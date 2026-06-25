@@ -5,3 +5,6 @@ openai>=1.40.0          # OpenAI SDK (files, vector_stores, responses)
 pydantic>=2.6.0         # Taxonomy schema + strict structured output models
 python-dotenv>=1.0.0    # Load OPENAI_API_KEY etc. from .env
 requests>=2.31.0        # Direct /v1/responses calls + response-id deletion
+PyYAML>=6.0             # taxonomy / company-profile YAML
+PyMuPDF>=1.24           # PDF render (vision) + per-page text
+# System dependency (not pip): poppler's `pdftotext` for layout-preserved text.
