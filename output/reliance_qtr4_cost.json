@@ -1,0 +1,98 @@
+[
+  {
+    "key": "Sundry Creditors",
+    "scope": "standalone",
+    "value": "122,379",
+    "page": 16
+  },
+  {
+    "key": "Sundry Creditors",
+    "scope": "consolidated",
+    "value": "158,842",
+    "page": 16
+  },
+  {
+    "key": "Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",
+    "scope": "consolidated",
+    "value": "99,552",
+    "page": 16
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Other Long Term Liabilities",
+    "scope": "standalone",
+    "value": "3,173",
+    "page": 30
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Other Long Term Liabilities",
+    "scope": "consolidated",
+    "value": ".6;932",
+    "page": 30
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Total Long Term Liabilities",
+    "scope": "standalone",
+    "value": "3,173",
+    "page": 16
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Total Long Term Liabilities",
+    "scope": "consolidated",
+    "value": ".6;932",
+    "page": 16
+  },
+  {
+    "key": "Equity Subscribed fully paid",
+    "scope": "standalone",
+    "value": "13,532",
+    "page": 28
+  },
+  {
+    "key": "Equity Subscribed fully paid",
+    "scope": "consolidated",
+    "value": "13,532",
+    "page": 28
+  },
+  {
+    "key": "Equity Paid Up",
+    "scope": "standalone",
+    "value": "13,532",
+    "page": 28
+  },
+  {
+    "key": "Equity Paid Up",
+    "scope": "consolidated",
+    "value": "13,532",
+    "page": 28
+  },
+  {
+    "key": "Face Value of Share (in Rs)",
+    "scope": "standalone",
+    "value": "10",
+    "page": 28
+  },
+  {
+    "key": "Face Value of Share (in Rs)",
+    "scope": "consolidated",
+    "value": "10/-",
+    "page": 28
+  },
+  {
+    "key": "Equity attributable to the equity holders of the parent",
+    "scope": "consolidated",
+    "value": "843,200",
+    "page": 16
+  },
+  {
+    "key": "Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",
+    "scope": "standalone",
+    "value": "(10,679)",
+    "page": 14
+  },
+  {
+    "key": "Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",
+    "scope": "consolidated",
+    "value": "\u00b711       \u00a72ab",
+    "page": 14
+  }
+]

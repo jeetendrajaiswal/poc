@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- Secrets / credentials (NEVER commit) ---
+.env
+.env.*
+*.key
+secrets.*
+
+# --- Privacy: uploaded annual reports are processed then deleted; never track them ---
+uploads/*.pdf
+uploads/*.PDF
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# --- Backups & scratch ---
+*.bak
+.bak_before_mini/
+scratchpad/
+tmp/
+
+# --- Transient / experimental pipeline outputs (regenerable) ---
+output/*_STALE.json
+output/*_batched.json
+output/*_sbatch.json
+output/*_costtest.json
+output/*_mini*.json
+output/*_wd.json
+output/*_wholedoc.json
+data/*.bak

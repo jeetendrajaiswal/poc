@@ -1,0 +1,137 @@
+# Phase-0 thin-slice taxonomy: ~12 representative data points across easy/medium/hard tiers.
+# Aliases grounded in real wording seen in the 6 reports (Schedule III / Ind AS conventions).
+# Full ~60-item definitions.yaml comes in Phase 1 once this baseline is measured.
+
+items:
+  - key: Share Premium
+    tier: easy
+    scope: both
+    value_type: monetary
+    concept: >
+      Premium received over the face/par value on issue of equity shares; a component of
+      Other Equity / Reserves. Ind AS / Companies Act §52.
+    aliases: ["Securities premium", "Securities Premium Account", "Securities premium reserve", "Share premium"]
+    location_hint: "Other Equity / Reserves and Surplus note; Statement of Changes in Equity"
+
+  - key: Hedging Reserve
+    tier: hard
+    scope: both
+    value_type: monetary
+    concept: >
+      Accumulated effective portion of gains/losses on cash-flow hedging instruments, within
+      Other Equity. Ind AS 109.
+    aliases: ["Cash flow hedge reserve", "Hedging reserve", "Effective portion of cash flow hedges", "Cash flow hedging reserve"]
+    location_hint: "Other Equity note; Statement of Changes in Equity"
+
+  - key: Total Power & Fuel Expenses
+    tier: easy
+    scope: both
+    value_type: monetary
+    kind: reported
+    concept: >
+      Cost of power and fuel consumed, a line within Other Expenses (manufacturing). Usually a single
+      printed line, not a sum.
+    aliases: ["Power and fuel", "Power & fuel", "Power, fuel and water", "Consumption of power and fuel"]
+    location_hint: "Other Expenses note in the Statement of Profit and Loss"
+
+  - key: Gross Carrying Value_Furnitures & Fixtures
+    tier: medium
+    scope: both
+    value_type: monetary
+    concept: >
+      Gross block (cost / gross carrying amount, before accumulated depreciation) of Furniture &
+      Fixtures within Property, Plant and Equipment. Ind AS 16.
+    aliases: ["Furniture and fixtures", "Furniture & fixtures", "Furniture, fixtures"]
+    column_hint: "Gross carrying value / Gross block / Cost — NOT net block"
+    location_hint: "Property, Plant and Equipment note (PP&E movement schedule)"
+
+  - key: Gross Carrying Value_Office Equipments
+    tier: medium
+    scope: both
+    value_type: monetary
+    concept: >
+      Gross block (cost / gross carrying amount) of Office Equipment within PP&E. Ind AS 16.
+    aliases: ["Office equipment", "Office equipments"]
+    column_hint: "Gross carrying value / Gross block / Cost — NOT net block"
+    location_hint: "Property, Plant and Equipment note"
+
+  - key: Accumulated Depreciation_Office Equipments
+    tier: medium
+    scope: both
+    value_type: monetary
+    concept: >
+      Accumulated depreciation to date on Office Equipment within PP&E. Ind AS 16.
+    aliases: ["Office equipment", "Office equipments"]
+    column_hint: "Accumulated depreciation / Depreciation column — NOT gross or net"
+    location_hint: "Property, Plant and Equipment note (depreciation block)"
+
+  - key: Sundry Creditors
+    tier: easy
+    scope: both
+    value_type: monetary
+    concept: >
+      Amounts payable to suppliers for goods/services — trade payables. Schedule III current
+      liabilities.
+    aliases: ["Trade payables", "Trade and other payables", "Sundry creditors", "Trade Payable"]
+    location_hint: "Trade Payables note under Current Liabilities"
+
+  - key: Consumption Of Stores And Spare Parts
+    tier: medium
+    scope: both
+    value_type: monetary
+    concept: >
+      Cost of stores and spare parts consumed during the year, a line within Other Expenses
+      (manufacturing).
+    aliases: ["Stores and spares consumed", "Consumption of stores and spares", "Stores, spares and consumables", "Consumption of stores and spare parts"]
+    location_hint: "Other Expenses note"
+
+  - key: Authorised Equity Share Capital
+    tier: easy
+    scope: both
+    value_type: monetary
+    concept: >
+      Maximum equity share capital the company is authorised to issue, as a MONETARY AMOUNT in Rs
+      crore (= number of authorised shares x face value), EQUITY class only — exclude preference shares.
+      Companies Act §2/§61.
+    aliases: ["Authorised", "Authorised share capital", "Authorised capital", "Equity shares of"]
+    column_hint: "the AMOUNT in Rs crore (e.g. '250'), NOT the count of authorised shares"
+    location_hint: "Share Capital note — 'Authorised' sub-section"
+
+  - key: Face Value of Share (in Rs)
+    tier: easy
+    scope: both
+    value_type: per_share
+    concept: >
+      Par/nominal value per equity share in Rs (e.g. 'equity shares of Rs 1 each').
+    aliases: ["face value", "par value", "of `", "of Rs", "each"]
+    location_hint: "Share Capital note (e.g. 'equity shares of Rs X each')"
+
+  - key: No Of Paid up Equity Shares
+    tier: medium
+    scope: both
+    value_type: count
+    concept: >
+      COUNT of equity shares issued, subscribed and fully paid-up as at year-END (closing). EQUITY
+      class only.
+    aliases: ["issued, subscribed and fully paid", "fully paid up", "equity shares of", "number of shares"]
+    column_hint: "the CLOSING count of issued & fully paid-up equity shares; NOT authorised shares, NOT opening balance, NOT a movement/reconciliation line"
+    location_hint: "Share Capital note — 'Issued, subscribed and paid-up' sub-section (closing balance)"
+
+  - key: CSR Expenditure
+    tier: hard
+    scope: both
+    value_type: monetary
+    concept: >
+      Amount spent on Corporate Social Responsibility during the year. Companies Act §135 + Schedule VII.
+    aliases: ["Corporate social responsibility", "CSR expenditure", "Amount spent on CSR", "expenditure on Corporate Social Responsibility"]
+    location_hint: "Other Expenses note and/or a dedicated CSR note"
+
+  - key: Equity attributable to the equity holders of the parent
+    tier: hard
+    scope: consolidated
+    value_type: monetary
+    concept: >
+      Total equity attributable to owners of the parent company (excludes non-controlling interest).
+      Consolidated only. Ind AS 110.
+    aliases: ["Equity attributable to owners of the Company", "attributable to owners of the parent", "Equity attributable to equity holders of the parent", "Equity attributable to owners of the Holding Company"]
+    location_hint: "Consolidated Balance Sheet / Statement of Changes in Equity (Equity section)"

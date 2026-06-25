@@ -1,0 +1,579 @@
+company,key,scope,expected_value
+infosys,Share Premium,standalone,"1,054"
+infosys,Share Premium,consolidated,"1,091"
+infosys,Hedging Reserve,standalone,(18)
+infosys,Hedging Reserve,consolidated,(19)
+infosys,Non Current Investments_Unquoted Debentures/Bonds,standalone,Not disclosed
+infosys,Non Current Investments_Unquoted Debentures/Bonds,consolidated,Not disclosed
+infosys,Non Current Investments_Joint Venture/Partnerships,standalone,Not disclosed
+infosys,Non Current Investments_Joint Venture/Partnerships,consolidated,Not disclosed
+infosys,Gross Carrying Value_Furnitures & Fixtures,standalone,"2,200"
+infosys,Gross Carrying Value_Furnitures & Fixtures,consolidated,"2,438"
+infosys,Gross Carrying Value_Office Equipments,standalone,"1,497"
+infosys,Gross Carrying Value_Office Equipments,consolidated,"1,732"
+infosys,Accumulated Depreciation_Furnitures & Fixtures,standalone,"(1,838)"
+infosys,Accumulated Depreciation_Furnitures & Fixtures,consolidated,"(1,995)"
+infosys,Accumulated Depreciation_Office Equipments,standalone,"(1,249)"
+infosys,Accumulated Depreciation_Office Equipments,consolidated,"(1,417)"
+infosys,Other CWIP,standalone,Not disclosed
+infosys,Other CWIP,consolidated,Not disclosed
+infosys,Gross Investment Property,standalone,Not disclosed
+infosys,Gross Investment Property,consolidated,Not disclosed
+infosys,Loss On Disposal Of Fixed Asset,standalone,Not disclosed
+infosys,Loss On Disposal Of Fixed Asset,consolidated,Not disclosed
+infosys,Fixed Assets Written Off,standalone,Not disclosed
+infosys,Fixed Assets Written Off,consolidated,Not disclosed
+infosys,Sundry Creditors,standalone,"3,539"
+infosys,Sundry Creditors,consolidated,"4,744"
+infosys,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,Not disclosed
+infosys,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,Not disclosed
+infosys,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,Not disclosed
+infosys,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,Not disclosed
+infosys,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,Not disclosed
+infosys,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,Not disclosed
+infosys,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,Not disclosed
+infosys,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,Not disclosed
+infosys,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,Not disclosed
+infosys,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,Not disclosed
+infosys,Other Current Liabilities_Revenue received in advance,standalone,Not disclosed
+infosys,Other Current Liabilities_Revenue received in advance,consolidated,Not disclosed
+infosys,Other Current Liabilities_Accrued Salary Payable,standalone,Not disclosed
+infosys,Other Current Liabilities_Accrued Salary Payable,consolidated,Not disclosed
+infosys,Other Current Liabilities_Employees Stock Options Outstanding,standalone,Not disclosed
+infosys,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,Not disclosed
+infosys,Short Term Loans And Advances_Other Deposit Assets,standalone,10
+infosys,Short Term Loans And Advances_Other Deposit Assets,consolidated,75
+infosys,Short Term Loans And Advances_Advances to related parties,standalone,Not disclosed
+infosys,Short Term Loans And Advances_Advances to related parties,consolidated,Not disclosed
+infosys,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,Not disclosed
+infosys,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,Not disclosed
+infosys,Other Current Assets_Advances to related parties,standalone,Not disclosed
+infosys,Other Current Assets_Advances to related parties,consolidated,Not disclosed
+infosys,Other Current Assets_Advances given suppliers,standalone,Not disclosed
+infosys,Other Current Assets_Advances given suppliers,consolidated,Not disclosed
+infosys,Other Current Assets_Export incentives receivables,standalone,Not disclosed
+infosys,Other Current Assets_Export incentives receivables,consolidated,Not disclosed
+infosys,Other Current Assets_Less : Doubtful Advances,standalone,Not disclosed
+infosys,Other Current Assets_Less : Doubtful Advances,consolidated,Not disclosed
+infosys,Authorised Equity Share Capital,standalone,"2,400"
+infosys,Authorised Equity Share Capital,consolidated,"2,400"
+infosys,Equity Issued,standalone,"2,027"
+infosys,Equity Issued,consolidated,"2,024"
+infosys,Equity Subscribed fully paid,standalone,"2,027"
+infosys,Equity Subscribed fully paid,consolidated,"2,024"
+infosys,Equity Forfeited,standalone,"₹1,500/-"
+infosys,Equity Forfeited,consolidated,"₹1,500"
+infosys,Equity Paid Up,standalone,"2,027"
+infosys,Equity Paid Up,consolidated,"2,024"
+infosys,Face Value of Share (in Rs),standalone,5
+infosys,Face Value of Share (in Rs),consolidated,5
+infosys,No Of Authorised Equity Shares,standalone,"4,80,00,00,000"
+infosys,No Of Authorised Equity Shares,consolidated,"480,00,00,000"
+infosys,No Of Issued Equity Shares,standalone,"4,05,55,91,723"
+infosys,No Of Issued Equity Shares,consolidated,"404,69,40,812"
+infosys,No Of Subscribed Equity Shares Fully Paid,standalone,Not disclosed
+infosys,No Of Subscribed Equity Shares Fully Paid,consolidated,Not disclosed
+infosys,No Of Paid up Equity Shares,standalone,"4,05,55,91,723"
+infosys,No Of Paid up Equity Shares,consolidated,Not disclosed
+infosys,Number of shares outstanding at beginning of period,standalone,Not disclosed
+infosys,Number of shares outstanding at beginning of period,consolidated,"414,36,07,528"
+infosys,No Of Shares Increase Towards Stock Split,standalone,Not disclosed
+infosys,No Of Shares Increase Towards Stock Split,consolidated,Not disclosed
+infosys,No Of Shares bought back or treasury shares,standalone,"10,00,00,000"
+infosys,No Of Shares bought back or treasury shares,consolidated,"86,50,911"
+infosys,Equity attributable to the equity holders of the parent,consolidated,Not disclosed
+infosys,Share Depreciation Joint ventures,consolidated,Not disclosed
+infosys,Total Power & Fuel Expenses,both,Not disclosed
+infosys,Consumption Of Stores And Spare Parts,both,Not disclosed
+infosys,Brokerage/Commission To Agents,standalone,Not disclosed
+infosys,Brokerage/Commission To Agents,consolidated,Not disclosed
+infosys,Carriage Outwards,standalone,Not disclosed
+infosys,Carriage Outwards,consolidated,Not disclosed
+infosys,Legal & Professional Charges,standalone,Not disclosed
+infosys,Legal & Professional Charges,consolidated,Not disclosed
+infosys,Payments To Auditor,standalone,Not disclosed
+infosys,Payments To Auditor,consolidated,Not disclosed
+infosys,Payment for reimbursement of expenses,standalone,Not disclosed
+infosys,Payment for reimbursement of expenses,consolidated,Not disclosed
+infosys,Donations Subscriptions,standalone,Not disclosed
+infosys,Donations Subscriptions,consolidated,Not disclosed
+infosys,CSR Expenditure,standalone,577
+infosys,CSR Expenditure,consolidated,623
+infosys,Impairment loss on financial assets loans and advances,standalone,71
+infosys,Impairment loss on financial assets loans and advances,consolidated,75
+infosys,Provision Bad Doubtful Loans Advances,standalone,Not disclosed
+infosys,Provision Bad Doubtful Loans Advances,consolidated,Not disclosed
+infosys,Bad Debts Advances Written Off,standalone,Not disclosed
+infosys,Bad Debts Advances Written Off,consolidated,Not disclosed
+infosys,Interest Expense Borrowings,standalone,Not disclosed
+infosys,Interest Expense Borrowings,consolidated,Not disclosed
+infosys,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,Not disclosed
+infosys,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,Not disclosed
+infosys,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,Not disclosed
+infosys,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,Not disclosed
+infosys,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,709
+infosys,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,843
+itc,Share Premium,standalone,15834.70
+itc,Share Premium,consolidated,15834.70
+itc,Hedging Reserve,standalone,(4.54)
+itc,Hedging Reserve,consolidated,(13.89)
+itc,Non Current Investments_Unquoted Debentures/Bonds,standalone,Not disclosed
+itc,Non Current Investments_Unquoted Debentures/Bonds,consolidated,Not disclosed
+itc,Non Current Investments_Joint Venture/Partnerships,standalone,Not disclosed
+itc,Non Current Investments_Joint Venture/Partnerships,consolidated,146.42
+itc,Gross Carrying Value_Furnitures & Fixtures,standalone,261.74
+itc,Gross Carrying Value_Furnitures & Fixtures,consolidated,282.36
+itc,Gross Carrying Value_Office Equipments,standalone,43.21
+itc,Gross Carrying Value_Office Equipments,consolidated,62.88
+itc,Accumulated Depreciation_Furnitures & Fixtures,standalone,161.61
+itc,Accumulated Depreciation_Furnitures & Fixtures,consolidated,169.33
+itc,Accumulated Depreciation_Office Equipments,standalone,24.77
+itc,Accumulated Depreciation_Office Equipments,consolidated,36.33
+itc,Other CWIP,standalone,Not disclosed
+itc,Other CWIP,consolidated,Not disclosed
+itc,Gross Investment Property,standalone,505.45
+itc,Gross Investment Property,consolidated,408.54
+itc,Loss On Disposal Of Fixed Asset,standalone,(108.26)
+itc,Loss On Disposal Of Fixed Asset,consolidated,(138.76)
+itc,Fixed Assets Written Off,standalone,Not disclosed
+itc,Fixed Assets Written Off,consolidated,Not disclosed
+itc,Sundry Creditors,standalone,4489.82
+itc,Sundry Creditors,consolidated,4807.30
+itc,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,Not disclosed
+itc,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,Not disclosed
+itc,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,Not disclosed
+itc,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,Not disclosed
+itc,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,Not disclosed
+itc,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,Not disclosed
+itc,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,Not disclosed
+itc,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,34.51
+itc,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,Not disclosed
+itc,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,34.51
+itc,Other Current Liabilities_Revenue received in advance,standalone,Not disclosed
+itc,Other Current Liabilities_Revenue received in advance,consolidated,1264.18
+itc,Other Current Liabilities_Accrued Salary Payable,standalone,Not disclosed
+itc,Other Current Liabilities_Accrued Salary Payable,consolidated,Not disclosed
+itc,Other Current Liabilities_Employees Stock Options Outstanding,standalone,Not disclosed
+itc,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,507.59
+itc,Short Term Loans And Advances_Other Deposit Assets,standalone,6.26
+itc,Short Term Loans And Advances_Other Deposit Assets,consolidated,6.26
+itc,Short Term Loans And Advances_Advances to related parties,standalone,-
+itc,Short Term Loans And Advances_Advances to related parties,consolidated,-
+itc,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,Not disclosed
+itc,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,Not disclosed
+itc,Other Current Assets_Advances to related parties,standalone,-
+itc,Other Current Assets_Advances to related parties,consolidated,-
+itc,Other Current Assets_Advances given suppliers,standalone,Not disclosed
+itc,Other Current Assets_Advances given suppliers,consolidated,Not disclosed
+itc,Other Current Assets_Export incentives receivables,standalone,Not disclosed
+itc,Other Current Assets_Export incentives receivables,consolidated,Not disclosed
+itc,Other Current Assets_Less : Doubtful Advances,standalone,Not disclosed
+itc,Other Current Assets_Less : Doubtful Advances,consolidated,Not disclosed
+itc,Authorised Equity Share Capital,standalone,2000.00
+itc,Authorised Equity Share Capital,consolidated,2000.00
+itc,Equity Issued,standalone,1251.41
+itc,Equity Issued,consolidated,1251.41
+itc,Equity Subscribed fully paid,standalone,1251.41
+itc,Equity Subscribed fully paid,consolidated,1251.41
+itc,Equity Forfeited,standalone,Not disclosed
+itc,Equity Forfeited,consolidated,Not disclosed
+itc,Equity Paid Up,standalone,1251.41
+itc,Equity Paid Up,consolidated,1251.41
+itc,Face Value of Share (in Rs),standalone,1.00
+itc,Face Value of Share (in Rs),consolidated,1.00
+itc,No Of Authorised Equity Shares,standalone,"20,00,00,00,000"
+itc,No Of Authorised Equity Shares,consolidated,"20,00,00,00,000"
+itc,No Of Issued Equity Shares,standalone,"12,51,41,19,781"
+itc,No Of Issued Equity Shares,consolidated,"12,51,41,19,781"
+itc,No Of Subscribed Equity Shares Fully Paid,standalone,"12,51,41,19,781"
+itc,No Of Subscribed Equity Shares Fully Paid,consolidated,"12,51,41,19,781"
+itc,No Of Paid up Equity Shares,standalone,"12,51,41,19,781"
+itc,No Of Paid up Equity Shares,consolidated,"12,51,41,19,781"
+itc,Number of shares outstanding at beginning of period,standalone,"12,48,47,21,471"
+itc,Number of shares outstanding at beginning of period,consolidated,"12,48,47,21,471"
+itc,No Of Shares Increase Towards Stock Split,standalone,Not disclosed
+itc,No Of Shares Increase Towards Stock Split,consolidated,Not disclosed
+itc,No Of Shares bought back or treasury shares,standalone,Not disclosed
+itc,No Of Shares bought back or treasury shares,consolidated,Not disclosed
+itc,Equity attributable to the equity holders of the parent,consolidated,70030.05
+itc,Share Depreciation Joint ventures,consolidated,Not disclosed
+itc,Total Power & Fuel Expenses,standalone,942.47
+itc,Total Power & Fuel Expenses,consolidated,975.35
+itc,Consumption Of Stores And Spare Parts,standalone,390.49
+itc,Consumption Of Stores And Spare Parts,consolidated,397.38
+itc,Brokerage/Commission To Agents,standalone,Not disclosed
+itc,Brokerage/Commission To Agents,consolidated,Not disclosed
+itc,Carriage Outwards,standalone,1891.85
+itc,Carriage Outwards,consolidated,1928.59
+itc,Legal & Professional Charges,standalone,223.10
+itc,Legal & Professional Charges,consolidated,723.81
+itc,Payments To Auditor,standalone,7.43
+itc,Payments To Auditor,consolidated,Not disclosed
+itc,Payment for reimbursement of expenses,standalone,0.26
+itc,Payment for reimbursement of expenses,consolidated,Not disclosed
+itc,Donations Subscriptions,standalone,Not disclosed
+itc,Donations Subscriptions,consolidated,Not disclosed
+itc,CSR Expenditure,standalone,443.68
+itc,CSR Expenditure,consolidated,475.33
+itc,Impairment loss on financial assets loans and advances,standalone,Not disclosed
+itc,Impairment loss on financial assets loans and advances,consolidated,Not disclosed
+itc,Provision Bad Doubtful Loans Advances,standalone,Not disclosed
+itc,Provision Bad Doubtful Loans Advances,consolidated,Not disclosed
+itc,Bad Debts Advances Written Off,standalone,Not disclosed
+itc,Bad Debts Advances Written Off,consolidated,Not disclosed
+itc,Interest Expense Borrowings,standalone,Not disclosed
+itc,Interest Expense Borrowings,consolidated,Not disclosed
+itc,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,(640.50)
+itc,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,(725.65)
+itc,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,Not disclosed
+itc,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,1556.24
+itc,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,Not disclosed
+itc,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,Not disclosed
+adani,Share Premium,standalone,"37,685.70"
+adani,Share Premium,consolidated,"37,685.70"
+adani,Hedging Reserve,standalone,Not disclosed
+adani,Hedging Reserve,consolidated,100.20
+adani,Non Current Investments_Unquoted Debentures/Bonds,standalone,"5,292.63"
+adani,Non Current Investments_Unquoted Debentures/Bonds,consolidated,"5,292.63"
+adani,Non Current Investments_Joint Venture/Partnerships,standalone,Not disclosed
+adani,Non Current Investments_Joint Venture/Partnerships,consolidated,"6,705.74"
+adani,Gross Carrying Value_Furnitures & Fixtures,standalone,60.62
+adani,Gross Carrying Value_Furnitures & Fixtures,consolidated,"1,180.71"
+adani,Gross Carrying Value_Office Equipments,standalone,59.84
+adani,Gross Carrying Value_Office Equipments,consolidated,"1,064.61"
+adani,Accumulated Depreciation_Furnitures & Fixtures,standalone,25.26
+adani,Accumulated Depreciation_Furnitures & Fixtures,consolidated,231.19
+adani,Accumulated Depreciation_Office Equipments,standalone,38.49
+adani,Accumulated Depreciation_Office Equipments,consolidated,331.70
+adani,Other CWIP,standalone,Not disclosed
+adani,Other CWIP,consolidated,Not disclosed
+adani,Gross Investment Property,standalone,19.35
+adani,Gross Investment Property,consolidated,311.33
+adani,Loss On Disposal Of Fixed Asset,standalone,Not disclosed
+adani,Loss On Disposal Of Fixed Asset,consolidated,1.66
+adani,Fixed Assets Written Off,standalone,Not disclosed
+adani,Fixed Assets Written Off,consolidated,Not disclosed
+adani,Sundry Creditors,standalone,"4,474.96"
+adani,Sundry Creditors,consolidated,"20,289.87"
+adani,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,Not disclosed
+adani,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,Not disclosed
+adani,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,Not disclosed
+adani,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,Not disclosed
+adani,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,Not disclosed
+adani,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,Not disclosed
+adani,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,Not disclosed
+adani,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,"8,836.51"
+adani,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,Not disclosed
+adani,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,"8,836.51"
+adani,Other Current Liabilities_Revenue received in advance,standalone,198.29
+adani,Other Current Liabilities_Revenue received in advance,consolidated,"3,710.14"
+adani,Other Current Liabilities_Accrued Salary Payable,standalone,Not disclosed
+adani,Other Current Liabilities_Accrued Salary Payable,consolidated,Not disclosed
+adani,Other Current Liabilities_Employees Stock Options Outstanding,standalone,Not disclosed
+adani,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,Not disclosed
+adani,Short Term Loans And Advances_Other Deposit Assets,standalone,87.53
+adani,Short Term Loans And Advances_Other Deposit Assets,consolidated,307.44
+adani,Short Term Loans And Advances_Advances to related parties,standalone,Not disclosed
+adani,Short Term Loans And Advances_Advances to related parties,consolidated,Not disclosed
+adani,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,(2.43)
+adani,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,(4.84)
+adani,Other Current Assets_Advances to related parties,standalone,Not disclosed
+adani,Other Current Assets_Advances to related parties,consolidated,Not disclosed
+adani,Other Current Assets_Advances given suppliers,standalone,411.18
+adani,Other Current Assets_Advances given suppliers,consolidated,Not disclosed
+adani,Other Current Assets_Export incentives receivables,standalone,Not disclosed
+adani,Other Current Assets_Export incentives receivables,consolidated,Not disclosed
+adani,Other Current Assets_Less : Doubtful Advances,standalone,(2.43)
+adani,Other Current Assets_Less : Doubtful Advances,consolidated,(4.84)
+adani,Authorised Equity Share Capital,standalone,485.92
+adani,Authorised Equity Share Capital,consolidated,485.92
+adani,Equity Issued,standalone,129.27
+adani,Equity Issued,consolidated,129.27
+adani,Equity Subscribed fully paid,standalone,129.27
+adani,Equity Subscribed fully paid,consolidated,129.27
+adani,Equity Forfeited,standalone,Not disclosed
+adani,Equity Forfeited,consolidated,Not disclosed
+adani,Equity Paid Up,standalone,129.24
+adani,Equity Paid Up,consolidated,129.27
+adani,Face Value of Share (in Rs),standalone,1
+adani,Face Value of Share (in Rs),consolidated,1
+adani,No Of Authorised Equity Shares,standalone,"4,85,92,00,000"
+adani,No Of Authorised Equity Shares,consolidated,"4,85,92,00,000"
+adani,No Of Issued Equity Shares,standalone,"1,29,26,82,416"
+adani,No Of Issued Equity Shares,consolidated,"1,29,26,82,416"
+adani,No Of Subscribed Equity Shares Fully Paid,standalone,"1,29,26,82,416"
+adani,No Of Subscribed Equity Shares Fully Paid,consolidated,"1,29,26,82,416"
+adani,No Of Paid up Equity Shares,standalone,"1,29,26,82,416"
+adani,No Of Paid up Equity Shares,consolidated,"1,29,26,82,416"
+adani,Number of shares outstanding at beginning of period,standalone,"1,15,41,80,729"
+adani,Number of shares outstanding at beginning of period,consolidated,"1,15,41,80,729"
+adani,No Of Shares Increase Towards Stock Split,standalone,Not disclosed
+adani,No Of Shares Increase Towards Stock Split,consolidated,Not disclosed
+adani,No Of Shares bought back or treasury shares,standalone,Not disclosed
+adani,No Of Shares bought back or treasury shares,consolidated,Not disclosed
+adani,Equity attributable to the equity holders of the parent,consolidated,"80,925.95"
+adani,Share Depreciation Joint ventures,consolidated,Not disclosed
+adani,Total Power & Fuel Expenses,standalone,40.93
+adani,Total Power & Fuel Expenses,consolidated,"2,019.96"
+adani,Consumption Of Stores And Spare Parts,standalone,42.35
+adani,Consumption Of Stores And Spare Parts,consolidated,Not disclosed
+adani,Brokerage/Commission To Agents,standalone,Not disclosed
+adani,Brokerage/Commission To Agents,consolidated,Not disclosed
+adani,Carriage Outwards,standalone,Not disclosed
+adani,Carriage Outwards,consolidated,Not disclosed
+adani,Legal & Professional Charges,standalone,307.61
+adani,Legal & Professional Charges,consolidated,"1,076.06"
+adani,Payments To Auditor,standalone,1.70
+adani,Payments To Auditor,consolidated,11.84
+adani,Payment for reimbursement of expenses,standalone,Not disclosed
+adani,Payment for reimbursement of expenses,consolidated,Not disclosed
+adani,Donations Subscriptions,standalone,5.26
+adani,Donations Subscriptions,consolidated,10.96
+adani,CSR Expenditure,standalone,60.18
+adani,CSR Expenditure,consolidated,140.50
+adani,Impairment loss on financial assets loans and advances,standalone,Not disclosed
+adani,Impairment loss on financial assets loans and advances,consolidated,Not disclosed
+adani,Provision Bad Doubtful Loans Advances,standalone,6.46
+adani,Provision Bad Doubtful Loans Advances,consolidated,74.77
+adani,Bad Debts Advances Written Off,standalone,62.59
+adani,Bad Debts Advances Written Off,consolidated,206.68
+adani,Interest Expense Borrowings,standalone,Not disclosed
+adani,Interest Expense Borrowings,consolidated,Not disclosed
+adani,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,(168.75)
+adani,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,"(2,824.59)"
+adani,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,308.32
+adani,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,"4,614.21"
+adani,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,33.23
+adani,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,94.32
+reliance,Share Premium,standalone,"93,118"
+reliance,Share Premium,consolidated,"93,118"
+reliance,Hedging Reserve,standalone,"(16,123)"
+reliance,Hedging Reserve,consolidated,Not disclosed
+reliance,Non Current Investments_Unquoted Debentures/Bonds,standalone,Not disclosed
+reliance,Non Current Investments_Unquoted Debentures/Bonds,consolidated,Not disclosed
+reliance,Non Current Investments_Joint Venture/Partnerships,standalone,Not disclosed
+reliance,Non Current Investments_Joint Venture/Partnerships,consolidated,"9,648"
+reliance,Gross Carrying Value_Furnitures & Fixtures,standalone,"1,939"
+reliance,Gross Carrying Value_Furnitures & Fixtures,consolidated,"17,369"
+reliance,Gross Carrying Value_Office Equipments,standalone,"28,349"
+reliance,Gross Carrying Value_Office Equipments,consolidated,"71,504"
+reliance,Accumulated Depreciation_Furnitures & Fixtures,standalone,800
+reliance,Accumulated Depreciation_Furnitures & Fixtures,consolidated,"6,717"
+reliance,Accumulated Depreciation_Office Equipments,standalone,"12,550"
+reliance,Accumulated Depreciation_Office Equipments,consolidated,"22,187"
+reliance,Other CWIP,standalone,Not disclosed
+reliance,Other CWIP,consolidated,Not disclosed
+reliance,Gross Investment Property,standalone,Not disclosed
+reliance,Gross Investment Property,consolidated,Not disclosed
+reliance,Loss On Disposal Of Fixed Asset,standalone,38
+reliance,Loss On Disposal Of Fixed Asset,consolidated,Not disclosed
+reliance,Fixed Assets Written Off,standalone,Not disclosed
+reliance,Fixed Assets Written Off,consolidated,Not disclosed
+reliance,Sundry Creditors,standalone,"1,47,415"
+reliance,Sundry Creditors,consolidated,"1,58,842"
+reliance,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,Not disclosed
+reliance,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,Not disclosed
+reliance,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,Not disclosed
+reliance,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,Not disclosed
+reliance,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,Not disclosed
+reliance,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,Not disclosed
+reliance,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,Not disclosed
+reliance,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,"6,932"
+reliance,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,"4,040"
+reliance,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,"6,932"
+reliance,Other Current Liabilities_Revenue received in advance,standalone,"89,099"
+reliance,Other Current Liabilities_Revenue received in advance,consolidated,"1,72,201"
+reliance,Other Current Liabilities_Accrued Salary Payable,standalone,Not disclosed
+reliance,Other Current Liabilities_Accrued Salary Payable,consolidated,Not disclosed
+reliance,Other Current Liabilities_Employees Stock Options Outstanding,standalone,Not disclosed
+reliance,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,Not disclosed
+reliance,Short Term Loans And Advances_Other Deposit Assets,standalone,"2,403"
+reliance,Short Term Loans And Advances_Other Deposit Assets,consolidated,Not disclosed
+reliance,Short Term Loans And Advances_Advances to related parties,standalone,Not disclosed
+reliance,Short Term Loans And Advances_Advances to related parties,consolidated,Not disclosed
+reliance,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,Not disclosed
+reliance,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,Not disclosed
+reliance,Other Current Assets_Advances to related parties,standalone,Not disclosed
+reliance,Other Current Assets_Advances to related parties,consolidated,Not disclosed
+reliance,Other Current Assets_Advances given suppliers,standalone,Not disclosed
+reliance,Other Current Assets_Advances given suppliers,consolidated,Not disclosed
+reliance,Other Current Assets_Export incentives receivables,standalone,Not disclosed
+reliance,Other Current Assets_Export incentives receivables,consolidated,Not disclosed
+reliance,Other Current Assets_Less : Doubtful Advances,standalone,Not disclosed
+reliance,Other Current Assets_Less : Doubtful Advances,consolidated,Not disclosed
+reliance,Authorised Equity Share Capital,standalone,"49,000"
+reliance,Authorised Equity Share Capital,consolidated,"49,000"
+reliance,Equity Issued,standalone,"13,532"
+reliance,Equity Issued,consolidated,"13,532"
+reliance,Equity Subscribed fully paid,standalone,"13,532"
+reliance,Equity Subscribed fully paid,consolidated,"13,532"
+reliance,Equity Forfeited,standalone,Not disclosed
+reliance,Equity Forfeited,consolidated,Not disclosed
+reliance,Equity Paid Up,standalone,"13,532"
+reliance,Equity Paid Up,consolidated,"13,532"
+reliance,Face Value of Share (in Rs),standalone,10
+reliance,Face Value of Share (in Rs),consolidated,10
+reliance,No Of Authorised Equity Shares,standalone,"49,00,00,00,000"
+reliance,No Of Authorised Equity Shares,consolidated,"49,00,00,00,000"
+reliance,No Of Issued Equity Shares,standalone,"13,53,24,72,634"
+reliance,No Of Issued Equity Shares,consolidated,"13,53,24,72,634"
+reliance,No Of Subscribed Equity Shares Fully Paid,standalone,"13,53,24,72,634"
+reliance,No Of Subscribed Equity Shares Fully Paid,consolidated,"13,53,24,72,634"
+reliance,No Of Paid up Equity Shares,standalone,"13,53,24,72,634"
+reliance,No Of Paid up Equity Shares,consolidated,"13,53,24,72,634"
+reliance,Number of shares outstanding at beginning of period,standalone,"13,53,23,72,898"
+reliance,Number of shares outstanding at beginning of period,consolidated,"13,53,23,72,898"
+reliance,No Of Shares Increase Towards Stock Split,standalone,Not disclosed
+reliance,No Of Shares Increase Towards Stock Split,consolidated,Not disclosed
+reliance,No Of Shares bought back or treasury shares,standalone,Not disclosed
+reliance,No Of Shares bought back or treasury shares,consolidated,Not disclosed
+reliance,Equity attributable to the equity holders of the parent,consolidated,"9,04,030"
+reliance,Share Depreciation Joint ventures,consolidated,Not disclosed
+reliance,Total Power & Fuel Expenses,standalone,"19,735"
+reliance,Total Power & Fuel Expenses,consolidated,"22,069"
+reliance,Consumption Of Stores And Spare Parts,standalone,Not disclosed
+reliance,Consumption Of Stores And Spare Parts,consolidated,Not disclosed
+reliance,Brokerage/Commission To Agents,standalone,Not disclosed
+reliance,Brokerage/Commission To Agents,consolidated,Not disclosed
+reliance,Carriage Outwards,standalone,Not disclosed
+reliance,Carriage Outwards,consolidated,Not disclosed
+reliance,Legal & Professional Charges,standalone,Not disclosed
+reliance,Legal & Professional Charges,consolidated,Not disclosed
+reliance,Payments To Auditor,standalone,52
+reliance,Payments To Auditor,consolidated,122
+reliance,Payment for reimbursement of expenses,standalone,Not disclosed
+reliance,Payment for reimbursement of expenses,consolidated,Not disclosed
+reliance,Donations Subscriptions,standalone,"1,734"
+reliance,Donations Subscriptions,consolidated,"2,756"
+reliance,CSR Expenditure,standalone,"1,223"
+reliance,CSR Expenditure,consolidated,"2,248"
+reliance,Impairment loss on financial assets loans and advances,standalone,Not disclosed
+reliance,Impairment loss on financial assets loans and advances,consolidated,Not disclosed
+reliance,Provision Bad Doubtful Loans Advances,standalone,Not disclosed
+reliance,Provision Bad Doubtful Loans Advances,consolidated,Not disclosed
+reliance,Bad Debts Advances Written Off,standalone,Not disclosed
+reliance,Bad Debts Advances Written Off,consolidated,Not disclosed
+reliance,Interest Expense Borrowings,standalone,"5,187"
+reliance,Interest Expense Borrowings,consolidated,"22,050"
+reliance,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,"(6,750)"
+reliance,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,"(10,267)"
+reliance,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,"37,535"
+reliance,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,Not disclosed
+reliance,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,Not disclosed
+reliance,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,Not disclosed
+hindalco,Share Premium,standalone,"8,235"
+hindalco,Share Premium,consolidated,"8,235"
+hindalco,Hedging Reserve,standalone,325
+hindalco,Hedging Reserve,consolidated,583
+hindalco,Non Current Investments_Unquoted Debentures/Bonds,standalone,Not disclosed
+hindalco,Non Current Investments_Unquoted Debentures/Bonds,consolidated,17
+hindalco,Non Current Investments_Joint Venture/Partnerships,standalone,165
+hindalco,Non Current Investments_Joint Venture/Partnerships,consolidated,7
+hindalco,Gross Carrying Value_Furnitures & Fixtures,standalone,231
+hindalco,Gross Carrying Value_Furnitures & Fixtures,consolidated,"1,839"
+hindalco,Gross Carrying Value_Office Equipments,standalone,403
+hindalco,Gross Carrying Value_Office Equipments,consolidated,"1,467"
+hindalco,Accumulated Depreciation_Furnitures & Fixtures,standalone,133
+hindalco,Accumulated Depreciation_Furnitures & Fixtures,consolidated,"1,201"
+hindalco,Accumulated Depreciation_Office Equipments,standalone,235
+hindalco,Accumulated Depreciation_Office Equipments,consolidated,913
+hindalco,Other CWIP,standalone,Not disclosed
+hindalco,Other CWIP,consolidated,Not disclosed
+hindalco,Gross Investment Property,standalone,39
+hindalco,Gross Investment Property,consolidated,62
+hindalco,Loss On Disposal Of Fixed Asset,standalone,Not disclosed
+hindalco,Loss On Disposal Of Fixed Asset,consolidated,(486)
+hindalco,Fixed Assets Written Off,standalone,Not disclosed
+hindalco,Fixed Assets Written Off,consolidated,Not disclosed
+hindalco,Sundry Creditors,standalone,"10,553"
+hindalco,Sundry Creditors,consolidated,"40,632"
+hindalco,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,Not disclosed
+hindalco,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,Not disclosed
+hindalco,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,Not disclosed
+hindalco,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,Not disclosed
+hindalco,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,Not disclosed
+hindalco,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,Not disclosed
+hindalco,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,967
+hindalco,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,40
+hindalco,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,967
+hindalco,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,"1,685"
+hindalco,Other Current Liabilities_Revenue received in advance,standalone,263
+hindalco,Other Current Liabilities_Revenue received in advance,consolidated,358
+hindalco,Other Current Liabilities_Accrued Salary Payable,standalone,Not disclosed
+hindalco,Other Current Liabilities_Accrued Salary Payable,consolidated,Not disclosed
+hindalco,Other Current Liabilities_Employees Stock Options Outstanding,standalone,Not disclosed
+hindalco,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,Not disclosed
+hindalco,Short Term Loans And Advances_Other Deposit Assets,standalone,130
+hindalco,Short Term Loans And Advances_Other Deposit Assets,consolidated,131
+hindalco,Short Term Loans And Advances_Advances to related parties,standalone,81
+hindalco,Short Term Loans And Advances_Advances to related parties,consolidated,-
+hindalco,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,Not disclosed
+hindalco,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,Not disclosed
+hindalco,Other Current Assets_Advances to related parties,standalone,Not disclosed
+hindalco,Other Current Assets_Advances to related parties,consolidated,Not disclosed
+hindalco,Other Current Assets_Advances given suppliers,standalone,890
+hindalco,Other Current Assets_Advances given suppliers,consolidated,"1,297"
+hindalco,Other Current Assets_Export incentives receivables,standalone,Not disclosed
+hindalco,Other Current Assets_Export incentives receivables,consolidated,Not disclosed
+hindalco,Other Current Assets_Less : Doubtful Advances,standalone,(122)
+hindalco,Other Current Assets_Less : Doubtful Advances,consolidated,(131)
+hindalco,Authorised Equity Share Capital,standalone,250
+hindalco,Authorised Equity Share Capital,consolidated,250
+hindalco,Equity Issued,standalone,225
+hindalco,Equity Issued,consolidated,225
+hindalco,Equity Subscribed fully paid,standalone,225
+hindalco,Equity Subscribed fully paid,consolidated,225
+hindalco,Equity Forfeited,standalone,-
+hindalco,Equity Forfeited,consolidated,-
+hindalco,Equity Paid Up,standalone,222
+hindalco,Equity Paid Up,consolidated,222
+hindalco,Face Value of Share (in Rs),standalone,1
+hindalco,Face Value of Share (in Rs),consolidated,1
+hindalco,No Of Authorised Equity Shares,standalone,"2,500,000,000"
+hindalco,No Of Authorised Equity Shares,consolidated,"2,500,000,000"
+hindalco,No Of Issued Equity Shares,standalone,"2,247,780,169"
+hindalco,No Of Issued Equity Shares,consolidated,"2,247,780,169"
+hindalco,No Of Subscribed Equity Shares Fully Paid,standalone,"2,247,772,772"
+hindalco,No Of Subscribed Equity Shares Fully Paid,consolidated,"2,247,772,772"
+hindalco,No Of Paid up Equity Shares,standalone,"2,247,226,523"
+hindalco,No Of Paid up Equity Shares,consolidated,"2,247,226,523"
+hindalco,Number of shares outstanding at beginning of period,standalone,"2,220,623,508"
+hindalco,Number of shares outstanding at beginning of period,consolidated,"2,220,623,508"
+hindalco,No Of Shares Increase Towards Stock Split,standalone,Not disclosed
+hindalco,No Of Shares Increase Towards Stock Split,consolidated,Not disclosed
+hindalco,No Of Shares bought back or treasury shares,standalone,"(26,783,115)"
+hindalco,No Of Shares bought back or treasury shares,consolidated,"10,466,985"
+hindalco,Equity attributable to the equity holders of the parent,consolidated,"123,709"
+hindalco,Share Depreciation Joint ventures,consolidated,Not disclosed
+hindalco,Total Power & Fuel Expenses,standalone,"8,798"
+hindalco,Total Power & Fuel Expenses,consolidated,"14,396"
+hindalco,Consumption Of Stores And Spare Parts,standalone,882
+hindalco,Consumption Of Stores And Spare Parts,consolidated,"4,827"
+hindalco,Brokerage/Commission To Agents,standalone,Not disclosed
+hindalco,Brokerage/Commission To Agents,consolidated,Not disclosed
+hindalco,Carriage Outwards,standalone,"1,006"
+hindalco,Carriage Outwards,consolidated,"8,062"
+hindalco,Legal & Professional Charges,standalone,Not disclosed
+hindalco,Legal & Professional Charges,consolidated,Not disclosed
+hindalco,Payments To Auditor,standalone,7
+hindalco,Payments To Auditor,consolidated,92
+hindalco,Payment for reimbursement of expenses,standalone,-
+hindalco,Payment for reimbursement of expenses,consolidated,2
+hindalco,Donations Subscriptions,standalone,263
+hindalco,Donations Subscriptions,consolidated,365
+hindalco,CSR Expenditure,standalone,64
+hindalco,CSR Expenditure,consolidated,Not disclosed
+hindalco,Impairment loss on financial assets loans and advances,standalone,34
+hindalco,Impairment loss on financial assets loans and advances,consolidated,36
+hindalco,Provision Bad Doubtful Loans Advances,standalone,34
+hindalco,Provision Bad Doubtful Loans Advances,consolidated,36
+hindalco,Bad Debts Advances Written Off,standalone,Not disclosed
+hindalco,Bad Debts Advances Written Off,consolidated,-
+hindalco,Interest Expense Borrowings,standalone,"1,051"
+hindalco,Interest Expense Borrowings,consolidated,"3,875"
+hindalco,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,(130)
+hindalco,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,"(2,327)"
+hindalco,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,Not disclosed
+hindalco,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,205
+hindalco,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,30
+hindalco,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,36

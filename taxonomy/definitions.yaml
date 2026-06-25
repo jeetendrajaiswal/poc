@@ -1,0 +1,673 @@
+# definitions + verified recall aliases (incl. 'Equipments' for office equipment, footnote-bridged).
+# expert-reviewed alias/location-hint additions (additive, never replacing).
+
+items:
+- key: Share Premium
+  scope: both
+  value_type: monetary
+  concept: Premium received over face value on issue of equity shares; component of Other Equity. Companies
+    Act §52. Return the CLOSING balance as at the reporting date (the 'Closing Balance' /
+    balance-as-at-end-of-year figure that reconciles to the balance sheet), NOT the opening
+    'As per last Balance Sheet' figure.
+  aliases:
+  - Securities premium
+  - Securities Premium Account
+  - Securities premium reserve
+  - Share premium
+  location_hint: Other Equity / Reserves note; Statement of Changes in Equity (closing balance); Reserves
+    and Surplus note
+- key: Hedging Reserve
+  scope: both
+  value_type: monetary
+  concept: Accumulated effective portion of cash-flow hedge gains/losses within Other Equity. Ind AS 109.
+  aliases:
+  - Cash flow hedge reserve
+  - Effective portion of cash flow hedges
+  - Hedging reserve
+  - Cash flow hedging reserve
+  - Hedges of net investment in foreign operations
+  location_hint: Other Equity note; Statement of Changes in Equity (closing balance)
+- key: Non Current Investments_Unquoted Debentures/Bonds
+  scope: both
+  value_type: monetary
+  concept: Carrying value of unquoted (not listed) debentures and bonds held as non-current investments.
+  aliases:
+  - Investment in debentures
+  - Investment in bonds
+  - Unquoted debentures or bonds
+  - Debentures and bonds (unquoted)
+  column_hint: unquoted only; non-current investments
+  location_hint: Non-current Investments note
+- key: Non Current Investments_Joint Venture/Partnerships
+  scope: both
+  value_type: monetary
+  concept: Carrying value of investments in joint ventures / partnership firms held as non-current investments.
+  aliases:
+  - Investment in joint ventures
+  - Investments in partnership firms
+  - Investment in JV
+  - Interest in joint venture
+  location_hint: Non-current Investments note (joint ventures / partnerships sub-head)
+- key: Gross Carrying Value_Furnitures & Fixtures
+  scope: both
+  value_type: monetary
+  concept: Gross block (cost / gross carrying amount, before accumulated depreciation) of Furniture &
+    Fixtures. Ind AS 16.
+  aliases:
+  - Furniture and fixtures
+  - Furniture & fixtures
+  - Furniture, fixtures
+  column_hint: GROSS carrying value / Cost as at year-end — NOT net block, NOT accumulated depreciation
+  location_hint: Property, Plant and Equipment note (movement schedule)
+- key: Gross Carrying Value_Office Equipments
+  scope: both
+  value_type: monetary
+  concept: Gross block (cost / gross carrying amount) of Office Equipment. Ind AS 16.
+  aliases:
+  - Office equipment
+  - Office equipments
+  - Equipments
+  - Equipment
+  column_hint: GROSS carrying value / Cost as at year-end — NOT net block
+  location_hint: Property, Plant and Equipment note
+- key: Accumulated Depreciation_Furnitures & Fixtures
+  scope: both
+  value_type: monetary
+  concept: Accumulated depreciation to date on Furniture & Fixtures. Ind AS 16.
+  aliases:
+  - Furniture and fixtures
+  - Furniture & fixtures
+  column_hint: ACCUMULATED DEPRECIATION column as at year-end — NOT gross, NOT net
+  location_hint: Property, Plant and Equipment note (depreciation block)
+- key: Accumulated Depreciation_Office Equipments
+  scope: both
+  value_type: monetary
+  concept: Accumulated depreciation to date on Office Equipment. Ind AS 16.
+  aliases:
+  - Office equipment
+  - Office equipments
+  - Equipments
+  - Equipment
+  column_hint: ACCUMULATED DEPRECIATION column as at year-end — NOT gross, NOT net
+  location_hint: Property, Plant and Equipment note (depreciation block)
+- key: Other CWIP
+  scope: both
+  value_type: monetary
+  concept: Capital work-in-progress other than buildings/plant — i.e. other capital WIP. 2021 Schedule
+    III amendment.
+  aliases:
+  - Capital work-in-progress
+  - CWIP
+  - Other capital work in progress
+  - Capital work in progress - others
+  location_hint: PP&E / CWIP note
+- key: Gross Investment Property
+  scope: both
+  value_type: monetary
+  concept: Gross carrying amount (cost) of Investment Property. Ind AS 40.
+  aliases:
+  - Investment property
+  - Investment properties
+  column_hint: GROSS / cost as at year-end — NOT net
+  location_hint: Investment Property note
+- key: Loss On Disposal Of Fixed Asset
+  scope: both
+  value_type: monetary
+  concept: Loss on sale/disposal of property, plant and equipment.
+  aliases:
+  - Loss on sale of property, plant and equipment
+  - Loss on disposal of fixed assets
+  - Loss on sale of assets
+  - (Profit)/loss on sale of PPE
+  - Loss/(Profit) on sale/disposal of assets, net
+  - Loss on sale of fixed assets
+  location_hint: Other Expenses note (P&L)
+- key: Fixed Assets Written Off
+  scope: both
+  value_type: monetary
+  concept: Carrying value of fixed assets written off / discarded during the year.
+  aliases:
+  - Property, plant and equipment written off
+  - Fixed assets written off
+  - Assets written off
+  - PPE written off
+  location_hint: Other Expenses note (P&L)
+- key: Sundry Creditors
+  scope: both
+  value_type: monetary
+  concept: Amounts payable to suppliers for goods/services — total trade payables. Schedule III.
+  aliases:
+  - Trade payables
+  - Trade and other payables
+  - Sundry creditors
+  column_hint: TOTAL trade payables (MSME + others)
+  location_hint: Trade Payables note under Current Liabilities
+- key: Noncurrent Borrowings_Unsecured Loans_Loans and advances from others
+  scope: both
+  value_type: monetary
+  concept: Unsecured non-current borrowings comprising loans and advances taken from parties other than
+    banks/related parties.
+  aliases:
+  - Loans from others
+  - Loans and advances from others
+  - Unsecured loans from others
+  - Other loans (unsecured)
+  column_hint: non-current, unsecured, "from others"
+  location_hint: Non-current Borrowings note (unsecured sub-head)
+- key: Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment
+  scope: both
+  value_type: monetary
+  concept: Secured non-current borrowing in the form of deferred payment liabilities for acquiring PP&E.
+  aliases:
+  - Deferred payment liabilities
+  - Deferred payment for acquisition of property, plant and equipment
+  - Deferred payment liability (secured)
+  column_hint: non-current, secured
+  location_hint: Non-current Borrowings note (secured sub-head)
+- key: Current Borrowings_Unsecured Loans_Subordinated debts
+  scope: both
+  value_type: monetary
+  concept: Current (short-term) unsecured borrowings classified as subordinated debt.
+  aliases:
+  - Subordinated debt
+  - Subordinated liabilities
+  - Subordinated debts (unsecured)
+  column_hint: current, unsecured
+  location_hint: Current Borrowings note (unsecured sub-head)
+- key: Other Noncurrent Liabilities_Other Long Term Liabilities
+  scope: both
+  value_type: monetary
+  concept: The total 'Other Non-Current Liabilities' line shown on the face of the Balance
+    Sheet (a single aggregate figure / the supporting note's total). Do NOT return a sub-component
+    such as a row labelled 'Others' inside the note.
+  aliases:
+  - Other long term liabilities
+  - Other non-current liabilities
+  location_hint: Other Non-current Liabilities note
+- key: Other Noncurrent Liabilities_Total Long Term Liabilities
+  scope: both
+  value_type: monetary
+  kind: reported
+  concept: Total of Other Non-current (long-term) Liabilities (the note total).
+  aliases:
+  - Total other non-current liabilities
+  - Total long term liabilities
+  - Total
+  column_hint: the TOTAL of the Other Non-current Liabilities note
+  location_hint: Other Non-current Liabilities note (total row)
+- key: Other Current Liabilities_Revenue received in advance
+  scope: both
+  value_type: monetary
+  concept: Revenue received in advance / contract liabilities / advance from customers within Other Current
+    Liabilities. Ind AS 115.
+  aliases:
+  - Revenue received in advance
+  - Advance from customers
+  - Contract liabilities
+  - Income received in advance
+  location_hint: Other Current Liabilities note; Trade receivables & contract-balances note (Ind AS 115
+    contract liabilities)
+- key: Other Current Liabilities_Accrued Salary Payable
+  scope: both
+  value_type: monetary
+  concept: Accrued salaries / employee dues payable within Other Current Liabilities.
+  aliases:
+  - Accrued salaries and benefits
+  - Salary payable
+  - Employee dues payable
+  - Accrued employee benefits
+  - Accrued compensation to employees
+  location_hint: Other Current Liabilities note
+- key: Other Current Liabilities_Employees Stock Options Outstanding
+  scope: both
+  value_type: monetary
+  concept: Employee stock options outstanding (share-based payment liability/reserve) within Other Current
+    Liabilities. Ind AS 102.
+  aliases:
+  - Employee stock options outstanding
+  - ESOP outstanding
+  - Share options outstanding account
+  - Stock options outstanding
+  - Share Options Outstanding Account
+  - Share options outstanding
+  location_hint: Other Current Liabilities note / Share-based payment; Other Equity / Reserves and Surplus
+    (Share Options Outstanding Account)
+- key: Short Term Loans And Advances_Other Deposit Assets
+  scope: both
+  value_type: monetary
+  concept: Security Deposits asset (current portion) within Other Financial Assets / Loans & Advances
+    — take the line labelled 'Security Deposits' (or 'Security and other deposits'). Do NOT pick a
+    separate 'Deposit with Others', 'Deposit with Banks', 'Deposit with NBFC' or statutory-authority sub-line.
+  aliases:
+  - Security deposits
+  - Other deposits
+  - Deposits
+  - Balances with statutory authorities (deposits)
+  column_hint: current / short-term
+  location_hint: Loans / Other Current Financial Assets note
+- key: Short Term Loans And Advances_Advances to related parties
+  scope: both
+  value_type: monetary
+  concept: Advances given to related parties classified as short-term.
+  aliases:
+  - Advances to related parties
+  - Loans to related parties
+  - Dues from related parties (advances)
+  column_hint: current / short-term
+  location_hint: Loans & Advances note (related parties); Other Financial Assets note (dues from related
+    parties)
+- key: Short Term Loans And Advances_Allowance for bad and doubtful loans
+  scope: both
+  value_type: monetary
+  concept: Allowance/provision for bad and doubtful short-term loans and advances (a deduction/contra).
+    Ind AS 109 ECL.
+  aliases:
+  - 'Less: Allowance for doubtful advances'
+  - Allowance for bad and doubtful loans
+  - Provision for doubtful advances
+  - Impairment allowance
+  - Provision for doubtful debts and advances
+  column_hint: this is a contra (deduction); report the allowance amount
+  location_hint: Loans & Advances note (the 'less - allowance' row)
+- key: Other Current Assets_Advances to related parties
+  scope: both
+  value_type: monetary
+  concept: Advances to related parties shown under Other Current Assets.
+  aliases:
+  - Advances to related parties
+  - Amounts due from related parties
+  - Related party advances
+  location_hint: Other Current Assets note; Other Financial Assets note
+- key: Other Current Assets_Advances given suppliers
+  scope: both
+  value_type: monetary
+  concept: Advances given to suppliers / vendors under Other Current Assets.
+  aliases:
+  - Advances to suppliers
+  - Advance to vendors
+  - Advances given to suppliers
+  - Advance to supplier for goods and services
+  - Advance to suppliers for goods and services
+  - Supplier advances
+  location_hint: Other Current Assets note
+- key: Other Current Assets_Export incentives receivables
+  scope: both
+  value_type: monetary
+  concept: Export incentives / duty drawback receivable under Other Current Assets.
+  aliases:
+  - Export incentives receivable
+  - Export benefits receivable
+  - Duty drawback receivable
+  - Incentives receivable
+  location_hint: Other Current Assets note; Short-term loans & advances note
+- key: 'Other Current Assets_Less : Doubtful Advances'
+  scope: both
+  value_type: monetary
+  concept: Allowance for doubtful advances deducted (contra) within Other Current Assets.
+  aliases:
+  - 'Less: Allowance for doubtful advances'
+  - 'Less: Doubtful advances'
+  - Provision for doubtful advances
+  - Allowance for doubtful other assets
+  - 'Less: Loss Allowances'
+  - Loss allowances
+  column_hint: contra/deduction within Other Current Assets
+  location_hint: Other Current Assets note (the 'less - doubtful' row)
+- key: Authorised Equity Share Capital
+  scope: both
+  value_type: monetary
+  concept: Authorised EQUITY share capital as a MONETARY AMOUNT in Rs (number of authorised equity shares
+    x face value). Exclude preference. Companies Act §2/§61.
+  aliases:
+  - Authorised
+  - Authorised share capital
+  - Authorised capital
+  column_hint: the AMOUNT in Rs crore, NOT the number of shares; equity class only
+  location_hint: Share Capital note (Authorised sub-section)
+- key: Equity Issued
+  scope: both
+  value_type: monetary
+  concept: Issued EQUITY share capital amount (Rs). Companies Act.
+  aliases:
+  - Issued
+  - Issued equity share capital
+  - Issued capital
+  - Issued, Subscribed and Paid-Up
+  - Issued, subscribed and fully paid-up
+  column_hint: AMOUNT in Rs crore; issued equity; not authorised, not paid-up
+  location_hint: Share Capital note (Issued sub-section)
+- key: Equity Subscribed fully paid
+  scope: both
+  value_type: monetary
+  concept: Subscribed and fully paid-up EQUITY share capital amount (Rs), before deducting forfeiture.
+  aliases:
+  - Subscribed and fully paid up
+  - Subscribed and paid-up
+  - Subscribed capital fully paid
+  column_hint: AMOUNT in Rs crore; subscribed & fully paid (before forfeiture adjustment)
+  location_hint: Share Capital note (Subscribed and paid-up sub-section)
+- key: Equity Forfeited
+  scope: both
+  value_type: monetary
+  concept: Amount of equity shares / calls forfeited (forfeited shares account). Often nil. Companies
+    Act.
+  aliases:
+  - Forfeited shares
+  - 'Less: Calls in arrears / forfeited'
+  - Forfeited equity shares
+  - Amount of forfeited shares
+  location_hint: Share Capital note (forfeiture adjustment)
+- key: Equity Paid Up
+  scope: both
+  value_type: monetary
+  concept: Paid-up EQUITY share capital amount (Rs) as at year-end — the final paid-up line after forfeiture.
+  aliases:
+  - Total equity share capital
+  - Paid-up equity share capital
+  - Equity share capital
+  - Paid up
+  column_hint: AMOUNT in Rs crore; final paid-up (closing); equity only
+  location_hint: Share Capital note (paid-up total) / Balance Sheet equity
+- key: Face Value of Share (in Rs)
+  scope: both
+  value_type: per_share
+  concept: Par/nominal value per equity share in Rs (e.g. 'equity shares of Rs 1 each').
+  aliases:
+  - face value
+  - par value
+  - of Rs
+  - each
+  - of `
+  location_hint: Share Capital note (e.g. 'equity shares of Rs X each')
+- key: No Of Authorised Equity Shares
+  scope: both
+  value_type: count
+  concept: Number of authorised EQUITY shares (count). Exclude preference shares.
+  aliases:
+  - Authorised
+  - equity shares of
+  - number of equity shares (authorised)
+  column_hint: COUNT of authorised equity shares (not the Rs amount, not preference)
+  location_hint: Share Capital note (Authorised)
+- key: No Of Issued Equity Shares
+  scope: both
+  value_type: count
+  concept: Number of issued EQUITY shares (count).
+  aliases:
+  - Issued
+  - equity shares of
+  - number of equity shares issued
+  column_hint: COUNT of issued equity shares (closing)
+  location_hint: Share Capital note (Issued)
+- key: No Of Subscribed Equity Shares Fully Paid
+  scope: both
+  value_type: count
+  concept: Number of subscribed and fully paid-up EQUITY shares (count), before forfeiture deduction.
+  aliases:
+  - Subscribed and fully paid up
+  - equity shares fully paid up
+  - number of shares subscribed
+  column_hint: COUNT of subscribed & fully paid equity shares
+  location_hint: Share Capital note (Subscribed and paid-up)
+- key: No Of Paid up Equity Shares
+  scope: both
+  value_type: count
+  concept: Number of paid-up EQUITY shares as at year-end — the final 'Paid up' count after forfeiture.
+    NOT shares outstanding (which is net of treasury/ESOP-trust shares).
+  aliases:
+  - Paid up
+  - fully paid up
+  - equity shares of
+  - number of shares
+  column_hint: the final PAID-UP count (closing); NOT 'shares outstanding at the end', NOT authorised
+  location_hint: Share Capital note (Paid-up total)
+- key: Number of shares outstanding at beginning of period
+  scope: both
+  value_type: count
+  concept: Number of equity shares outstanding at the BEGINNING of the year (opening), from the share
+    reconciliation.
+  aliases:
+  - Equity shares outstanding at the beginning
+  - Balance at the beginning of the year
+  - Opening balance (number of shares)
+  - At the beginning of the year
+  column_hint: OPENING count in the share reconciliation table
+  location_hint: Share Capital note — reconciliation of shares outstanding
+- key: No Of Shares Increase Towards Stock Split
+  scope: both
+  value_type: count
+  concept: Increase in number of shares due to a stock split / sub-division during the year (from the
+    reconciliation). Often nil.
+  aliases:
+  - Shares issued on sub-division
+  - Increase due to stock split
+  - Sub-division of shares
+  - Bonus/split shares
+  column_hint: movement line for stock split / sub-division
+  location_hint: Share Capital note — reconciliation of shares
+- key: No Of Shares bought back or treasury shares
+  scope: both
+  value_type: count
+  concept: Number of equity shares bought back during the year OR held as treasury shares (ESOP trust).
+    Companies Act §68.
+  aliases:
+  - Shares bought back
+  - Buy-back of equity shares
+  - Treasury shares
+  - Shares held by ESOP trust
+  - 'Less: shares bought back'
+  column_hint: count of buyback / treasury shares
+  location_hint: Share Capital note — reconciliation / treasury shares
+- key: Equity attributable to the equity holders of the parent
+  scope: consolidated
+  value_type: monetary
+  concept: Total equity attributable to owners of the parent (excludes non-controlling interest). Consolidated
+    only. Ind AS 110.
+  aliases:
+  - Equity attributable to owners of the Company
+  - attributable to owners of the parent
+  - Equity attributable to equity holders of the parent
+  - attributable to owners of the Holding Company
+  location_hint: Consolidated Balance Sheet / SOCE (Equity section); Share Capital note
+- key: Share Depreciation Joint ventures
+  scope: consolidated
+  value_type: monetary
+  concept: Group's share of depreciation/amortisation of joint ventures (equity-accounted). Consolidated
+    only. Ind AS 28/111.
+  aliases:
+  - Share of depreciation of joint ventures
+  - Group's share of depreciation in JV
+  - Share in depreciation of joint ventures
+  location_hint: Consolidated notes — interests in joint ventures / associates; Depreciation / PP&E movement
+    schedule note
+- key: Total Power & Fuel Expenses
+  scope: both
+  value_type: monetary
+  kind: reported
+  concept: Cost of power and fuel consumed — single printed line in Other/Manufacturing Expenses.
+  aliases:
+  - Power and fuel
+  - Power & fuel
+  - Power, fuel and water
+  - Consumption of power and fuel
+  location_hint: Other Expenses note (P&L); Manufacturing / operating expenses schedule
+- key: Consumption Of Stores And Spare Parts
+  scope: both
+  value_type: monetary
+  concept: Cost of stores and spare parts consumed during the year.
+  aliases:
+  - Stores and spares consumed
+  - Stores & spares consumed
+  - Consumption of stores and spares
+  - Stores, spares and consumables
+  - Consumption of stores and spare parts
+  location_hint: Other Expenses / Manufacturing Expenses note
+- key: Brokerage/Commission To Agents
+  scope: both
+  value_type: monetary
+  concept: Brokerage and commission paid to selling agents.
+  aliases:
+  - Commission to agents
+  - Brokerage and commission
+  - Commission and brokerage
+  - Selling commission
+  - To agents
+  - Commission - to agents
+  location_hint: Other Expenses note (P&L)
+- key: Carriage Outwards
+  scope: both
+  value_type: monetary
+  concept: Outward freight / carriage on dispatch of goods (distribution).
+  aliases:
+  - Freight and forwarding
+  - Carriage outward
+  - Outward freight
+  - Freight outward
+  - Distribution expenses (freight)
+  location_hint: Other Expenses note (P&L); Revenue-from-operations / gross-revenue schedule (freight)
+- key: Legal & Professional Charges
+  scope: both
+  value_type: monetary
+  concept: Legal and professional / consultancy fees.
+  aliases:
+  - Legal and professional
+  - Legal & professional charges
+  - Legal & professional fees
+  - Professional and consultancy charges
+  - Legal and professional fees
+  location_hint: Other Expenses note (P&L)
+- key: Payments To Auditor
+  scope: both
+  value_type: monetary
+  concept: Total remuneration to auditors (audit fee + tax + other services). Companies Act §142.
+  aliases:
+  - Payment to auditors
+  - Auditors' remuneration
+  - Remuneration to auditors
+  - Payment to statutory auditors
+  - Auditor fees and expenses
+  - Auditors' fees and expenses
+  column_hint: total auditor remuneration
+  location_hint: Other Expenses note (auditor remuneration sub-note)
+- key: Payment for reimbursement of expenses
+  scope: both
+  value_type: monetary
+  concept: Reimbursement of expenses paid (often within auditor remuneration or related-party reimbursements).
+  aliases:
+  - Reimbursement of expenses
+  - Out of pocket expenses
+  - Reimbursement of out-of-pocket expenses
+  location_hint: Auditor remuneration / Other Expenses note
+- key: Donations Subscriptions
+  scope: both
+  value_type: monetary
+  concept: Donations and subscriptions paid (excluding CSR).
+  aliases:
+  - Donations and subscriptions
+  - Donations
+  - Donation
+  - Subscriptions and donations
+  - Charity and donations
+  - Charity & donations
+  location_hint: Other Expenses note (P&L)
+- key: CSR Expenditure
+  scope: both
+  value_type: monetary
+  concept: Amount spent on Corporate Social Responsibility during the year. Companies Act §135 + Schedule
+    VII.
+  aliases:
+  - Corporate social responsibility
+  - CSR expenditure
+  - Amount spent on CSR
+  - Expenditure on Corporate Social Responsibility
+  - CSR Expenses
+  location_hint: 'Other Expenses note and/or dedicated CSR note; Operating Expenses schedule (banks: Schedule
+    16)'
+- key: Impairment loss on financial assets loans and advances
+  scope: both
+  value_type: monetary
+  concept: Impairment loss (expected credit loss) recognised on financial assets / loans and advances.
+    Ind AS 109.
+  aliases:
+  - Impairment loss on financial assets
+  - Expected credit loss
+  - Impairment of loans and advances
+  - Allowance for expected credit loss (charge)
+  location_hint: Other Expenses / Finance-related note (P&L)
+- key: Provision Bad Doubtful Loans Advances
+  scope: both
+  value_type: monetary
+  concept: Provision created for bad and doubtful loans and advances (P&L charge).
+  aliases:
+  - Provision for doubtful debts and advances
+  - Provision for bad and doubtful loans and advances
+  - Allowance for doubtful debts (charge)
+  - Provision for bad or doubtful loans
+  - Allowances for Credit Loss
+  - Allowance for credit losses
+  - Allowance for credit loss / doubtful advances
+  - Provision for doubtful debts, loans and other financial assets
+  location_hint: Other Expenses note (P&L); Impairment Loss on Financial Assets note
+- key: Bad Debts Advances Written Off
+  scope: both
+  value_type: monetary
+  concept: Bad debts and advances written off during the year (P&L).
+  aliases:
+  - Bad debts written off
+  - Bad debts and advances written off
+  - Advances written off
+  - Bad debts / advances written off
+  location_hint: Other Expenses note (P&L)
+- key: Interest Expense Borrowings
+  scope: both
+  value_type: monetary
+  concept: Interest expense on borrowings (a component of Finance Costs). Ind AS 23.
+  aliases:
+  - Interest on borrowings
+  - Interest expense on borrowings
+  - Interest on term loans
+  - Interest and finance charges on borrowings
+  - Interest expense on financial liabilities
+  - Interest expenses on financial liabilities not at fvtpl
+  - Interest expended
+  column_hint: interest on borrowings within Finance Costs (not total finance costs)
+  location_hint: 'Finance Costs note (P&L); banks: ''Interest Expended'' schedule'
+- key: Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+  scope: both
+  value_type: monetary
+  kind: reported
+  concept: Changes in inventories of finished goods, WIP and stock-in-trade — single printed P&L line
+    (may be negative). Ind AS 2.
+  aliases:
+  - Changes in inventories of finished goods, work-in-progress and stock-in-trade
+  - Changes in inventories
+  - (Increase)/decrease in inventories
+  - Changes in stock
+  column_hint: the single P&L line (parentheses = negative)
+  location_hint: Statement of Profit and Loss (expenses section)
+- key: Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation
+  scope: both
+  value_type: monetary
+  concept: Deferred tax LIABILITY component arising from accumulated depreciation / difference in WDV
+    of PP&E, within the deferred tax (net) breakdown. Ind AS 12.
+  aliases:
+  - Property, plant and equipment
+  - Depreciation
+  - Difference in WDV / depreciation
+  - Accelerated depreciation (DTL)
+  column_hint: deferred tax LIABILITY component for depreciation/PPE
+  location_hint: Deferred Tax note (components breakdown)
+- key: Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment
+  scope: both
+  value_type: monetary
+  concept: Deferred tax ASSET component arising from leave encashment / compensated absences, within the
+    deferred tax (net) breakdown. Ind AS 12/19.
+  aliases:
+  - Leave encashment
+  - Compensated absences
+  - Provision for leave encashment (DTA)
+  - Employee benefits - leave
+  - Employee benefits liability
+  - Employee benefit obligations
+  column_hint: deferred tax ASSET component for leave encashment
+  location_hint: Deferred Tax note (components breakdown)

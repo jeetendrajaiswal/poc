@@ -1,0 +1,39 @@
+# Per-company profiles hold ONLY stable, semantic facts — never page numbers.
+# The standalone/consolidated Balance-Sheet anchor PAGES are auto-detected from
+# content per document (see structure_map.detect_bs_anchors), so the pipeline works
+# on any company and any reporting year. This file is OPTIONAL: an unknown company
+# with no entry still runs (sector unknown → all items treated as applicable).
+#
+# sector   : the company's sector (drives item applicability).
+# na_items : data points genuinely not applicable to this company's sector
+#            (scored as N/A, never as a miss). Could later be derived from sector.
+# scope_order / standalone_bs / consolidated_bs : OPTIONAL overrides only, for the
+#            rare report where content auto-detection picks the wrong anchor.
+
+companies:
+  reddy:
+    sector: Pharmaceuticals
+    na_items: []
+
+  adani:
+    sector: Diversified / Trading & Infrastructure
+    na_items: []
+
+  reliance:
+    sector: Diversified (Energy / Retail / Telecom)
+    na_items: []
+
+  itc:
+    sector: FMCG / Diversified
+    na_items: []
+
+  infosys:
+    sector: IT Services
+    # IT services company: no manufacturing lines.
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  hindalco:
+    sector: Metals (Aluminium / Copper)
+    na_items: []

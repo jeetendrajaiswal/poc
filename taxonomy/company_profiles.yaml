@@ -1,0 +1,325 @@
+# Per-company profiles hold ONLY stable, semantic facts — never page numbers.
+# The standalone/consolidated Balance-Sheet anchor PAGES are auto-detected from
+# content per document (see structure_map.detect_bs_anchors), so the pipeline works
+# on any company and any reporting year. This file is OPTIONAL: an unknown company
+# with no entry still runs (sector unknown -> all items treated as applicable).
+#
+# sector   : the company's sector (drives item applicability).
+# na_items : data points genuinely not applicable to this company's sector
+#            (scored as N/A, never as a miss).
+#   - IT services         -> Power & Fuel, Stores & Spares N/A
+#   - Banks/NBFC/Insurance -> + Changes in Inventories, Carriage Outwards N/A
+#   - Manufacturing/Energy -> all applicable
+# scope_order / standalone_bs / consolidated_bs : OPTIONAL anchor overrides only.
+
+companies:
+  adani:
+    name: Adani Enterprises
+    sector: Diversified — Trading & Infrastructure
+    na_items: []
+
+  adaniports:
+    name: Adani Ports & SEZ
+    sector: Ports, Logistics & Infrastructure
+    na_items: []
+
+  apollohosp:
+    name: Apollo Hospitals
+    sector: Healthcare Services (Hospitals)
+    na_items: []
+
+  asianpaint:
+    name: Asian Paints
+    sector: Paints & Coatings (Manufacturing)
+    na_items: []
+
+  axisbank:
+    name: Axis Bank
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  bajajauto:
+    name: Bajaj Auto
+    sector: Automobiles — 2/3 Wheelers
+    na_items: []
+
+  bajfinance:
+    name: Bajaj Finance
+    sector: NBFC — Lending
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  bajajfinsv:
+    name: Bajaj Finserv
+    sector: Financial Services (Holding/Insurance)
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  bel:
+    name: Bharat Electronics
+    sector: Defence Electronics (Manufacturing)
+    na_items: []
+
+  bhartiartl:
+    name: Bharti Airtel
+    sector: Telecom Services
+    na_items: []
+
+  cipla:
+    name: Cipla
+    sector: Pharmaceuticals
+    na_items: []
+
+  coalindia:
+    name: Coal India
+    sector: Mining — Coal
+    na_items: []
+
+  reddy:
+    name: Dr Reddy's Laboratories
+    sector: Pharmaceuticals
+    na_items: []
+
+  eichermot:
+    name: Eicher Motors
+    sector: Automobiles — CV / 2-Wheelers
+    na_items: []
+
+  eternal:
+    name: Eternal (Zomato)
+    sector: Internet — Food Delivery & Quick Commerce
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  grasim:
+    name: Grasim Industries
+    sector: Diversified — Cement / Chemicals / Textiles
+    na_items: []
+
+  hcltech:
+    name: HCL Technologies
+    sector: IT Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  hdfcbank:
+    name: HDFC Bank
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  hdfclife:
+    name: HDFC Life
+    sector: Life Insurance
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  heromotoco:
+    name: Hero MotoCorp
+    sector: Automobiles — 2-Wheelers
+    na_items: []
+
+  hindalco:
+    name: Hindalco Industries
+    sector: Metals — Aluminium / Copper
+    na_items: []
+
+  hindunilvr:
+    name: Hindustan Unilever
+    sector: FMCG
+    na_items: []
+
+  icicibank:
+    name: ICICI Bank
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  indusindbk:
+    name: IndusInd Bank
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  infosys:
+    name: Infosys
+    sector: IT Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  itc:
+    name: ITC
+    sector: FMCG / Diversified
+    na_items: []
+
+  jiofin:
+    name: Jio Financial Services
+    sector: Financial Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  jswsteel:
+    name: JSW Steel
+    sector: Metals — Steel
+    na_items: []
+
+  kotakbank:
+    name: Kotak Mahindra Bank
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  lt:
+    name: Larsen & Toubro
+    sector: Engineering & Construction
+    na_items: []
+
+  m_m:
+    name: Mahindra & Mahindra
+    sector: Automobiles & Farm Equipment
+    na_items: []
+
+  maruti:
+    name: Maruti Suzuki
+    sector: Automobiles — Passenger Vehicles
+    na_items: []
+
+  nestleind:
+    name: Nestle India
+    sector: FMCG — Foods
+    na_items: []
+
+  ntpc:
+    name: NTPC
+    sector: Power Generation
+    na_items: []
+
+  ongc:
+    name: Oil & Natural Gas Corp
+    sector: Oil & Gas — Exploration & Production
+    na_items: []
+
+  powergrid:
+    name: Power Grid Corp
+    sector: Power Transmission
+    na_items: []
+
+  reliance:
+    name: Reliance Industries
+    sector: Diversified — Energy / Retail / Telecom
+    na_items: []
+
+  sbilife:
+    name: SBI Life Insurance
+    sector: Life Insurance
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  shriramfin:
+    name: Shriram Finance
+    sector: NBFC — Lending
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  sbin:
+    name: State Bank of India
+    sector: Banking
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+      - Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade
+      - Carriage Outwards
+
+  sunpharma:
+    name: Sun Pharmaceutical
+    sector: Pharmaceuticals
+    na_items: []
+
+  tcs:
+    name: Tata Consultancy Services
+    sector: IT Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  tataconsum:
+    name: Tata Consumer Products
+    sector: FMCG — Foods & Beverages
+    na_items: []
+
+  tatamotors:
+    name: Tata Motors
+    sector: Automobiles
+    na_items: []
+
+  tatasteel:
+    name: Tata Steel
+    sector: Metals — Steel
+    na_items: []
+
+  techm:
+    name: Tech Mahindra
+    sector: IT Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+
+  titan:
+    name: Titan Company
+    sector: Consumer — Jewellery & Watches (Mfg + Retail)
+    na_items: []
+
+  trent:
+    name: Trent
+    sector: Retail
+    na_items: []
+
+  ultracemco:
+    name: UltraTech Cement
+    sector: Cement (Manufacturing)
+    na_items: []
+
+  wipro:
+    name: Wipro
+    sector: IT Services
+    na_items:
+      - Total Power & Fuel Expenses
+      - Consumption Of Stores And Spare Parts
+

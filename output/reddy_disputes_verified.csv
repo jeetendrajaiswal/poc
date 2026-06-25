@@ -1,0 +1,30 @@
+key,scope,verdict,pipeline_value,page_verified_truth,method,note
+Accumulated Depreciation_Furnitures & Fixtures,standalone,PIPELINE_CORRECT,"4,747","4,747",page p137,"Combined 'Furniture, fixtures & office equipment' accum closing Mar-25"
+Accumulated Depreciation_Furnitures & Fixtures,consolidated,PIPELINE_CORRECT,"6,190","6,190",page p189,Combined column accum closing Mar-25
+Non Current Investments_Unquoted Debentures/Bonds,standalone,PIPELINE_CORRECT,"13,069","13,069",page p141,NCDs of Dr Reddy's Laboratories Inc.
+Equity Subscribed fully paid,standalone,PIPELINE_CORRECT,834,834,page p143,Subscribed & fully paid-up `834 cr
+Equity Paid Up,standalone,PIPELINE_CORRECT,834,834,page p143,Paid-up `834 cr
+No Of Subscribed Equity Shares Fully Paid,standalone,PIPELINE_CORRECT,"834,455,365","834,455,365",page p143,Shares of `1 each
+No Of Shares Increase Towards Stock Split,standalone,PIPELINE_CORRECT,"667,507,784","667,507,784",page p143,Stock-split increase
+Number of shares outstanding at beginning of period,standalone,PIPELINE_CORRECT,"166,818,266","166,818,266",page p143,Opening shares
+Equity Subscribed fully paid,consolidated,PIPELINE_CORRECT,834,834,page p196,Subscribed & fully paid-up
+Equity Paid Up,consolidated,PIPELINE_CORRECT,834,834,page p196,Paid-up
+No Of Subscribed Equity Shares Fully Paid,consolidated,PIPELINE_CORRECT,"834,455,365","834,455,365",page p196,Shares of `1 each
+No Of Shares Increase Towards Stock Split,consolidated,PIPELINE_CORRECT,"667,507,784","667,507,784",page p196,Stock-split increase
+Number of shares outstanding at beginning of period,consolidated,PIPELINE_CORRECT,"166,818,266","166,818,266",page p202,Opening shares
+Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,PIPELINE_WRONG,870,"1,852",page p126,"BS 'Other non-current liabilities'=1,852; pipeline grabbed sub-line 'Deferred revenue'=870"
+Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,PIPELINE_SPURIOUS,"1,852","7,825",page p126,"Total non-current liabilities=7,825; pipeline returned the Other-NCL line 1,852"
+Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,PIPELINE_SPURIOUS,"2,256",,page p176,"No 'total long-term liab' subtotal; pipeline returned Other-NCL line 2,256"
+Impairment loss on financial assets loans and advances,standalone,PIPELINE_SPURIOUS,103,,evidence,Duplicate of 'allowance for credit losses' 103 (same cell reused as Provision)
+Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,MISS,-,(90),evidence,Loans allowance disclosed; pipeline returned nothing (loans ECL = (585) bal; gt (90) from movement table)
+Provision Bad Doubtful Loans Advances,standalone,PIPELINE_CORRECT,103,103,evidence p141,Allowance for credit losses (ECL) charge
+Non Current Investments_Joint Venture/Partnerships,standalone,PIPELINE_CORRECT,397,397,evidence p140,Investment in partnership firms (ABCD Technologies LLP)
+Non Current Investments_Joint Venture/Partnerships,consolidated,PIPELINE_CORRECT,"4,811","4,811",evidence p193,Total investment in equity-accounted investees
+Interest Expense Borrowings,standalone,PIPELINE_CORRECT,966,966,evidence p148,Interest on other borrowings
+Interest Expense Borrowings,consolidated,PIPELINE_CORRECT,"2,151","2,151",evidence p176,Interest on other borrowings
+Payments To Auditor,standalone,PIPELINE_CORRECT,41,41,evidence p149,Auditors' remuneration
+Payments To Auditor,consolidated,PIPELINE_CORRECT,45,45,evidence p203,Auditors' remuneration
+Loss On Disposal Of Fixed Asset,standalone,PIPELINE_CORRECT,428,428,evidence p169,"Loss on sale/disposal of assets, net"
+Share Premium,consolidated,PIPELINE_CORRECT,"8,553","8,553",evidence p178,Securities premium closing Mar-25
+Hedging Reserve,consolidated,PIPELINE_CORRECT,108,108,evidence p178,Cash flow hedge reserve closing
+Short Term Loans And Advances_Advances to related parties,consolidated,PIPELINE_CORRECT,8,8,evidence p195,Dues from other related parties

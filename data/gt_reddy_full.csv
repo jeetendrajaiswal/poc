@@ -1,0 +1,117 @@
+company,key,scope,expected_value
+reddy,Share Premium,standalone,"8,546"
+reddy,Share Premium,consolidated,
+reddy,Hedging Reserve,standalone,100
+reddy,Hedging Reserve,consolidated,
+reddy,Non Current Investments_Unquoted Debentures/Bonds,standalone,
+reddy,Non Current Investments_Unquoted Debentures/Bonds,consolidated,"1,001"
+reddy,Non Current Investments_Joint Venture/Partnerships,standalone,
+reddy,Non Current Investments_Joint Venture/Partnerships,consolidated,
+reddy,Gross Carrying Value_Furnitures & Fixtures,standalone,"6,017"
+reddy,Gross Carrying Value_Furnitures & Fixtures,consolidated,"8,245"
+reddy,Gross Carrying Value_Office Equipments,standalone,"6,017"
+reddy,Gross Carrying Value_Office Equipments,consolidated,"8,245"
+reddy,Accumulated Depreciation_Furnitures & Fixtures,standalone,
+reddy,Accumulated Depreciation_Furnitures & Fixtures,consolidated,
+reddy,Accumulated Depreciation_Office Equipments,standalone,"4,747"
+reddy,Accumulated Depreciation_Office Equipments,consolidated,"6,190"
+reddy,Other CWIP,standalone,
+reddy,Other CWIP,consolidated,
+reddy,Gross Investment Property,standalone,
+reddy,Gross Investment Property,consolidated,
+reddy,Loss On Disposal Of Fixed Asset,standalone,
+reddy,Loss On Disposal Of Fixed Asset,consolidated,
+reddy,Fixed Assets Written Off,standalone,
+reddy,Fixed Assets Written Off,consolidated,
+reddy,Sundry Creditors,standalone,"19,931"
+reddy,Sundry Creditors,consolidated,"26,478"
+reddy,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,standalone,
+reddy,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,consolidated,
+reddy,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",standalone,
+reddy,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",consolidated,
+reddy,Current Borrowings_Unsecured Loans_Subordinated debts,standalone,
+reddy,Current Borrowings_Unsecured Loans_Subordinated debts,consolidated,
+reddy,Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,"1,852"
+reddy,Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,892
+reddy,Other Noncurrent Liabilities_Total Long Term Liabilities,standalone,
+reddy,Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,
+reddy,Other Current Liabilities_Revenue received in advance,standalone,411
+reddy,Other Current Liabilities_Revenue received in advance,consolidated,"1,562"
+reddy,Other Current Liabilities_Accrued Salary Payable,standalone,
+reddy,Other Current Liabilities_Accrued Salary Payable,consolidated,
+reddy,Other Current Liabilities_Employees Stock Options Outstanding,standalone,
+reddy,Other Current Liabilities_Employees Stock Options Outstanding,consolidated,
+reddy,Short Term Loans And Advances_Other Deposit Assets,standalone,-
+reddy,Short Term Loans And Advances_Other Deposit Assets,consolidated,
+reddy,Short Term Loans And Advances_Advances to related parties,standalone,14
+reddy,Short Term Loans And Advances_Advances to related parties,consolidated,
+reddy,Short Term Loans And Advances_Allowance for bad and doubtful loans,standalone,(90)
+reddy,Short Term Loans And Advances_Allowance for bad and doubtful loans,consolidated,(156)
+reddy,Other Current Assets_Advances to related parties,standalone,8
+reddy,Other Current Assets_Advances to related parties,consolidated,
+reddy,Other Current Assets_Advances given suppliers,standalone,
+reddy,Other Current Assets_Advances given suppliers,consolidated,
+reddy,Other Current Assets_Export incentives receivables,standalone,"2,956"
+reddy,Other Current Assets_Export incentives receivables,consolidated,"2,967"
+reddy,Other Current Assets_Less : Doubtful Advances,standalone,(90)
+reddy,Other Current Assets_Less : Doubtful Advances,consolidated,(156)
+reddy,Authorised Equity Share Capital,standalone,"1,450"
+reddy,Authorised Equity Share Capital,consolidated,"1,450"
+reddy,Equity Issued,standalone,834
+reddy,Equity Issued,consolidated,834
+reddy,Equity Subscribed fully paid,standalone,
+reddy,Equity Subscribed fully paid,consolidated,
+reddy,Equity Forfeited,standalone,
+reddy,Equity Forfeited,consolidated,
+reddy,Equity Paid Up,standalone,
+reddy,Equity Paid Up,consolidated,
+reddy,Face Value of Share (in Rs),standalone,1
+reddy,Face Value of Share (in Rs),consolidated,₹ 1/-
+reddy,No Of Authorised Equity Shares,standalone,"1,450,000,000"
+reddy,No Of Authorised Equity Shares,consolidated,"1,450,000,000"
+reddy,No Of Issued Equity Shares,standalone,"834,456,365"
+reddy,No Of Issued Equity Shares,consolidated,"834,456,365"
+reddy,No Of Subscribed Equity Shares Fully Paid,standalone,
+reddy,No Of Subscribed Equity Shares Fully Paid,consolidated,
+reddy,No Of Paid up Equity Shares,standalone,"834,455,365"
+reddy,No Of Paid up Equity Shares,consolidated,"834,455,365"
+reddy,Number of shares outstanding at beginning of period,standalone,
+reddy,Number of shares outstanding at beginning of period,consolidated,
+reddy,No Of Shares Increase Towards Stock Split,standalone,
+reddy,No Of Shares Increase Towards Stock Split,consolidated,
+reddy,No Of Shares bought back or treasury shares,standalone,"2,452,260"
+reddy,No Of Shares bought back or treasury shares,consolidated,"2,452,260"
+reddy,Equity attributable to the equity holders of the parent,consolidated,"333,388"
+reddy,Share Depreciation Joint ventures,consolidated,
+reddy,Total Power & Fuel Expenses,standalone,"4,801"
+reddy,Total Power & Fuel Expenses,consolidated,"5,625"
+reddy,Consumption Of Stores And Spare Parts,standalone,
+reddy,Consumption Of Stores And Spare Parts,consolidated,
+reddy,Brokerage/Commission To Agents,standalone,
+reddy,Brokerage/Commission To Agents,consolidated,
+reddy,Carriage Outwards,standalone,"5,802"
+reddy,Carriage Outwards,consolidated,"7,569"
+reddy,Legal & Professional Charges,standalone,"5,724"
+reddy,Legal & Professional Charges,consolidated,"9,363"
+reddy,Payments To Auditor,standalone,
+reddy,Payments To Auditor,consolidated,
+reddy,Payment for reimbursement of expenses,standalone,4
+reddy,Payment for reimbursement of expenses,consolidated,4
+reddy,Donations Subscriptions,standalone,469
+reddy,Donations Subscriptions,consolidated,478
+reddy,CSR Expenditure,standalone,724
+reddy,CSR Expenditure,consolidated,745
+reddy,Impairment loss on financial assets loans and advances,standalone,-
+reddy,Impairment loss on financial assets loans and advances,consolidated,
+reddy,Provision Bad Doubtful Loans Advances,standalone,
+reddy,Provision Bad Doubtful Loans Advances,consolidated,
+reddy,Bad Debts Advances Written Off,standalone,
+reddy,Bad Debts Advances Written Off,consolidated,
+reddy,Interest Expense Borrowings,standalone,
+reddy,Interest Expense Borrowings,consolidated,
+reddy,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",standalone,"(1,739)"
+reddy,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",consolidated,"(5,447)"
+reddy,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,standalone,
+reddy,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,consolidated,"(11,958)"
+reddy,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,standalone,
+reddy,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,consolidated,

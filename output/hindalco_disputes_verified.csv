@@ -1,0 +1,33 @@
+key,scope,verdict,pipeline,our_gt,chatgpt,my_read
+Hedging Reserve,standalone,GT_ONLY_CORRECT,,325,325,"325 where: Notes, “Effective portion of cash flow hedges” — Total (after deferred tax), closing balance “As at 31/03/2025”."
+Non Current Investments_Joint Venture/Partnerships,standalone,BOTH_WRONG,,,5,Not disclosed (no candidate page)
+Non Current Investments_Joint Venture/Partnerships,consolidated,BOTH_WRONG,,,7,Not disclosed (no candidate page)
+Gross Carrying Value_Office Equipments,consolidated,PIPELINE_ONLY_CORRECT,"1,497","1,467","1,497","1,467 — where: Note 3A “Property, plant and equipment”, row “Office Equipment”, under **Cost** → **As at 31/03/2025** (₹ crore)."
+Other Noncurrent Liabilities_Other Long Term Liabilities,standalone,BOTH_WRONG,,967,41,"967 where: Standalone Balance Sheet (as at 31/03/2025), Equity and Liabilities → Non-Current Liabilities → “Other Non-Current Liabilities” (Note 16)."
+Other Noncurrent Liabilities_Other Long Term Liabilities,consolidated,BOTH_WRONG,"1,685","1,685",40,"1,685 where: Consolidated Balance Sheet → Non-current liabilities → “Other non-current liabilities” as at 31/03/2025."
+Other Noncurrent Liabilities_Total Long Term Liabilities,consolidated,BOTH_WRONG,,,"1,685","1,685  where: Consolidated Balance Sheet → Non-current liabilities → “Other non-current liabilities” as at 31/03/2025 (Note 16)."
+Short Term Loans And Advances_Other Deposit Assets,standalone,PIPELINE_ONLY_CORRECT,130,-,130,"0 where: Note 5G “Other Financial Assets”, line “Deposit with Others”, Current column as at 31/03/2025 shows “–” (nil)."
+Short Term Loans And Advances_Other Deposit Assets,consolidated,PIPELINE_ONLY_CORRECT,131,-,131,"0 where: Note 5E “Other financial assets”, line “Deposit with Others”, Current column as at 31/03/2025 shows “-” (nil)."
+Short Term Loans And Advances_Advances to related parties,standalone,BOTH_WRONG,,,81,Not disclosed (no candidate page)
+Short Term Loans And Advances_Advances to related parties,consolidated,BOTH_WRONG,,,-,Not disclosed (no candidate page)
+Other Current Assets_Advances given suppliers,standalone,BOTH_WRONG,,,890,Not disclosed (no candidate page)
+Other Current Assets_Advances given suppliers,consolidated,BOTH_WRONG,,,"1,297",Not disclosed (no candidate page)
+Other Current Assets_Less : Doubtful Advances,standalone,BOTH_WRONG,,,(122),Not disclosed (no candidate page)
+Other Current Assets_Less : Doubtful Advances,consolidated,BOTH_WRONG,,,(131),Not disclosed (no candidate page)
+Authorised Equity Share Capital,consolidated,BOTH_WRONG,,,250,Not disclosed — where: the provided pages show provisions notes and auditor annexures; no current-year line for authorised equity share capital amount is disclo
+Equity Forfeited,consolidated,GT_ONLY_CORRECT,"(546,249)",-,-,"0 where: Note on share capital under “Subscribed and Paid-up,” the line “Add: Forfeited Shares (Amount originally Paid-up)” shows “–” for 31/03/2025 (₹ crore), "
+Equity Paid Up,standalone,GT_ONLY_CORRECT,222,225,225,"225 where: Note 10 “Equity Share Capital” → “Subscribed and Paid-up” → final paid-up line after forfeiture adjustments, amount as at 31/03/2025."
+Equity Paid Up,consolidated,BOTH_WRONG,222,222,225,"222 where: Consolidated Statement of Changes in Equity, section “A. Equity share capital” — “Balance as at March 31, 2025” is ₹222 crore."
+No Of Subscribed Equity Shares Fully Paid,standalone,BOTH_WRONG,,,"2,247,772,772",Not disclosed (no candidate page)
+No Of Subscribed Equity Shares Fully Paid,consolidated,BOTH_WRONG,,,"2,247,772,772",Not disclosed (no candidate page)
+No Of Shares bought back or treasury shares,standalone,PIPELINE_ONLY_CORRECT,"10,466,985",,"10,466,985","-26,783,115 where: Note 10 “Equity Share Capital”, as at 31/03/2025 under “Less: Treasury Shares” = (16,316,130) + (10,466,985) shares."
+No Of Shares bought back or treasury shares,consolidated,BOTH_WRONG,"(2,205,303)","(10,466,985)","10,466,985","-10,466,985 where: Note on Share Capital, under “Less: Treasury Shares – Equity Shares (b)(ii)” as at 31/03/2025; footnote (b)(ii) says these are shares held by"
+Payments To Auditor,consolidated,BOTH_WRONG,,,92,Not disclosed (no candidate page)
+Donations Subscriptions,standalone,BOTH_WRONG,,,263,Not disclosed (no candidate page)
+Donations Subscriptions,consolidated,BOTH_WRONG,,,365,Not disclosed (no candidate page)
+Impairment loss on financial assets loans and advances,standalone,GT_ONLY_CORRECT,,34,34,"Not disclosed — where: the provided standalone notes show “Impairment losses recognised/(reversed) on receivables” of 34 in Note 34(c)(i) for 31/03/2025, but no"
+Provision Bad Doubtful Loans Advances,standalone,BOTH_WRONG,,,34,Not disclosed (no candidate page)
+Provision Bad Doubtful Loans Advances,consolidated,BOTH_WRONG,,,36,Not disclosed (no candidate page)
+Bad Debts Advances Written Off,consolidated,BOTH_WRONG,,,-,Not disclosed (no candidate page)
+Interest Expense Borrowings,standalone,BOTH_WRONG,,,"1,051",Not disclosed (no candidate page)
+Interest Expense Borrowings,consolidated,BOTH_WRONG,,,"3,875",Not disclosed (no candidate page)

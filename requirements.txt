@@ -1,0 +1,7 @@
+# Corporate Annual Report Ingestion PoC
+# Standalone — no Django. Python 3.10+
+
+openai>=1.40.0          # OpenAI SDK (files, vector_stores, responses)
+pydantic>=2.6.0         # Taxonomy schema + strict structured output models
+python-dotenv>=1.0.0    # Load OPENAI_API_KEY etc. from .env
+requests>=2.31.0        # Direct /v1/responses calls + response-id deletion

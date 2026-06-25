@@ -1,0 +1,693 @@
+company,data_point,scope,report_field,page,source
+Reliance,Share Premium,Standalone,Securities Premium,99,pipeline
+Reliance,Share Premium,Consolidated,Securities Premium,141,pipeline
+Reliance,Hedging Reserve,Standalone,Other Equity - Cash flow Hedge,100,page-verified
+Reliance,Hedging Reserve,Consolidated,Cash Flow Hedge,141,pipeline
+Reliance,Non Current Investments_Unquoted Debentures/Bonds,Standalone,In Debentures of Other Company,104,pipeline
+Reliance,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,"In Debentures or Bonds - Unquoted, Fully Paid Up",147,pipeline
+Reliance,Non Current Investments_Joint Venture/Partnerships,Standalone,In Preference Shares of Joint Venture Companies / In Debentures of Joint Venture Companies,100,pipeline
+Reliance,Non Current Investments_Joint Venture/Partnerships,Consolidated,Total of Investments in Joint Ventures,147,pipeline
+Reliance,Gross Carrying Value_Furnitures & Fixtures,Standalone,Furniture & Fixtures,103,pipeline
+Reliance,Gross Carrying Value_Furnitures & Fixtures,Consolidated,Furniture & Fixtures,146,pipeline
+Reliance,Gross Carrying Value_Office Equipments,Standalone,Equipments $,103,pipeline
+Reliance,Gross Carrying Value_Office Equipments,Consolidated,Equipments $,146,pipeline
+Reliance,Accumulated Depreciation_Furnitures & Fixtures,Standalone,Furniture & Fixtures,103,pipeline
+Reliance,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,Furniture & Fixtures,146,pipeline
+Reliance,Accumulated Depreciation_Office Equipments,Standalone,Equipments $,103,pipeline
+Reliance,Accumulated Depreciation_Office Equipments,Consolidated,Equipments $,146,pipeline
+Reliance,Other CWIP,Standalone,,,Not disclosed
+Reliance,Other CWIP,Consolidated,,,Not disclosed
+Reliance,Gross Investment Property,Standalone,,,Not disclosed
+Reliance,Gross Investment Property,Consolidated,,,Not disclosed
+Reliance,Loss On Disposal Of Fixed Asset,Standalone,"Loss on Sale/Discard of Property, Plant and Equipment and Intangible Assets (Net)",103,page-verified
+Reliance,Loss On Disposal Of Fixed Asset,Consolidated,,,Not disclosed
+Reliance,Fixed Assets Written Off,Standalone,Deductions / Adjustments,103,pipeline
+Reliance,Fixed Assets Written Off,Consolidated,,,Not disclosed
+Reliance,Sundry Creditors,Standalone,Total,113,pipeline
+Reliance,Sundry Creditors,Consolidated,Total,153,pipeline
+Reliance,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+Reliance,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,Term Loans - from Others,152,pipeline
+Reliance,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+Reliance,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+Reliance,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+Reliance,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+Reliance,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,,,Not disclosed
+Reliance,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,Other Non-Current Liabilities,139,pipeline
+Reliance,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,Total,97,pipeline
+Reliance,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Total Non-Current Liabilities,139,pipeline
+Reliance,Other Current Liabilities_Revenue received in advance,Standalone,Contract Liabilities*,114,pipeline
+Reliance,Other Current Liabilities_Revenue received in advance,Consolidated,Contract Liabilities *,154,pipeline
+Reliance,Other Current Liabilities_Accrued Salary Payable,Standalone,,,Not disclosed
+Reliance,Other Current Liabilities_Accrued Salary Payable,Consolidated,,,Not disclosed
+Reliance,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+Reliance,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,,,Not disclosed
+Reliance,Short Term Loans And Advances_Other Deposit Assets,Standalone,Other Deposits,110,pipeline
+Reliance,Short Term Loans And Advances_Other Deposit Assets,Consolidated,,,Not disclosed
+Reliance,Short Term Loans And Advances_Advances to related parties,Standalone,,,Not disclosed
+Reliance,Short Term Loans And Advances_Advances to related parties,Consolidated,,,Not disclosed
+Reliance,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,,,Not disclosed
+Reliance,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,,,Not disclosed
+Reliance,Other Current Assets_Advances to related parties,Standalone,,,Not disclosed
+Reliance,Other Current Assets_Advances to related parties,Consolidated,,,Not disclosed
+Reliance,Other Current Assets_Advances given suppliers,Standalone,,,Not disclosed
+Reliance,Other Current Assets_Advances given suppliers,Consolidated,Others **,150,pipeline
+Reliance,Other Current Assets_Export incentives receivables,Standalone,,,Not disclosed
+Reliance,Other Current Assets_Export incentives receivables,Consolidated,,,Not disclosed
+Reliance,Other Current Assets_Less : Doubtful Advances,Standalone,,,Not disclosed
+Reliance,Other Current Assets_Less : Doubtful Advances,Consolidated,,,Not disclosed
+Reliance,Authorised Equity Share Capital,Standalone,"Authorised Share Capital: 49,00,00,00,000 Equity Shares of H 10 each",110,pipeline
+Reliance,Authorised Equity Share Capital,Consolidated,"49,00,00,00,000 Equity Shares of H 10 each",150,pipeline
+Reliance,Equity Issued,Standalone,Issued and Subscribed Capital,110,pipeline
+Reliance,Equity Issued,Consolidated,Issued and Subscribed Capital,150,pipeline
+Reliance,Equity Subscribed fully paid,Standalone,Equity Shares of H 10 each fully paid up,110,pipeline
+Reliance,Equity Subscribed fully paid,Consolidated,"13,53,24,72,634 Equity Shares of ₹ 10 each, Fully Paid Up",150,pipeline
+Reliance,Equity Forfeited,Standalone,,,Not disclosed
+Reliance,Equity Forfeited,Consolidated,,,Not disclosed
+Reliance,Equity Paid Up,Standalone,Paid Up Capital:,111,pipeline
+Reliance,Equity Paid Up,Consolidated,Total,151,pipeline
+Reliance,Face Value of Share (in Rs),Standalone,The Company has only one class of equity shares having face value of H 10 each.,111,pipeline
+Reliance,Face Value of Share (in Rs),Consolidated,Equity Shares of H 10 each,151,pipeline
+Reliance,No Of Authorised Equity Shares,Standalone,Equity Shares of H 10 each,110,pipeline
+Reliance,No Of Authorised Equity Shares,Consolidated,"49,00,00,00,000 Equity Shares of H 10 each",150,pipeline
+Reliance,No Of Issued Equity Shares,Standalone,Equity Shares at the end of the year,110,pipeline
+Reliance,No Of Issued Equity Shares,Consolidated,Equity Shares at the end of the year,150,pipeline
+Reliance,No Of Subscribed Equity Shares Fully Paid,Standalone,Equity Shares of H 10 each fully paid up,110,pipeline
+Reliance,No Of Subscribed Equity Shares Fully Paid,Consolidated,Equity Shares at the end of the year,150,pipeline
+Reliance,No Of Paid up Equity Shares,Standalone,Equity Shares of H 10 each fully paid up,111,pipeline
+Reliance,No Of Paid up Equity Shares,Consolidated,Paid Up Capital,151,pipeline
+Reliance,Number of shares outstanding at beginning of period,Standalone,Equity Shares at the beginning of the year,111,pipeline
+Reliance,Number of shares outstanding at beginning of period,Consolidated,Equity Shares at the beginning of the year,151,pipeline
+Reliance,No Of Shares Increase Towards Stock Split,Standalone,,,Not disclosed
+Reliance,No Of Shares Increase Towards Stock Split,Consolidated,,,Not disclosed
+Reliance,No Of Shares bought back or treasury shares,Standalone,,,Not disclosed
+Reliance,No Of Shares bought back or treasury shares,Consolidated,,,Not disclosed
+Reliance,Equity attributable to the equity holders of the parent,Consolidated,Equity attributable to Owners of the Company (B),164,pipeline
+Reliance,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+Reliance,Total Power & Fuel Expenses,Standalone,"Electric Power, Fuel and Water",116,pipeline
+Reliance,Total Power & Fuel Expenses,Consolidated,"Electric Power, Fuel and Water",157,pipeline
+Reliance,Consumption Of Stores And Spare Parts,Standalone,,,Not disclosed
+Reliance,Consumption Of Stores And Spare Parts,Consolidated,,,Not disclosed
+Reliance,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+Reliance,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+Reliance,Carriage Outwards,Standalone,,,Not disclosed
+Reliance,Carriage Outwards,Consolidated,,,Not disclosed
+Reliance,Legal & Professional Charges,Standalone,,,Not disclosed
+Reliance,Legal & Professional Charges,Consolidated,,,Not disclosed
+Reliance,Payments To Auditor,Standalone,Payment to Auditors,117,pipeline
+Reliance,Payments To Auditor,Consolidated,Payment to Auditors,185,pipeline
+Reliance,Payment for reimbursement of expenses,Standalone,,,Not disclosed
+Reliance,Payment for reimbursement of expenses,Consolidated,,,Not disclosed
+Reliance,Donations Subscriptions,Standalone,Charity and Donations,117,pipeline
+Reliance,Donations Subscriptions,Consolidated,Charity and Donations,157,pipeline
+Reliance,CSR Expenditure,Standalone,Expenditure related to Corporate Social Responsibility,117,pipeline
+Reliance,CSR Expenditure,Consolidated,Expenditure related to Corporate Social Responsibility,157,pipeline
+Reliance,Impairment loss on financial assets loans and advances,Standalone,,,Not disclosed
+Reliance,Impairment loss on financial assets loans and advances,Consolidated,,,Not disclosed
+Reliance,Provision Bad Doubtful Loans Advances,Standalone,,,Not disclosed
+Reliance,Provision Bad Doubtful Loans Advances,Consolidated,,,Not disclosed
+Reliance,Bad Debts Advances Written Off,Standalone,,,Not disclosed
+Reliance,Bad Debts Advances Written Off,Consolidated,,,Not disclosed
+Reliance,Interest Expense Borrowings,Standalone,Interest Expenses*,116,pipeline
+Reliance,Interest Expense Borrowings,Consolidated,Interest Expenses *,157,pipeline
+Reliance,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,"Changes in Inventories of Finished Goods, Work-in-Progress and Stock-in-Trade",98,pipeline
+Reliance,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,"Changes in Inventories of Finished Goods, Work-in-Progress and Stock-in-Trade",140,pipeline
+Reliance,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,"Property, Plant and Equipment and Intangible Assets",113,pipeline
+Reliance,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,,,Not disclosed
+Reliance,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,,,Not disclosed
+Reliance,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,,,Not disclosed
+Hindalco,Share Premium,Standalone,Securities Premium,371,pipeline
+Hindalco,Share Premium,Consolidated,Securities Premium,259,pipeline
+Hindalco,Hedging Reserve,Standalone,Effective portion of Cash Flow Hedge,371,pipeline
+Hindalco,Hedging Reserve,Consolidated,Effective portion of cash flow hedge,259,pipeline
+Hindalco,Non Current Investments_Unquoted Debentures/Bonds,Standalone,,,Not disclosed
+Hindalco,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,6% Convertible Promissory Note from NYPIT Inc (Everest Labs),278,page-verified
+Hindalco,Non Current Investments_Joint Venture/Partnerships,Standalone,Note 5B - Investment in Associates and Joint Ventures,343,page-verified
+Hindalco,Non Current Investments_Joint Venture/Partnerships,Consolidated,,,Not disclosed
+Hindalco,Gross Carrying Value_Furnitures & Fixtures,Standalone,Furniture and Fixtures,348,pipeline
+Hindalco,Gross Carrying Value_Furnitures & Fixtures,Consolidated,Furniture and Fixtures,268,pipeline
+Hindalco,Gross Carrying Value_Office Equipments,Standalone,Office Equipment,348,pipeline
+Hindalco,Gross Carrying Value_Office Equipments,Consolidated,Office Equipment,268,pipeline
+Hindalco,Accumulated Depreciation_Furnitures & Fixtures,Standalone,Furniture and Fixtures,348,pipeline
+Hindalco,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,Furniture and Fixtures,268,pipeline
+Hindalco,Accumulated Depreciation_Office Equipments,Standalone,Office Equipment,348,pipeline
+Hindalco,Accumulated Depreciation_Office Equipments,Consolidated,Office Equipment,268,pipeline
+Hindalco,Other CWIP,Standalone,,,Not disclosed
+Hindalco,Other CWIP,Consolidated,,,Not disclosed
+Hindalco,Gross Investment Property,Standalone,Total,351,pipeline
+Hindalco,Gross Investment Property,Consolidated,Total,271,pipeline
+Hindalco,Loss On Disposal Of Fixed Asset,Standalone,,,Not disclosed
+Hindalco,Loss On Disposal Of Fixed Asset,Consolidated,Consolidated Cash Flow - (Gain)/Loss on PPE & intangibles sold/discarded (net),260,page-verified
+Hindalco,Fixed Assets Written Off,Standalone,,,Not disclosed
+Hindalco,Fixed Assets Written Off,Consolidated,,,Not disclosed
+Hindalco,Sundry Creditors,Standalone,Trade Payables,374,pipeline
+Hindalco,Sundry Creditors,Consolidated,Trade payables,299,pipeline
+Hindalco,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+Hindalco,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,,,Not disclosed
+Hindalco,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+Hindalco,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+Hindalco,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+Hindalco,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+Hindalco,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,Standalone BS - Other Non-Current Liabilities (Note 16),343,page-verified
+Hindalco,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,Other non-current liabilities,257,pipeline
+Hindalco,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,Other Non-Current Liabilities,343,pipeline
+Hindalco,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Other non-current liabilities,257,pipeline
+Hindalco,Other Current Liabilities_Revenue received in advance,Standalone,Advance from Customers,343,pipeline
+Hindalco,Other Current Liabilities_Revenue received in advance,Consolidated,Advance from Customers,313,pipeline
+Hindalco,Other Current Liabilities_Accrued Salary Payable,Standalone,,,Not disclosed
+Hindalco,Other Current Liabilities_Accrued Salary Payable,Consolidated,,,Not disclosed
+Hindalco,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+Hindalco,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,,,Not disclosed
+Hindalco,Short Term Loans And Advances_Other Deposit Assets,Standalone,Deposit with Others,402,pipeline
+Hindalco,Short Term Loans And Advances_Other Deposit Assets,Consolidated,Deposit with Others,330,pipeline
+Hindalco,Short Term Loans And Advances_Advances to related parties,Standalone,,,Not disclosed
+Hindalco,Short Term Loans And Advances_Advances to related parties,Consolidated,"Loan to Related Parties - (a), (b), (c)",278,pipeline
+Hindalco,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,,,Not disclosed
+Hindalco,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,,,Not disclosed
+Hindalco,Other Current Assets_Advances to related parties,Standalone,,,Not disclosed
+Hindalco,Other Current Assets_Advances to related parties,Consolidated,,,Not disclosed
+Hindalco,Other Current Assets_Advances given suppliers,Standalone,,,Not disclosed
+Hindalco,Other Current Assets_Advances given suppliers,Consolidated,,,Not disclosed
+Hindalco,Other Current Assets_Export incentives receivables,Standalone,,,Not disclosed
+Hindalco,Other Current Assets_Export incentives receivables,Consolidated,,,Not disclosed
+Hindalco,Other Current Assets_Less : Doubtful Advances,Standalone,,,Not disclosed
+Hindalco,Other Current Assets_Less : Doubtful Advances,Consolidated,Less : Loss allowances,284,pipeline
+Hindalco,Authorised Equity Share Capital,Standalone,Note 10 - Authorised Equity Shares of Re 1 each,369,page-verified
+Hindalco,Authorised Equity Share Capital,Consolidated,Authorised Equity Shares,292,page-verified
+Hindalco,Equity Issued,Standalone,Issued,369,pipeline
+Hindalco,Equity Issued,Consolidated,Issued,292,pipeline
+Hindalco,Equity Subscribed fully paid,Standalone,Subscribed and Paid-up Equity Shares of ` 1/- each fully paid-up,369,pipeline
+Hindalco,Equity Subscribed fully paid,Consolidated,Subscribed and Paid-up Equity Shares of ` 1/- each fully paid-up,292,pipeline
+Hindalco,Equity Forfeited,Standalone,Add: Forfeited Shares (Amount originally Paid up),371,pipeline
+Hindalco,Equity Forfeited,Consolidated,Add: Forfeited Shares (Amount originally Paid-up),292,pipeline
+Hindalco,Equity Paid Up,Standalone,Standalone BS - Equity Share Capital (Note 10),343,page-verified
+Hindalco,Equity Paid Up,Consolidated,"Balance as at March 31, 2025",292,pipeline
+Hindalco,Face Value of Share (in Rs),Standalone,Equity Shares of ` 1/- each,369,pipeline
+Hindalco,Face Value of Share (in Rs),Consolidated,Face value per Equity Share (`),309,pipeline
+Hindalco,No Of Authorised Equity Shares,Standalone,Authorised Equity Shares of ` 1/- each,369,pipeline
+Hindalco,No Of Authorised Equity Shares,Consolidated,Authorized Equity Shares of ` 1/- each,292,pipeline
+Hindalco,No Of Issued Equity Shares,Standalone,Issued Equity Shares of ` 1/- each - (a),369,pipeline
+Hindalco,No Of Issued Equity Shares,Consolidated,Issued Equity Shares of ` 1/- each - (a),292,pipeline
+Hindalco,No Of Subscribed Equity Shares Fully Paid,Standalone,Note 10 - Subscribed and Paid-up Equity Shares of Re 1 each,369,page-verified
+Hindalco,No Of Subscribed Equity Shares Fully Paid,Consolidated,Subscribed and Paid-up Equity Shares,292,page-verified
+Hindalco,No Of Paid up Equity Shares,Standalone,Subscribed and Paid-up,369,pipeline
+Hindalco,No Of Paid up Equity Shares,Consolidated,Subscribed and Paid-up,292,pipeline
+Hindalco,Number of shares outstanding at beginning of period,Standalone,Equity shares outstanding at the beginning of the year,370,pipeline
+Hindalco,Number of shares outstanding at beginning of period,Consolidated,Equity Shares outstanding at the beginning of the year,292,pipeline
+Hindalco,No Of Shares Increase Towards Stock Split,Standalone,,,Not disclosed
+Hindalco,No Of Shares Increase Towards Stock Split,Consolidated,,,Not disclosed
+Hindalco,No Of Shares bought back or treasury shares,Standalone,Note 10 - Less: Treasury Shares (b)(i)+(b)(ii),369,page-verified
+Hindalco,No Of Shares bought back or treasury shares,Consolidated,Equity Shares - (b)(ii),292,pipeline
+Hindalco,Equity attributable to the equity holders of the parent,Consolidated,Equity attributable to owners of the Company,257,pipeline
+Hindalco,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+Hindalco,Total Power & Fuel Expenses,Standalone,Power and Fuel,344,pipeline
+Hindalco,Total Power & Fuel Expenses,Consolidated,Power and fuel,258,pipeline
+Hindalco,Consumption Of Stores And Spare Parts,Standalone,Consumption of Stores and Spares,388,pipeline
+Hindalco,Consumption Of Stores And Spare Parts,Consolidated,Consumption of Stores and Spares,316,pipeline
+Hindalco,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+Hindalco,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+Hindalco,Carriage Outwards,Standalone,Freight and Forwarding Expenses (Net) - (b),388,pipeline
+Hindalco,Carriage Outwards,Consolidated,Freight and Forwarding Expenses (Net) - (b),316,pipeline
+Hindalco,Legal & Professional Charges,Standalone,,,Not disclosed
+Hindalco,Legal & Professional Charges,Consolidated,,,Not disclosed
+Hindalco,Payments To Auditor,Standalone,Payment to Auditors - (a),388,pipeline
+Hindalco,Payments To Auditor,Consolidated,Note 24 Other expenses - Payments to Auditors,316,page-verified
+Hindalco,Payment for reimbursement of expenses,Standalone,Reimbursement of Out-of-Pocket Expenses,388,pipeline
+Hindalco,Payment for reimbursement of expenses,Consolidated,Reimbursement of expenses to,304,pipeline
+Hindalco,Donations Subscriptions,Standalone,,,Not disclosed
+Hindalco,Donations Subscriptions,Consolidated,,,Not disclosed
+Hindalco,CSR Expenditure,Standalone,Amount spent during the year - b) On purposes other than (a) above,403,pipeline
+Hindalco,CSR Expenditure,Consolidated,,,Not disclosed
+Hindalco,Impairment loss on financial assets loans and advances,Standalone,Reconciliation of Provision - Impairment losses recognised on receivables,402,page-verified
+Hindalco,Impairment loss on financial assets loans and advances,Consolidated,Note 23 - Impairment loss/(reversal) on financial assets (net),316,page-verified
+Hindalco,Provision Bad Doubtful Loans Advances,Standalone,,,Not disclosed
+Hindalco,Provision Bad Doubtful Loans Advances,Consolidated,,,Not disclosed
+Hindalco,Bad Debts Advances Written Off,Standalone,,,Not disclosed
+Hindalco,Bad Debts Advances Written Off,Consolidated,,,Not disclosed
+Hindalco,Interest Expense Borrowings,Standalone,,,Not disclosed
+Hindalco,Interest Expense Borrowings,Consolidated,,,Not disclosed
+Hindalco,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,"Changes in inventories of Finished Goods, Work-in-Progress and Stock-in-Trade",369,pipeline
+Hindalco,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,"Changes in inventories of finished goods, work-in-progress and stock-in-trade",258,pipeline
+Hindalco,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,,,Not disclosed
+Hindalco,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,PPE Depreciation and Intangible Amortisation,287,pipeline
+Hindalco,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,Retirement Benefits and Compensated Absences,367,pipeline
+Hindalco,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,Retirement Benefits and Compensated Absences,288,pipeline
+Reddy,Share Premium,Standalone,Securities premium(2),127,pipeline
+Reddy,Share Premium,Consolidated,SOCIE - Securities premium (closing),178,page-verified
+Reddy,Hedging Reserve,Standalone,Cash flow hedge reserve(7),127,pipeline
+Reddy,Hedging Reserve,Consolidated,SOCIE - Cash flow hedge reserve (closing),178,page-verified
+Reddy,Non Current Investments_Unquoted Debentures/Bonds,Standalone,Investment in Non-convertible debentures of Dr. Reddy's Laboratories Inc.,141,page-verified
+Reddy,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,Investment in bonds,194,pipeline
+Reddy,Non Current Investments_Joint Venture/Partnerships,Standalone,Investment in partnership firms (ABCD Technologies LLP),140,page-verified
+Reddy,Non Current Investments_Joint Venture/Partnerships,Consolidated,Total Investment in equity accounted investees,193,page-verified
+Reddy,Gross Carrying Value_Furnitures & Fixtures,Standalone,"Furniture, fixtures and office equipment",137,pipeline
+Reddy,Gross Carrying Value_Furnitures & Fixtures,Consolidated,"Furniture, fixtures and office equipment",189,pipeline
+Reddy,Gross Carrying Value_Office Equipments,Standalone,"Furniture, fixtures and office equipment",137,pipeline
+Reddy,Gross Carrying Value_Office Equipments,Consolidated,"Furniture, fixtures and office equipment",189,pipeline
+Reddy,Accumulated Depreciation_Furnitures & Fixtures,Standalone,"Note 2.1 PP&E - Furniture, fixtures & office equipment (combined) - Accum dep closing",137,page-verified
+Reddy,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,"Note 2.1 PP&E - Furniture, fixtures & office equipment (combined) - Accum dep closing",189,page-verified
+Reddy,Accumulated Depreciation_Office Equipments,Standalone,"Furniture, fixtures and office equipment",137,pipeline
+Reddy,Accumulated Depreciation_Office Equipments,Consolidated,"Furniture, fixtures and office equipment",189,pipeline
+Reddy,Other CWIP,Standalone,,,Not disclosed
+Reddy,Other CWIP,Consolidated,,,Not disclosed
+Reddy,Gross Investment Property,Standalone,,,Not disclosed
+Reddy,Gross Investment Property,Consolidated,,,Not disclosed
+Reddy,Loss On Disposal Of Fixed Asset,Standalone,"Other expenses - Loss/(Profit) on sale/disposal of assets, net",169,page-verified
+Reddy,Loss On Disposal Of Fixed Asset,Consolidated,,,Not disclosed
+Reddy,Fixed Assets Written Off,Standalone,,,Not disclosed
+Reddy,Fixed Assets Written Off,Consolidated,,,Not disclosed
+Reddy,Sundry Creditors,Standalone,Trade payables,145,pipeline
+Reddy,Sundry Creditors,Consolidated,Trade payables,199,pipeline
+Reddy,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+Reddy,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,,,Not disclosed
+Reddy,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+Reddy,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+Reddy,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+Reddy,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+Reddy,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,Standalone BS - Other non-current liabilities (Note 2.12A),126,page-verified
+Reddy,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,Other non-current liabilities,201,pipeline
+Reddy,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,Standalone BS - Total non-current liabilities,126,page-verified
+Reddy,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Other non-current liabilities,176,pipeline
+Reddy,Other Current Liabilities_Revenue received in advance,Standalone,Advance from customers,147,pipeline
+Reddy,Other Current Liabilities_Revenue received in advance,Consolidated,Advance from customers,202,pipeline
+Reddy,Other Current Liabilities_Accrued Salary Payable,Standalone,,,Not disclosed
+Reddy,Other Current Liabilities_Accrued Salary Payable,Consolidated,,,Not disclosed
+Reddy,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+Reddy,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,,,Not disclosed
+Reddy,Short Term Loans And Advances_Other Deposit Assets,Standalone,Other assets,142,pipeline
+Reddy,Short Term Loans And Advances_Other Deposit Assets,Consolidated,Other assets(1),195,pipeline
+Reddy,Short Term Loans And Advances_Advances to related parties,Standalone,Dues from related parties (refer note 2.24),142,pipeline
+Reddy,Short Term Loans And Advances_Advances to related parties,Consolidated,Dues from other related parties (Refer note 2.25),195,pipeline
+Reddy,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,Less: Allowance for doubtful loans and advances,141,pipeline
+Reddy,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,Less: Allowance for doubtful advances,195,pipeline
+Reddy,Other Current Assets_Advances to related parties,Standalone,Dues from related parties (Refer note 2.24),141,pipeline
+Reddy,Other Current Assets_Advances to related parties,Consolidated,,,Not disclosed
+Reddy,Other Current Assets_Advances given suppliers,Standalone,,,Not disclosed
+Reddy,Other Current Assets_Advances given suppliers,Consolidated,,,Not disclosed
+Reddy,Other Current Assets_Export incentives receivables,Standalone,Government incentives receivable(2),142,pipeline
+Reddy,Other Current Assets_Export incentives receivables,Consolidated,Government incentives receivable(2),195,pipeline
+Reddy,Other Current Assets_Less : Doubtful Advances,Standalone,Less: Allowance for doubtful advances,141,pipeline
+Reddy,Other Current Assets_Less : Doubtful Advances,Consolidated,Less: Allowance for doubtful advances,195,pipeline
+Reddy,Authorised Equity Share Capital,Standalone,Authorised share capital,143,pipeline
+Reddy,Authorised Equity Share Capital,Consolidated,Authorised share capital,196,pipeline
+Reddy,Equity Issued,Standalone,Issued equity capital**,143,pipeline
+Reddy,Equity Issued,Consolidated,Issued equity capital**,196,pipeline
+Reddy,Equity Subscribed fully paid,Standalone,Note 2.9 - Subscribed and fully paid-up (Rs),143,page-verified
+Reddy,Equity Subscribed fully paid,Consolidated,Subscribed and fully paid-up,196,page-verified
+Reddy,Equity Forfeited,Standalone,,,Not disclosed
+Reddy,Equity Forfeited,Consolidated,,,Not disclosed
+Reddy,Equity Paid Up,Standalone,Subscribed and fully paid-up**,143,pipeline
+Reddy,Equity Paid Up,Consolidated,Equity share capital,196,pipeline
+Reddy,Face Value of Share (in Rs),Standalone,par value / face value of equity shares,143,pipeline
+Reddy,Face Value of Share (in Rs),Consolidated,par value,196,pipeline
+Reddy,No Of Authorised Equity Shares,Standalone,"1,450,000,000 equity shares of ` 1/- each (March 31, 2024: 290,000,000 equity shares of ` 5/ each**)",143,pipeline
+Reddy,No Of Authorised Equity Shares,Consolidated,"1,450,000,000 equity shares of ` 1/- each (March 31, 2024: 290,000,000 equity shares of ` 5/ each)",196,pipeline
+Reddy,No Of Issued Equity Shares,Standalone,Issued equity capital**,143,pipeline
+Reddy,No Of Issued Equity Shares,Consolidated,Closing number of equity shares/share capital **,196,pipeline
+Reddy,No Of Subscribed Equity Shares Fully Paid,Standalone,Note 2.9 - Subscribed and fully paid-up (no. of shares),143,page-verified
+Reddy,No Of Subscribed Equity Shares Fully Paid,Consolidated,Subscribed and fully paid-up,196,page-verified
+Reddy,No Of Paid up Equity Shares,Standalone,Closing number of equity shares/share capital**,143,pipeline
+Reddy,No Of Paid up Equity Shares,Consolidated,Subscribed and fully paid-up**,196,pipeline
+Reddy,Number of shares outstanding at beginning of period,Standalone,Note 2.9 - Opening number of equity shares,143,page-verified
+Reddy,Number of shares outstanding at beginning of period,Consolidated,Opening number of equity shares/share capital (face value of ` 5 each),196,pipeline
+Reddy,No Of Shares Increase Towards Stock Split,Standalone,Note 2.9 - Increase in outstanding shares on account of stock split,143,page-verified
+Reddy,No Of Shares Increase Towards Stock Split,Consolidated,Add: Increase in outstanding shares on account of stock split**,196,pipeline
+Reddy,No Of Shares bought back or treasury shares,Standalone,Treasury shares,143,pipeline
+Reddy,No Of Shares bought back or treasury shares,Consolidated,Treasury shares,196,pipeline
+Reddy,Equity attributable to the equity holders of the parent,Consolidated,Equity attributable to equity shareholders of parent company,176,pipeline
+Reddy,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+Reddy,Total Power & Fuel Expenses,Standalone,Power and fuel (Refer note 2.21),148,pipeline
+Reddy,Total Power & Fuel Expenses,Consolidated,Power and fuel,203,pipeline
+Reddy,Consumption Of Stores And Spare Parts,Standalone,,,Not disclosed
+Reddy,Consumption Of Stores And Spare Parts,Consolidated,,,Not disclosed
+Reddy,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+Reddy,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+Reddy,Carriage Outwards,Standalone,Carriage outward,148,pipeline
+Reddy,Carriage Outwards,Consolidated,Carriage outward,203,pipeline
+Reddy,Legal & Professional Charges,Standalone,Legal and professional,148,pipeline
+Reddy,Legal & Professional Charges,Consolidated,Legal and professional,203,pipeline
+Reddy,Payments To Auditor,Standalone,Other expenses - Auditors' remuneration,149,page-verified
+Reddy,Payments To Auditor,Consolidated,Other expenses - Auditors' remuneration,203,page-verified
+Reddy,Payment for reimbursement of expenses,Standalone,Reimbursement of out of pocket expenses,149,pipeline
+Reddy,Payment for reimbursement of expenses,Consolidated,Reimbursement of out of pocket expenses,204,pipeline
+Reddy,Donations Subscriptions,Standalone,Donations (Refer note (1) below),149,pipeline
+Reddy,Donations Subscriptions,Consolidated,Donations,203,pipeline
+Reddy,CSR Expenditure,Standalone,Corporate Social Responsibility (Refer note (2) below),149,pipeline
+Reddy,CSR Expenditure,Consolidated,Corporate social responsibility(1),203,pipeline
+Reddy,Impairment loss on financial assets loans and advances,Standalone,Allowance for credit losses (on trade receivables and other advances),141,pipeline
+Reddy,Impairment loss on financial assets loans and advances,Consolidated,"Provision made during the year, net of reversals",194,pipeline
+Reddy,Provision Bad Doubtful Loans Advances,Standalone,"Allowance for doubtful advances, net",128,pipeline
+Reddy,Provision Bad Doubtful Loans Advances,Consolidated,"Provision made during the year, net of reversals",203,pipeline
+Reddy,Bad Debts Advances Written Off,Standalone,,,Not disclosed
+Reddy,Bad Debts Advances Written Off,Consolidated,,,Not disclosed
+Reddy,Interest Expense Borrowings,Standalone,Finance costs - Interest on other borrowings,148,page-verified
+Reddy,Interest Expense Borrowings,Consolidated,Finance costs - Interest on other borrowings,176,page-verified
+Reddy,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,"Changes in inventories of finished goods, work-in-progress and stock-in-trade",126,pipeline
+Reddy,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,"Changes in inventories of finished goods, work-in-progress and stock-in-trade",176,pipeline
+Reddy,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,,,Not disclosed
+Reddy,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,"Property, plant and equipment",217,pipeline
+Reddy,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,,,Not disclosed
+Reddy,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,,,Not disclosed
+ITC,Share Premium,Standalone,Securities Premium,160,pipeline
+ITC,Share Premium,Consolidated,Securities Premium,254,pipeline
+ITC,Hedging Reserve,Standalone,Effective portion of Cash Flow Hedges,226,pipeline
+ITC,Hedging Reserve,Consolidated,Effective portion of Cash Flow Hedges,333,pipeline
+ITC,Non Current Investments_Unquoted Debentures/Bonds,Standalone,,,Not disclosed
+ITC,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,,,Not disclosed
+ITC,Non Current Investments_Joint Venture/Partnerships,Standalone,Maharaja Heritage Resorts Limited^,176,pipeline
+ITC,Non Current Investments_Joint Venture/Partnerships,Consolidated,Investment in JV (ITC Filtrona Limited etc.),256,page-verified
+ITC,Gross Carrying Value_Furnitures & Fixtures,Standalone,Furniture and Fixtures,172,pipeline
+ITC,Gross Carrying Value_Furnitures & Fixtures,Consolidated,Furniture and Fixtures,268,pipeline
+ITC,Gross Carrying Value_Office Equipments,Standalone,Office Equipment,172,pipeline
+ITC,Gross Carrying Value_Office Equipments,Consolidated,Office Equipment,268,pipeline
+ITC,Accumulated Depreciation_Furnitures & Fixtures,Standalone,Furniture and Fixtures,173,pipeline
+ITC,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,Furniture and Fixtures,269,pipeline
+ITC,Accumulated Depreciation_Office Equipments,Standalone,Office Equipment,173,pipeline
+ITC,Accumulated Depreciation_Office Equipments,Consolidated,Office Equipment,269,pipeline
+ITC,Other CWIP,Standalone,,,Not disclosed
+ITC,Other CWIP,Consolidated,,,Not disclosed
+ITC,Gross Investment Property,Standalone,3C. Investment Property 3,172,pipeline
+ITC,Gross Investment Property,Consolidated,3C. Investment Property 3,268,pipeline
+ITC,Loss On Disposal Of Fixed Asset,Standalone,"(Gain) / Loss on sale of property, plant and equipment - Net",200,pipeline
+ITC,Loss On Disposal Of Fixed Asset,Consolidated,"(Gain) / Loss on sale of property, plant and equipment - Net",297,pipeline
+ITC,Fixed Assets Written Off,Standalone,,,Not disclosed
+ITC,Fixed Assets Written Off,Consolidated,,,Not disclosed
+ITC,Sundry Creditors,Standalone,Trade payables,224,pipeline
+ITC,Sundry Creditors,Consolidated,Note 21 Trade Payables (Current) - total outstanding dues,252,page-verified
+ITC,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+ITC,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,,,Not disclosed
+ITC,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+ITC,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+ITC,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+ITC,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+ITC,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,,,Not disclosed
+ITC,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,Other non-current liabilities,252,pipeline
+ITC,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,,,Not disclosed
+ITC,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Other non-current liabilities,252,pipeline
+ITC,Other Current Liabilities_Revenue received in advance,Standalone,,,Not disclosed
+ITC,Other Current Liabilities_Revenue received in advance,Consolidated,Note 20 - Advances received from customers (* includes revenue received in advance),292,page-verified
+ITC,Other Current Liabilities_Accrued Salary Payable,Standalone,,,Not disclosed
+ITC,Other Current Liabilities_Accrued Salary Payable,Consolidated,,,Not disclosed
+ITC,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+ITC,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,Consolidated SOCIE - Share Options Outstanding Account (closing),254,page-verified
+ITC,Short Term Loans And Advances_Other Deposit Assets,Standalone,Security Deposits,158,pipeline
+ITC,Short Term Loans And Advances_Other Deposit Assets,Consolidated,Security Deposits – With Statutory Authorities / – Others,325,pipeline
+ITC,Short Term Loans And Advances_Advances to related parties,Standalone,Advances to related parties (Refer Note 31),221,pipeline
+ITC,Short Term Loans And Advances_Advances to related parties,Consolidated,Advances to related parties (Refer Note 32),280,pipeline
+ITC,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,Closing Balance,227,pipeline
+ITC,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,Closing Balance,335,pipeline
+ITC,Other Current Assets_Advances to related parties,Standalone,Advances to related parties (Refer Note 31),183,pipeline
+ITC,Other Current Assets_Advances to related parties,Consolidated,Advances to related parties (Refer Note 32),280,pipeline
+ITC,Other Current Assets_Advances given suppliers,Standalone,,,Not disclosed
+ITC,Other Current Assets_Advances given suppliers,Consolidated,,,Not disclosed
+ITC,Other Current Assets_Export incentives receivables,Standalone,,,Not disclosed
+ITC,Other Current Assets_Export incentives receivables,Consolidated,,,Not disclosed
+ITC,Other Current Assets_Less : Doubtful Advances,Standalone,,,Not disclosed
+ITC,Other Current Assets_Less : Doubtful Advances,Consolidated,,,Not disclosed
+ITC,Authorised Equity Share Capital,Standalone,Authorised Ordinary Shares of ` 1.00 each,191,pipeline
+ITC,Authorised Equity Share Capital,Consolidated,Authorised Ordinary Shares of ` 1.00 each,289,pipeline
+ITC,Equity Issued,Standalone,Issued and Subscribed,191,pipeline
+ITC,Equity Issued,Consolidated,Issued and Subscribed,289,pipeline
+ITC,Equity Subscribed fully paid,Standalone,"Issued and Subscribed Ordinary Shares of Re 1.00 each, fully paid",191,page-verified
+ITC,Equity Subscribed fully paid,Consolidated,"Issued and Subscribed Ordinary Shares of Re 1.00 each, fully paid",304,page-verified
+ITC,Equity Forfeited,Standalone,,,Not disclosed
+ITC,Equity Forfeited,Consolidated,,,Not disclosed
+ITC,Equity Paid Up,Standalone,Equity Share capital,160,pipeline
+ITC,Equity Paid Up,Consolidated,"Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",254,pipeline
+ITC,Face Value of Share (in Rs),Standalone,Ordinary Shares of ` 1.00 each,191,pipeline
+ITC,Face Value of Share (in Rs),Consolidated,par value of ` 1.00 per share,289,pipeline
+ITC,No Of Authorised Equity Shares,Standalone,Authorised Ordinary Shares of ` 1.00 each,191,pipeline
+ITC,No Of Authorised Equity Shares,Consolidated,Ordinary Shares of ` 1.00 each,289,pipeline
+ITC,No Of Issued Equity Shares,Standalone,"Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",191,pipeline
+ITC,No Of Issued Equity Shares,Consolidated,"Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",289,pipeline
+ITC,No Of Subscribed Equity Shares Fully Paid,Standalone,Issued and Subscribed Ordinary Shares (no. of shares),191,page-verified
+ITC,No Of Subscribed Equity Shares Fully Paid,Consolidated,Issued and Subscribed Ordinary Shares (no. of shares),289,page-verified
+ITC,No Of Paid up Equity Shares,Standalone,"Ordinary Shares of ` 1.00 each, fully paid",191,pipeline
+ITC,No Of Paid up Equity Shares,Consolidated,"Ordinary Shares of ` 1.00 each, fully paid",289,pipeline
+ITC,Number of shares outstanding at beginning of period,Standalone,As at beginning of the year (share reconciliation),191,page-verified
+ITC,Number of shares outstanding at beginning of period,Consolidated,As at beginning of the year,289,page-verified
+ITC,No Of Shares Increase Towards Stock Split,Standalone,,,Not disclosed
+ITC,No Of Shares Increase Towards Stock Split,Consolidated,,,Not disclosed
+ITC,No Of Shares bought back or treasury shares,Standalone,,,Not disclosed
+ITC,No Of Shares bought back or treasury shares,Consolidated,,,Not disclosed
+ITC,Equity attributable to the equity holders of the parent,Consolidated,Attributable to owners of the parent,252,pipeline
+ITC,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+ITC,Total Power & Fuel Expenses,Standalone,Power and fuel,200,pipeline
+ITC,Total Power & Fuel Expenses,Consolidated,Power and fuel,297,pipeline
+ITC,Consumption Of Stores And Spare Parts,Standalone,Consumption of stores and spare parts,200,pipeline
+ITC,Consumption Of Stores And Spare Parts,Consolidated,Consumption of stores and spare parts,297,pipeline
+ITC,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+ITC,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+ITC,Carriage Outwards,Standalone,Outward freight and handling charges,200,pipeline
+ITC,Carriage Outwards,Consolidated,Outward freight and handling charges,297,pipeline
+ITC,Legal & Professional Charges,Standalone,Legal and professional fees,200,pipeline
+ITC,Legal & Professional Charges,Consolidated,Legal and professional fees,297,pipeline
+ITC,Payments To Auditor,Standalone,Note 27 - Auditors' remuneration and expenses (Audit 3.80 + Tax audit 0.78 + ...),200,page-verified
+ITC,Payments To Auditor,Consolidated,,,Not disclosed
+ITC,Payment for reimbursement of expenses,Standalone,Reimbursement of expenses,200,pipeline
+ITC,Payment for reimbursement of expenses,Consolidated,Expenses Reimbursed,328,pipeline
+ITC,Donations Subscriptions,Standalone,,,Not disclosed
+ITC,Donations Subscriptions,Consolidated,,,Not disclosed
+ITC,CSR Expenditure,Standalone,Note 27 Other expenses - Corporate Social Responsibility (P&L line; note 29(ii) 'incurred' = 461.50),200,page-verified
+ITC,CSR Expenditure,Consolidated,Expenditure incurred during the year,322,pipeline
+ITC,Impairment loss on financial assets loans and advances,Standalone,,,Not disclosed
+ITC,Impairment loss on financial assets loans and advances,Consolidated,,,Not disclosed
+ITC,Provision Bad Doubtful Loans Advances,Standalone,,,Not disclosed
+ITC,Provision Bad Doubtful Loans Advances,Consolidated,,,Not disclosed
+ITC,Bad Debts Advances Written Off,Standalone,,,Not disclosed
+ITC,Bad Debts Advances Written Off,Consolidated,,,Not disclosed
+ITC,Interest Expense Borrowings,Standalone,,,Not disclosed
+ITC,Interest Expense Borrowings,Consolidated,,,Not disclosed
+ITC,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,"Changes in inventories of finished goods, Stock-in-Trade, work-in-progress and intermediates",159,pipeline
+ITC,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,"Changes in inventories of finished goods, Stock-in-Trade, work-in-progress, intermediates and Biological Assets",253,pipeline
+ITC,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,,,Not disclosed
+ITC,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,"On fiscal allowances on property, plant and equipment, investment property etc.",279,pipeline
+ITC,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,,,Not disclosed
+ITC,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,,,Not disclosed
+Infosys,Share Premium,Standalone,Securities premium,214,pipeline
+Infosys,Share Premium,Consolidated,Securities premium,293,pipeline
+Infosys,Hedging Reserve,Standalone,,,Not disclosed
+Infosys,Hedging Reserve,Consolidated,SOCIE - Effective portion of cash flow hedges (closing),292,page-verified
+Infosys,Non Current Investments_Unquoted Debentures/Bonds,Standalone,Non-convertible debentures,226,pipeline
+Infosys,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,,,Not disclosed
+Infosys,Non Current Investments_Joint Venture/Partnerships,Standalone,,,Not disclosed
+Infosys,Non Current Investments_Joint Venture/Partnerships,Consolidated,,,Not disclosed
+Infosys,Gross Carrying Value_Furnitures & Fixtures,Standalone,Note 2.2 PP&E - Furniture and fixtures - Gross carrying value,221,page-verified
+Infosys,Gross Carrying Value_Furnitures & Fixtures,Consolidated,Note 2.2 PP&E - Furniture and fixtures - Gross carrying value,302,page-verified
+Infosys,Gross Carrying Value_Office Equipments,Standalone,Note 2.2 PP&E - Office equipment - Gross carrying value,221,page-verified
+Infosys,Gross Carrying Value_Office Equipments,Consolidated,"Note 2.2 PP&E - Office equipment - Gross carrying value as at Mar 31, 2026",302,page-verified
+Infosys,Accumulated Depreciation_Furnitures & Fixtures,Standalone,Note 2.2 PP&E - Furniture and fixtures - Accumulated depreciation,221,page-verified
+Infosys,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,Note 2.2 PP&E - Furniture and fixtures - Accumulated depreciation,302,page-verified
+Infosys,Accumulated Depreciation_Office Equipments,Standalone,Note 2.2 PP&E - Office equipment - Accumulated depreciation,221,page-verified
+Infosys,Accumulated Depreciation_Office Equipments,Consolidated,"Note 2.2 PP&E - Office equipment - Accumulated depreciation as at Mar 31, 2026",302,page-verified
+Infosys,Other CWIP,Standalone,,,Not disclosed
+Infosys,Other CWIP,Consolidated,,,Not disclosed
+Infosys,Gross Investment Property,Standalone,,,Not disclosed
+Infosys,Gross Investment Property,Consolidated,,,Not disclosed
+Infosys,Loss On Disposal Of Fixed Asset,Standalone,,,Not disclosed
+Infosys,Loss On Disposal Of Fixed Asset,Consolidated,,,Not disclosed
+Infosys,Fixed Assets Written Off,Standalone,,,Not disclosed
+Infosys,Fixed Assets Written Off,Consolidated,,,Not disclosed
+Infosys,Sundry Creditors,Standalone,Trade payables,235,pipeline
+Infosys,Sundry Creditors,Consolidated,Total trade payables,328,pipeline
+Infosys,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+Infosys,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,,,Not disclosed
+Infosys,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+Infosys,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+Infosys,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+Infosys,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+Infosys,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,,,Not disclosed
+Infosys,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,,,Not disclosed
+Infosys,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,,,Not disclosed
+Infosys,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Other non-current liabilities,287,pipeline
+Infosys,Other Current Liabilities_Revenue received in advance,Standalone,,,Not disclosed
+Infosys,Other Current Liabilities_Revenue received in advance,Consolidated,,,Not disclosed
+Infosys,Other Current Liabilities_Accrued Salary Payable,Standalone,Accrued compensation to employees (1),248,pipeline
+Infosys,Other Current Liabilities_Accrued Salary Payable,Consolidated,Accrued compensation to employees(1),328,pipeline
+Infosys,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+Infosys,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,,,Not disclosed
+Infosys,Short Term Loans And Advances_Other Deposit Assets,Standalone,Security deposits(1),231,pipeline
+Infosys,Short Term Loans And Advances_Other Deposit Assets,Consolidated,Security deposits(1),310,pipeline
+Infosys,Short Term Loans And Advances_Advances to related parties,Standalone,,,Not disclosed
+Infosys,Short Term Loans And Advances_Advances to related parties,Consolidated,,,Not disclosed
+Infosys,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,,,Not disclosed
+Infosys,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,,,Not disclosed
+Infosys,Other Current Assets_Advances to related parties,Standalone,,,Not disclosed
+Infosys,Other Current Assets_Advances to related parties,Consolidated,,,Not disclosed
+Infosys,Other Current Assets_Advances given suppliers,Standalone,,,Not disclosed
+Infosys,Other Current Assets_Advances given suppliers,Consolidated,Payment to vendors for supply of goods,311,pipeline
+Infosys,Other Current Assets_Export incentives receivables,Standalone,,,Not disclosed
+Infosys,Other Current Assets_Export incentives receivables,Consolidated,,,Not disclosed
+Infosys,Other Current Assets_Less : Doubtful Advances,Standalone,,,Not disclosed
+Infosys,Other Current Assets_Less : Doubtful Advances,Consolidated,,,Not disclosed
+Infosys,Authorised Equity Share Capital,Standalone,Note 2.12.1 - Authorized Equity shares (Rs crore),243,page-verified
+Infosys,Authorised Equity Share Capital,Consolidated,Authorized share capital,243,page-verified
+Infosys,Equity Issued,Standalone,"Issued, Subscribed and Paid-Up",243,pipeline
+Infosys,Equity Issued,Consolidated,"Issued, subscribed and paid-up",322,pipeline
+Infosys,Equity Subscribed fully paid,Standalone,"Issued, Subscribed and Paid-Up / Equity shares, `5/- par value(1)",243,pipeline
+Infosys,Equity Subscribed fully paid,Consolidated,"Issued, subscribed and paid-up",322,pipeline
+Infosys,Equity Forfeited,Standalone,Forfeited shares amounted to,243,pipeline
+Infosys,Equity Forfeited,Consolidated,Forfeited shares,322,pipeline
+Infosys,Equity Paid Up,Standalone,"Equity shares, `5/- par value(1)",243,pipeline
+Infosys,Equity Paid Up,Consolidated,"Equity shares, `5 par value(1)",322,pipeline
+Infosys,Face Value of Share (in Rs),Standalone,"Equity shares, Rs 5 par value",243,page-verified
+Infosys,Face Value of Share (in Rs),Consolidated,"Equity shares, `5 par value",322,pipeline
+Infosys,No Of Authorised Equity Shares,Standalone,"Authorized Equity shares, `5/- par value 4,80,00,00,000 (4,80,00,00,000) equity shares",243,pipeline
+Infosys,No Of Authorised Equity Shares,Consolidated,"480,00,00,000 (480,00,00,000) equity shares",322,pipeline
+Infosys,No Of Issued Equity Shares,Standalone,As at the end of the period,244,pipeline
+Infosys,No Of Issued Equity Shares,Consolidated,As at the end of the year,324,pipeline
+Infosys,No Of Subscribed Equity Shares Fully Paid,Standalone,equity shares fully paid-up,243,pipeline
+Infosys,No Of Subscribed Equity Shares Fully Paid,Consolidated,"404,69,40,812 (414,36,07,528) equity shares fully paid-up(2)",322,pipeline
+Infosys,No Of Paid up Equity Shares,Standalone,As at the end of the period,244,pipeline
+Infosys,No Of Paid up Equity Shares,Consolidated,As at the end of the year,324,pipeline
+Infosys,Number of shares outstanding at beginning of period,Standalone,As at the beginning of the period,244,pipeline
+Infosys,Number of shares outstanding at beginning of period,Consolidated,As at the beginning of the year,324,pipeline
+Infosys,No Of Shares Increase Towards Stock Split,Standalone,,,Not disclosed
+Infosys,No Of Shares Increase Towards Stock Split,Consolidated,,,Not disclosed
+Infosys,No Of Shares bought back or treasury shares,Standalone,Less: Shares bought back,244,pipeline
+Infosys,No Of Shares bought back or treasury shares,Consolidated,Less: Shares bought back,324,pipeline
+Infosys,Equity attributable to the equity holders of the parent,Consolidated,Total equity attributable to equity holders of the Company,287,pipeline
+Infosys,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+Infosys,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+Infosys,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+Infosys,Carriage Outwards,Standalone,,,Not disclosed
+Infosys,Carriage Outwards,Consolidated,,,Not disclosed
+Infosys,Legal & Professional Charges,Standalone,,,Not disclosed
+Infosys,Legal & Professional Charges,Consolidated,Consultancy and professional charges,288,pipeline
+Infosys,Payments To Auditor,Standalone,Statutory audit fees,257,pipeline
+Infosys,Payments To Auditor,Consolidated,,,Not disclosed
+Infosys,Payment for reimbursement of expenses,Standalone,,,Not disclosed
+Infosys,Payment for reimbursement of expenses,Consolidated,,,Not disclosed
+Infosys,Donations Subscriptions,Standalone,,,Not disclosed
+Infosys,Donations Subscriptions,Consolidated,,,Not disclosed
+Infosys,CSR Expenditure,Standalone,Note 2.20 - Contributions towards Corporate Social Responsibility,257,page-verified
+Infosys,CSR Expenditure,Consolidated,Contributions towards Corporate Social Responsibility,337,pipeline
+Infosys,Impairment loss on financial assets loans and advances,Standalone,Impairment loss recognized / (reversed) under expected credit loss model,257,pipeline
+Infosys,Impairment loss on financial assets loans and advances,Consolidated,Impairment loss recognized / (reversed) under expected credit loss model,313,pipeline
+Infosys,Provision Bad Doubtful Loans Advances,Standalone,,,Not disclosed
+Infosys,Provision Bad Doubtful Loans Advances,Consolidated,,,Not disclosed
+Infosys,Bad Debts Advances Written Off,Standalone,,,Not disclosed
+Infosys,Bad Debts Advances Written Off,Consolidated,,,Not disclosed
+Infosys,Interest Expense Borrowings,Standalone,,,Not disclosed
+Infosys,Interest Expense Borrowings,Consolidated,,,Not disclosed
+Infosys,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,,,Not disclosed
+Infosys,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,,,Not disclosed
+Infosys,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,"Property, plant and equipment",252,pipeline
+Infosys,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,,,Not disclosed
+Infosys,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,Compensated absences,252,pipeline
+Infosys,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,Compensated absences,332,pipeline
+Adani,Share Premium,Standalone,22.2 SECURITIES PREMIUM,251,pipeline
+Adani,Share Premium,Consolidated,22.2 Securities Premium,315,pipeline
+Adani,Hedging Reserve,Standalone,,,Not disclosed
+Adani,Hedging Reserve,Consolidated,22.8 Cash Flow Hedge Reserve,316,pipeline
+Adani,Non Current Investments_Unquoted Debentures/Bonds,Standalone,Compulsory Convertible Debentures of Ahmedabad International Airport Ltd.,244,pipeline
+Adani,Non Current Investments_Unquoted Debentures/Bonds,Consolidated,III. Unquoted Investment in Debentures of Jointly Controlled Entity,308,pipeline
+Adani,Non Current Investments_Joint Venture/Partnerships,Standalone,,,Not disclosed
+Adani,Non Current Investments_Joint Venture/Partnerships,Consolidated,Consolidated BS - Investments accounted using Equity Method,283,page-verified
+Adani,Gross Carrying Value_Furnitures & Fixtures,Standalone,Furniture & Fixture,240,pipeline
+Adani,Gross Carrying Value_Furnitures & Fixtures,Consolidated,Note 3 PP&E - Furniture & Fixture - Closing Gross Carrying Value,304,page-verified
+Adani,Gross Carrying Value_Office Equipments,Standalone,Office Equipment,240,pipeline
+Adani,Gross Carrying Value_Office Equipments,Consolidated,Note 3 PP&E - Office Equipment - Closing Gross Carrying Value,304,page-verified
+Adani,Accumulated Depreciation_Furnitures & Fixtures,Standalone,Furniture & Fixture,240,pipeline
+Adani,Accumulated Depreciation_Furnitures & Fixtures,Consolidated,Note 3 PP&E - Furniture & Fixture - Closing Accumulated Depreciation,304,page-verified
+Adani,Accumulated Depreciation_Office Equipments,Standalone,Office Equipment,240,pipeline
+Adani,Accumulated Depreciation_Office Equipments,Consolidated,Note 3 PP&E - Office Equipment - Closing Accumulated Depreciation,304,page-verified
+Adani,Other CWIP,Standalone,,,Not disclosed
+Adani,Other CWIP,Consolidated,,,Not disclosed
+Adani,Gross Investment Property,Standalone,Closing Balance,241,pipeline
+Adani,Gross Investment Property,Consolidated,Balance as at the end of the year,307,pipeline
+Adani,Loss On Disposal Of Fixed Asset,Standalone,,,Not disclosed
+Adani,Loss On Disposal Of Fixed Asset,Consolidated,"Loss on Sale of Property, Plant and Equipments (net)",327,pipeline
+Adani,Fixed Assets Written Off,Standalone,,,Not disclosed
+Adani,Fixed Assets Written Off,Consolidated,,,Not disclosed
+Adani,Sundry Creditors,Standalone,Trade payables,256,pipeline
+Adani,Sundry Creditors,Consolidated,Trade payables,325,pipeline
+Adani,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Standalone,,,Not disclosed
+Adani,Noncurrent Borrowings_Unsecured Loans_Loans and advances from others,Consolidated,,,Not disclosed
+Adani,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Standalone,,,Not disclosed
+Adani,"Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",Consolidated,,,Not disclosed
+Adani,Current Borrowings_Unsecured Loans_Subordinated debts,Standalone,,,Not disclosed
+Adani,Current Borrowings_Unsecured Loans_Subordinated debts,Consolidated,,,Not disclosed
+Adani,Other Noncurrent Liabilities_Other Long Term Liabilities,Standalone,,,Not disclosed
+Adani,Other Noncurrent Liabilities_Other Long Term Liabilities,Consolidated,Consolidated BS - Other non-current liabilities (Note 27),283,page-verified
+Adani,Other Noncurrent Liabilities_Total Long Term Liabilities,Standalone,,,Not disclosed
+Adani,Other Noncurrent Liabilities_Total Long Term Liabilities,Consolidated,Other Non-Current Liabilities,283,pipeline
+Adani,Other Current Liabilities_Revenue received in advance,Standalone,Contract Liabilities,254,pipeline
+Adani,Other Current Liabilities_Revenue received in advance,Consolidated,Contract Liabilities,326,pipeline
+Adani,Other Current Liabilities_Accrued Salary Payable,Standalone,,,Not disclosed
+Adani,Other Current Liabilities_Accrued Salary Payable,Consolidated,,,Not disclosed
+Adani,Other Current Liabilities_Employees Stock Options Outstanding,Standalone,,,Not disclosed
+Adani,Other Current Liabilities_Employees Stock Options Outstanding,Consolidated,,,Not disclosed
+Adani,Short Term Loans And Advances_Other Deposit Assets,Standalone,Security deposits,249,pipeline
+Adani,Short Term Loans And Advances_Other Deposit Assets,Consolidated,Note 18 - Security and Other deposits,313,page-verified
+Adani,Short Term Loans And Advances_Advances to related parties,Standalone,Loans to related parties (Refer note 50),249,pipeline
+Adani,Short Term Loans And Advances_Advances to related parties,Consolidated,,,Not disclosed
+Adani,Short Term Loans And Advances_Allowance for bad and doubtful loans,Standalone,Allowance for doubtful advances,249,pipeline
+Adani,Short Term Loans And Advances_Allowance for bad and doubtful loans,Consolidated,Allowance for doubtful advances,314,pipeline
+Adani,Other Current Assets_Advances to related parties,Standalone,,,Not disclosed
+Adani,Other Current Assets_Advances to related parties,Consolidated,,,Not disclosed
+Adani,Other Current Assets_Advances given suppliers,Standalone,Note 20 - Advances to suppliers (Considered good),249,page-verified
+Adani,Other Current Assets_Advances given suppliers,Consolidated,,,Not disclosed
+Adani,Other Current Assets_Export incentives receivables,Standalone,,,Not disclosed
+Adani,Other Current Assets_Export incentives receivables,Consolidated,,,Not disclosed
+Adani,Other Current Assets_Less : Doubtful Advances,Standalone,Note 20 - Allowance for doubtful advances,249,page-verified
+Adani,Other Current Assets_Less : Doubtful Advances,Consolidated,Allowance for doubtful advances,346,page-verified
+Adani,Authorised Equity Share Capital,Standalone,"4,85,92,00,000 (March 31, 2025 : 4,85,92,00,000) Equity Shares of ` 1/- each",250,pipeline
+Adani,Authorised Equity Share Capital,Consolidated,"4,85,92,00,000 (March 31, 2025: 4,85,92,00,000) Equity Shares of ` 1/- each",314,pipeline
+Adani,Equity Issued,Standalone,ISSUED CAPITAL,250,pipeline
+Adani,Equity Issued,Consolidated,ISSUED CAPITAL,314,pipeline
+Adani,Equity Subscribed fully paid,Standalone,Note 20(e) - Issued equity share capital (Rs crore),315,page-verified
+Adani,Equity Subscribed fully paid,Consolidated,Note 20(e) - Issued equity share capital,315,page-verified
+Adani,Equity Forfeited,Standalone,,,Not disclosed
+Adani,Equity Forfeited,Consolidated,,,Not disclosed
+Adani,Equity Paid Up,Standalone,Equity Share Capital,250,pipeline
+Adani,Equity Paid Up,Consolidated,SUBSCRIBED AND PAID UP CAPITAL,314,pipeline
+Adani,Face Value of Share (in Rs),Standalone,Equity shares of Rs 1 each,315,page-verified
+Adani,Face Value of Share (in Rs),Consolidated,Equity shares of Rs 1 each,315,page-verified
+Adani,No Of Authorised Equity Shares,Standalone,"4,85,92,00,000 (March 31, 2025 : 4,85,92,00,000) Equity Shares of ` 1/- each",250,pipeline
+Adani,No Of Authorised Equity Shares,Consolidated,"4,85,92,00,000 (March 31, 2025: 4,85,92,00,000) Equity Shares of ` 1/- each",314,pipeline
+Adani,No Of Issued Equity Shares,Standalone,ISSUED CAPITAL,250,pipeline
+Adani,No Of Issued Equity Shares,Consolidated,ISSUED CAPITAL,314,pipeline
+Adani,No Of Subscribed Equity Shares Fully Paid,Standalone,Note 20 - Subscribed and Paid-up (no. of shares),315,page-verified
+Adani,No Of Subscribed Equity Shares Fully Paid,Consolidated,Note 20 - Subscribed and Paid-up,315,page-verified
+Adani,No Of Paid up Equity Shares,Standalone,"1,29,26,82,416 (March 31, 2025: 1,15,41,80,729) Equity Shares of ` 1/- each fully paid up",250,pipeline
+Adani,No Of Paid up Equity Shares,Consolidated,"1,29,26,82,416 (March 31, 2025: 1,15,41,80,729) Equity Shares of ` 1/- each fully paid up",314,pipeline
+Adani,Number of shares outstanding at beginning of period,Standalone,At the beginning of the year,250,pipeline
+Adani,Number of shares outstanding at beginning of period,Consolidated,At the beginning of the year,314,pipeline
+Adani,No Of Shares Increase Towards Stock Split,Standalone,,,Not disclosed
+Adani,No Of Shares Increase Towards Stock Split,Consolidated,,,Not disclosed
+Adani,No Of Shares bought back or treasury shares,Standalone,,,Not disclosed
+Adani,No Of Shares bought back or treasury shares,Consolidated,,,Not disclosed
+Adani,Equity attributable to the equity holders of the parent,Consolidated,Equity attributable to owners of the Parent Company,283,pipeline
+Adani,Share Depreciation Joint ventures,Consolidated,,,Not disclosed
+Adani,Total Power & Fuel Expenses,Standalone,,,Not disclosed
+Adani,Total Power & Fuel Expenses,Consolidated,Power & Fuel Expenses,327,pipeline
+Adani,Consumption Of Stores And Spare Parts,Standalone,,,Not disclosed
+Adani,Consumption Of Stores And Spare Parts,Consolidated,,,Not disclosed
+Adani,Brokerage/Commission To Agents,Standalone,,,Not disclosed
+Adani,Brokerage/Commission To Agents,Consolidated,,,Not disclosed
+Adani,Carriage Outwards,Standalone,,,Not disclosed
+Adani,Carriage Outwards,Consolidated,,,Not disclosed
+Adani,Legal & Professional Charges,Standalone,,,Not disclosed
+Adani,Legal & Professional Charges,Consolidated,Legal and Professional Fees,327,pipeline
+Adani,Payments To Auditor,Standalone,Payment to Auditors,255,pipeline
+Adani,Payments To Auditor,Consolidated,Payment to Auditors,327,pipeline
+Adani,Payment for reimbursement of expenses,Standalone,,,Not disclosed
+Adani,Payment for reimbursement of expenses,Consolidated,,,Not disclosed
+Adani,Donations Subscriptions,Standalone,,,Not disclosed
+Adani,Donations Subscriptions,Consolidated,,,Not disclosed
+Adani,CSR Expenditure,Standalone,Corporate Social Responsibility Expenses (Refer note 55),255,pipeline
+Adani,CSR Expenditure,Consolidated,Corporate Social Responsibility Expenses,327,pipeline
+Adani,Impairment loss on financial assets loans and advances,Standalone,,,Not disclosed
+Adani,Impairment loss on financial assets loans and advances,Consolidated,,,Not disclosed
+Adani,Provision Bad Doubtful Loans Advances,Standalone,Allowances for Credit Loss / Doubtful advances,255,pipeline
+Adani,Provision Bad Doubtful Loans Advances,Consolidated,Note 41 - Allowances for Credit Loss / Doubtful advances,327,page-verified
+Adani,Bad Debts Advances Written Off,Standalone,"Bad debts, Loans and Advances Written off",255,pipeline
+Adani,Bad Debts Advances Written Off,Consolidated,"Note 41 - Bad debts, Exploration costs, Loans and Advances Written off",327,page-verified
+Adani,Interest Expense Borrowings,Standalone,,,Not disclosed
+Adani,Interest Expense Borrowings,Consolidated,,,Not disclosed
+Adani,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Standalone,Changes in Inventories of Stock-in-Trade,230,pipeline
+Adani,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Consolidated,"Changes in Inventories of Finished Goods, Work In Progress and Stock-in-Trade",283,pipeline
+Adani,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Standalone,"Property, Plant & Equipment, Right-of-Use Assets and Intangible Assets",246,pipeline
+Adani,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Consolidated,"Property, Plant & Equipment, Right-of-Use Assets and Intangible Assets",310,pipeline
+Adani,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Standalone,Employee Benefits Liability,246,pipeline
+Adani,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Consolidated,Employee Benefits Liability,310,pipeline
