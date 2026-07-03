@@ -1,0 +1,106 @@
+# Sector / format KPI catalog (the "bucket similar companies" idea).
+#
+# One bucket per regulatory financial-statement format. Each KPI is just a
+# natural-language question fed to the same citation-grounded QA layer, so adding
+# a KPI is a data change here — never code. `also` lists synonym terms that help
+# the lexical retriever find the right page.
+
+manufacturer:          # Schedule III Division II — most non-financial companies
+  label: Manufacturer / Services (Schedule III Div II)
+  kpis:
+    - key: revenue
+      q: What is the total revenue from operations for the year?
+      also: [turnover, total income]
+    - key: ebitda
+      q: What is EBITDA or operating profit before depreciation, interest and tax?
+      also: [operating profit, earnings before interest tax depreciation]
+    - key: pat
+      q: What is the profit for the year (profit after tax)?
+      also: [net profit, profit after tax]
+    - key: eps
+      q: What is the basic earnings per share?
+      also: [EPS, earnings per share]
+    - key: dividend_per_share
+      q: What is the dividend per share declared for the year?
+      also: [dividend, final dividend, interim dividend]
+    - key: net_worth
+      q: What is the total equity / net worth?
+      also: [shareholders funds, total equity]
+    - key: total_borrowings
+      q: What are the total borrowings (current plus non-current)?
+      also: [debt, borrowings, loans]
+
+bank:                  # Banking Regulation Act, Form A — Schedules 1-18
+  label: Bank (Banking Regulation Act Form A)
+  kpis:
+    - key: net_interest_income
+      q: What is the net interest income (interest earned minus interest expended)?
+      also: [NII, interest earned, interest expended]
+    - key: casa_ratio
+      q: What is the CASA ratio (current and savings account deposits to total deposits)?
+      also: [CASA, current account, savings account]
+    - key: gross_npa
+      q: What is the gross NPA ratio (gross non-performing assets percentage)?
+      also: [GNPA, gross non-performing assets]
+    - key: net_npa
+      q: What is the net NPA ratio?
+      also: [NNPA, net non-performing assets]
+    - key: capital_adequacy
+      q: What is the capital adequacy ratio (CRAR / CAR)?
+      also: [CRAR, CAR, capital to risk weighted assets]
+    - key: advances
+      q: What are the total advances?
+      also: [loans and advances, advances]
+    - key: deposits
+      q: What are the total deposits?
+      also: [deposits]
+    - key: net_profit
+      q: What is the net profit for the year?
+      also: [profit after tax, net profit]
+
+nbfc:                 # Schedule III Division III
+  label: NBFC / Financial services (Schedule III Div III)
+  kpis:
+    - key: aum
+      q: What are the assets under management or total loan assets?
+      also: [AUM, loan book, assets under management]
+    - key: net_interest_income
+      q: What is the net interest income?
+      also: [NII, interest income, finance cost]
+    - key: gross_npa
+      q: What is the gross stage 3 / gross NPA ratio?
+      also: [GNPA, stage 3, gross non-performing]
+    - key: net_npa
+      q: What is the net stage 3 / net NPA ratio?
+      also: [NNPA, net stage 3]
+    - key: capital_adequacy
+      q: What is the capital adequacy ratio (CRAR)?
+      also: [CRAR, capital adequacy]
+    - key: pat
+      q: What is the profit after tax for the year?
+      also: [net profit, profit for the year]
+    - key: eps
+      q: What is the basic earnings per share?
+      also: [EPS]
+
+insurer:             # IRDAI format — Revenue Account (Form A-RA) + P&L
+  label: Insurer (IRDAI)
+  kpis:
+    - key: gross_premium
+      q: What is the gross written premium / total premium for the year?
+      also: [gross premium, premium earned, GWP]
+    - key: net_premium
+      q: What is the net premium?
+      also: [net premium earned]
+    - key: solvency_ratio
+      q: What is the solvency ratio?
+      also: [solvency margin, required solvency]
+    - key: pat
+      q: What is the profit after tax for the year?
+      also: [profit after tax, net profit, surplus]
+    - key: aum
+      q: What are the total investments / assets under management?
+      also: [investments, AUM, policyholders investments]
+    - key: vnb
+      q: What is the value of new business (VNB) or VNB margin?
+      also: [value of new business, VNB margin, APE]

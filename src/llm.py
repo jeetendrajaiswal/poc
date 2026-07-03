@@ -8,9 +8,10 @@ File upload/delete helpers enforce the deletion guarantee (delete in `finally`).
 """
 from __future__ import annotations
 
+import contextlib
 import io
 import json
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from openai import OpenAI
 
@@ -36,13 +37,31 @@ def extract_json(
     model: Optional[str] = None,
     max_output_tokens: int = 1500,
     reasoning: str = "low",
+    images_b64: Optional[list[str]] = None,
+    file_ids: Optional[list[str]] = None,
 ) -> dict[str, Any]:
-    """One structured call. Returns the parsed JSON object. store=False always."""
+    """One structured call. Returns the parsed JSON object. store=False always.
+
+    Pass `images_b64` (base64-encoded PNGs) to send page images alongside the text
+    — used by the vision fallback for scanned/image-only PDFs. Pass `file_ids`
+    (uploaded PDF ids) to let the model read the file natively — used by the
+    small-scanned-doc path; upload/delete via `ephemeral_file`.
+    """
     mdl = model or config.model_default
+    if images_b64 or file_ids:
+        content: list[dict[str, Any]] = [{"type": "input_text", "text": user_input}]
+        for fid in (file_ids or []):
+            content.append({"type": "input_file", "file_id": fid})
+        for b64 in (images_b64 or []):
+            content.append({"type": "input_image",
+                            "image_url": f"data:image/png;base64,{b64}"})
+        api_input: Any = [{"role": "user", "content": content}]
+    else:
+        api_input = user_input
     resp = client().responses.create(
         model=mdl,
         instructions=instructions,
-        input=user_input,
+        input=api_input,
         text={
             "format": {
                 "type": "json_schema",
@@ -59,7 +78,11 @@ def extract_json(
     if not txt.strip():
         # surface incomplete/empty so the caller can mark it, not crash
         return {"_empty": True, "_status": getattr(resp, "status", "unknown")}
-    return json.loads(txt)
+    try:
+        return json.loads(txt)
+    except json.JSONDecodeError:
+        # truncated/incomplete output (e.g. hit max_output_tokens) -> surface, don't crash
+        return {"_empty": True, "_status": getattr(resp, "status", "incomplete")}
 
 
 def upload_file(content: bytes, name: str) -> str:
@@ -75,3 +98,33 @@ def delete_file(file_id: str) -> bool:
         return True
     except Exception:
         return False
+
+
+@contextlib.contextmanager
+def ephemeral_file(content: bytes, name: str) -> Iterator[str]:
+    """Upload a file, yield ITS id, and delete ONLY that file in finally — even on error.
+
+    Privacy: we only ever delete the resource WE created here (tracked by the returned id);
+    other files on the account are never touched. Use:  with ephemeral_file(b, "x.pdf") as fid: ...
+    """
+    fid = upload_file(content, name)
+    try:
+        yield fid
+    finally:
+        delete_file(fid)
+
+
+@contextlib.contextmanager
+def ephemeral_vector_store(name: str, file_ids: Optional[list[str]] = None) -> Iterator[str]:
+    """Create a vector store, yield ITS id, and delete ONLY that store in finally — even on error.
+
+    Deletes solely the store created here (by its returned id); nothing else on the account.
+    """
+    vs = client().vector_stores.create(name=name, file_ids=file_ids or [])
+    try:
+        yield vs.id
+    finally:
+        try:
+            client().vector_stores.delete(vs.id)
+        except Exception:
+            pass

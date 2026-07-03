@@ -21,6 +21,15 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_str(name: str, default: str) -> str:
+    """Read a string env var, tolerating an inline '# comment' and stray whitespace."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    raw = raw.split("#", 1)[0].strip()   # drop inline comment, trim
+    return raw or default
+
+
 @dataclass(frozen=True)
 class Config:
     # --- Auth ---
@@ -28,9 +37,9 @@ class Config:
 
     # --- Models ---
     # Default: cost-effective model for per-section extraction.
-    model_default: str = os.getenv("OPENAI_MODEL_DEFAULT", "gpt-5-mini-2025-08-07")
+    model_default: str = _env_str("OPENAI_MODEL_DEFAULT", "gpt-5-mini-2025-08-07")
     # Large: reserved for the harder synthesis / self-correction passes.
-    model_large: str = os.getenv("OPENAI_MODEL_LARGE", "gpt-5.2-2025-12-11")
+    model_large: str = _env_str("OPENAI_MODEL_LARGE", "gpt-5.2-2025-12-11")
 
     # --- Privacy (matches reference: privacy by default) ---
     # When False, "store" is sent False on every /v1/responses call, so nothing
@@ -42,7 +51,7 @@ class Config:
     max_correction_rounds: int = int(os.getenv("MAX_CORRECTION_ROUNDS", "2"))
     # Reasoning effort for gpt-5.4: none | low | medium | high | xhigh.
     # A/B showed none == low (80%) for value extraction — default to none (faster/cheaper).
-    reasoning_effort: str = os.getenv("REASONING_EFFORT", "none")
+    reasoning_effort: str = _env_str("REASONING_EFFORT", "none")
     # Self-consistency: read each value N times, take the agreeing answer. Fixes
     # unstable perception errors (misread digits). 1 = off (default): text-first reads
     # exact digits from layout text, so reads are stable — the run-to-run flips were a

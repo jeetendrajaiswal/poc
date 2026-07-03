@@ -30,7 +30,12 @@ items:
 - key: Non Current Investments_Unquoted Debentures/Bonds
   scope: both
   value_type: monetary
-  concept: Carrying value of unquoted (not listed) debentures and bonds held as non-current investments.
+  concept: Total carrying value of ALL UNQUOTED (not listed) debenture and bond investments held as
+    non-current investments. INSTRUMENT-FIRST - sum EVERY line labelled 'In Debentures or Bonds -
+    Unquoted', across ALL measurement bases (Cost / Amortised Cost / FVTOCI / FVTPL) AND ALL issuer
+    relationships (other companies, associates, AND joint ventures). EXCLUDE quoted debentures,
+    non-debenture instruments (equity/preference/units), AND debentures of SUBSIDIARIES. Debentures
+    of joint ventures count HERE, not under the Joint Venture datapoint.
   aliases:
   - Investment in debentures
   - Investment in bonds
@@ -41,7 +46,12 @@ items:
 - key: Non Current Investments_Joint Venture/Partnerships
   scope: both
   value_type: monetary
-  concept: Carrying value of investments in joint ventures / partnership firms held as non-current investments.
+  concept: Carrying value of EQUITY and PREFERENCE investments in JOINT-VENTURE companies and
+    partnership/LLP firms, held as non-current investments. INSTRUMENT-FIRST - sum the JV/partnership
+    EQUITY shares (BOTH Quoted AND Unquoted sub-blocks) PLUS JV/partnership PREFERENCE shares.
+    EXCLUDE JV DEBENTURES (those count under Unquoted Debentures/Bonds) and EXCLUDE subsidiaries and
+    associates. Do NOT use the report's printed 'Total of Investments in Joint Ventures' line if it
+    bundles debentures - take equity + preference only.
   aliases:
   - Investment in joint ventures
   - Investments in partnership firms
@@ -93,13 +103,15 @@ items:
 - key: Other CWIP
   scope: both
   value_type: monetary
-  concept: Capital work-in-progress other than buildings/plant — i.e. other capital WIP. 2021 Schedule
-    III amendment.
+  concept: A RESIDUAL sub-category of Capital Work-in-Progress — CWIP OTHER THAN buildings/plant
+    (2021 Schedule III amendment). Return a value ONLY if the note explicitly splits CWIP by asset
+    type and shows an 'Other' bucket. If CWIP is shown as a single line or aged only by time
+    (e.g. 'Projects in Progress' / 'temporarily suspended'), this residual is NOT disclosed —
+    present=false. NEVER return the TOTAL Capital Work-in-Progress figure here.
   aliases:
-  - Capital work-in-progress
-  - CWIP
   - Other capital work in progress
   - Capital work in progress - others
+  - CWIP - other than buildings and plant
   location_hint: PP&E / CWIP note
 - key: Gross Investment Property
   scope: both
@@ -248,14 +260,16 @@ items:
 - key: Short Term Loans And Advances_Advances to related parties
   scope: both
   value_type: monetary
-  concept: Advances given to related parties classified as short-term.
+  concept: Advances to related parties classified as CURRENT / short-term (under Current Assets —
+    Short-term Loans & Advances or Current Other Financial Assets). EXCLUDE any NON-CURRENT loans or
+    advances to related parties (e.g. a 'Loans – Non-Current / Loans to Related parties' line) — those
+    are not this item. If the only related-party loans/advances are non-current, present=false.
   aliases:
-  - Advances to related parties
-  - Loans to related parties
-  - Dues from related parties (advances)
-  column_hint: current / short-term
-  location_hint: Loans & Advances note (related parties); Other Financial Assets note (dues from related
-    parties)
+  - Advances to related parties (current)
+  - Short-term advances to related parties
+  - Current dues from related parties (advances)
+  column_hint: CURRENT / short-term ONLY — never the non-current Loans note
+  location_hint: Current Assets — Short-term Loans & Advances / Current Other Financial Assets
 - key: Short Term Loans And Advances_Allowance for bad and doubtful loans
   scope: both
   value_type: monetary
@@ -272,12 +286,14 @@ items:
 - key: Other Current Assets_Advances to related parties
   scope: both
   value_type: monetary
-  concept: Advances to related parties shown under Other Current Assets.
+  concept: Advances to related parties shown specifically under OTHER CURRENT ASSETS (a current-asset
+    line). EXCLUDE non-current loans/advances to related parties and EXCLUDE related-party DEPOSITS or
+    RECEIVABLES (different items). If no such current 'advances to related parties' line exists,
+    present=false. Never return a non-current 'Loans to Related parties' figure.
   aliases:
-  - Advances to related parties
-  - Amounts due from related parties
-  - Related party advances
-  location_hint: Other Current Assets note; Other Financial Assets note
+  - Advances to related parties (Other Current Assets)
+  - Current related-party advances
+  location_hint: Other Current Assets note (current)
 - key: Other Current Assets_Advances given suppliers
   scope: both
   value_type: monetary
