@@ -282,7 +282,8 @@ def _():
         assert any(gtd in re.sub(r"[^\d]", "", sn) for _, sn in lines), (comp, scope, frag)
 
 
-@test("scope-aware statements: std and cons locate different pages for bs AND pl", fast=False)
+@test("scope-aware statements: each scope's candidates include its own tagged page; they differ",
+      fast=False)
 def _():
     from src.engine.index import PageIndex
     from src.engine import statements as st
@@ -295,8 +296,12 @@ def _():
             for scope in ("standalone", "consolidated"):
                 allowed = frozenset(i + 1 for i, t in enumerate(tags) if t in (scope, "unknown"))
                 c = st.candidate_pages(path, kind, allowed)
-                assert c, (comp, kind, scope)
-                tops[scope] = c[0]
+                # a page tagged EXACTLY this scope must be reachable — 'unknown' pages can
+                # host false fingerprint hits (hindalco p179 is a dividend-policy page that
+                # matches the bs fingerprint; the runtime tie-out rejects it and moves on)
+                tagged = [p for p in c if tags[p - 1] == scope]
+                assert tagged, (comp, kind, scope, c)
+                tops[scope] = tagged[0]
             assert tops["standalone"] != tops["consolidated"], (comp, kind, tops)
 
 

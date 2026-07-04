@@ -18,8 +18,10 @@ _KPI_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "config", "kpis.
 
 
 def _norm(s: str) -> str:
-    # strip whitespace AND hyphens so 'Non-current Assets' -> 'noncurrentassets'
-    return re.sub(r"[\s\-]+", "", s.lower())
+    # strip whitespace AND hyphens so 'Non-current Assets' -> 'noncurrentassets';
+    # '&' -> 'and' so a bank's 'CAPITAL & LIABILITIES' still hits the Form-A fingerprint
+    # (PNB/Bank of Baroda print the ampersand form and were misdetected as manufacturer)
+    return re.sub(r"[\s\-]+", "", s.lower().replace("&", "and"))
 
 
 def detect_format(bs_page_texts: list[str]) -> str:

@@ -286,15 +286,54 @@ def page_scopes(index: PageIndex) -> list[str]:
     tags: list[str] = ["unknown"] * n
     cur = "unknown"
     for i in range(n):
-        c = _collapse(index.page_text[i])
-        # strong anchors: statement titles / section dividers / auditor reports
-        is_con = any(t in c for t in (
+        # Anchors are read from the page's TOP REGION only (first ~6 non-empty lines): that is
+        # where statement titles and running headers live. Matching the whole page let PROSE
+        # mentions anchor ('…report on the consolidated financial statements…' in an auditor
+        # report / Board's report) — PNB's entire standalone statements block inherited
+        # 'consolidated' from a p16 mention, and ONGC's tags flapped 12 times in 15 pages of
+        # a section that discusses both. This mis-tagging was the cause of ALL 14 share-capital
+        # locate gaps on the nifty100 held-out sweep.
+        top_lines = [l for l in index.page_text[i].splitlines() if l.strip()][:6]
+        top = _collapse(" ".join(top_lines))
+        # anchors are TIERED: a statement TITLE ('Standalone Balance Sheet as at …') outranks
+        # a section-nav phrase ('… Consolidated Financial Statements' in a header ribbon).
+        # ONGC's standalone BS page carries BOTH — the title plus a nav mention of the other
+        # section — and untiered matching cancelled them out, leaving the stale tag.
+        con_title = any(t in top for t in (
             "consolidatedbalancesheet", "consolidatedstatementofprofit",
-            "consolidatedfinancialstatement", "consolidatedstatementofcashflow",
-            "tothemembers" * 0 + "consolidatedfinancialresults"))
-        is_std = any(t in c for t in (
+            "consolidatedstatementofcashflow"))
+        std_title = any(t in top for t in (
             "standalonebalancesheet", "standalonestatementofprofit",
-            "standalonefinancialstatement", "standalonestatementofcashflow"))
+            "standalonestatementofcashflow"))
+
+        # tier-2 SECTION phrases must occupy (nearly) their own line: a genuine divider or
+        # running header ('Notes to the Consolidated Financial Statements') is a line of its
+        # own, while a nav RIBBON embeds the phrase among the other sections' names
+        # ('Overview  Annexures to the Board's Report  Consolidated Financial Statements' —
+        # ONGC prints that on EVERY standalone page and it flipped the whole block).
+        def _own_line(*phrases) -> bool:
+            for ln in top_lines:
+                cl = _collapse(ln)
+                for ph in phrases:
+                    if ph in cl and len(cl) - len(ph) <= 25:
+                        return True
+            return False
+
+        con_sec = _own_line("consolidatedfinancialstatement", "consolidatedfinancialresults")
+        std_sec = _own_line("standalonefinancialstatement")
+        if con_title or std_title:
+            is_con, is_std = con_title, std_title
+        else:
+            is_con, is_std = con_sec, std_sec
+        # Many ARs title the standalone statements PLAINLY ('Balance Sheet as at …' — no
+        # 'standalone' prefix), so that transition was invisible. Convention: consolidated
+        # statements always carry the word 'consolidated' in their title/header — a bare
+        # statement TITLE with no 'consolidated' in the top region anchors STANDALONE.
+        # The title match tolerates a short gap: on a TWO-UP page the BS and P&L titles
+        # interleave in -layout ('balancesheet statementofprofitandloss asat…' — adani p230).
+        if not is_std and not is_con and "consolidated" not in top:
+            if re.search(r"balancesheet.{0,40}asat|statementofprofitandloss.{0,40}forthe", top):
+                is_std = True
         if is_con and not is_std:
             cur = "consolidated"
         elif is_std and not is_con:
@@ -636,15 +675,26 @@ def _signature_pages(index: PageIndex, section: str, allowed: set[int]) -> list[
     if len(terms) < 4:
         return []
     core = _SIGNATURE_CORE.get(section, [])
-    scored = []
-    for i, t in enumerate(index.page_text):
-        if allowed and (i + 1) not in allowed:
-            continue
-        tl = t.lower()
-        hits = sum(1 for w in terms if w in tl)
-        if hits >= 4:
-            ch = sum(1 for grp in core if any(w in tl for w in grp))
-            scored.append((ch, hits, i + 1))
+
+    def _scan(pages_ok) -> list[tuple]:
+        scored = []
+        for i, t in enumerate(index.page_text):
+            if pages_ok and (i + 1) not in pages_ok:
+                continue
+            tl = t.lower()
+            hits = sum(1 for w in terms if w in tl)
+            if hits >= 4:
+                ch = sum(1 for grp in core if any(w in tl for w in grp))
+                scored.append((ch, hits, i + 1))
+        return scored
+
+    scored = _scan(allowed)
+    if not scored and allowed:
+        # the scope block has NO page carrying the note's signature — typical of a
+        # STANDALONE-ONLY company (Nestle/ABB/SBI Life publish no consolidated FS) queried
+        # for the consolidated scope. The document's only note IS the answer for either
+        # scope, so degrade to an unrestricted scan rather than going blind.
+        scored = _scan(None)
     scored.sort(key=lambda x: (-x[0], -x[1], x[2]))
     return [p for *_, p in scored[:2]]
 
@@ -1944,7 +1994,14 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
         by_section.setdefault(c.section, []).append(c)
 
     tags = page_scopes(index)
-    allowed = {i + 1 for i, t in enumerate(tags) if t in (scope, "unknown")}
+    if scope not in tags:
+        # the document has NO block for this scope at all — a standalone-only company
+        # (Nestle/ABB/SBI Life publish no consolidated FS) queried for 'consolidated'.
+        # Its single set of statements IS the answer for either scope: use the whole doc
+        # rather than the leftover 'unknown' pages (front-matter prose).
+        allowed = set(range(1, index.n_pages + 1))
+    else:
+        allowed = {i + 1 for i, t in enumerate(tags) if t in (scope, "unknown")}
     bs_lines = _statement_lines(index, scope, "bs", allowed)
     pl_lines = _statement_lines(index, scope, "pl", allowed)
 

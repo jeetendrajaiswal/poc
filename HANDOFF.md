@@ -504,9 +504,43 @@ Validation ($0): **16 correct / 4 silent / 0 wrong** on all 20 corpus GT cells (
 are correct behaviour: 2 genuinely Not disclosed, 2 multi-orientation ambiguity). Locked into
 the regression suite (now 14 tests, all passing).
 
-**Queued next:** (a) sector SECTIONS vocabularies for banks/insurance/NBFC (the 14 held-out
-format gaps). (b) selective consensus or determinization for `_statement_lines`. (c) a small
-held-out GT (10-15 nifty100 companies) so accuracy is measured on unseen reports.
+### 5l. 2026-07-04 — sector/scope-tagging robustness ($0): nifty100 locate 176 → 189/190
+
+The 14 held-out "format gaps" were NOT vocabulary gaps — forensics showed ALL were
+`page_scopes` MIS-TAGGING (every PDF had a proper core-table page, tagged the wrong scope).
+Root causes and fixes (all in `page_scopes` + one in `sector.py`; each iteration re-validated
+against the FULL dev suite — one intermediate attempt broke adani std and one broke a suite
+assertion, both caught by the suite and fixed):
+1. **Top-region anchoring** — anchors now read only the first 6 non-empty lines (titles/
+   running headers); whole-page matching let PROSE mentions flip blocks (PNB's statements
+   inherited 'consolidated' from a p16 auditor-report mention; ONGC flapped 12× in 15 pages).
+2. **Bare-title standalone anchor** — standalone statements titled plainly ('Balance Sheet
+   as at …', no prefix) now anchor; regex tolerates the two-up title interleave
+   ('balancesheet‹statementofprofitandloss›asat' — adani prints BS|P&L side-by-side).
+3. **Anchor tiering** — statement TITLES outrank section-nav phrases (ONGC's std BS page
+   carries both the real title and a ribbon mention of the cons section).
+4. **Own-line rule for section phrases** — a genuine running header ('Notes … Consolidated
+   Financial Statements') is its own line (≤25 collapsed chars beyond the phrase); ONGC's
+   nav ribbon embeds the phrase among other section names on EVERY page and is now ignored.
+5. **Whole-doc fallback for absent scopes** (`extract_datapoints`) — Nestle/ABB/SBI Life/
+   HDFC-AMC/IRFC publish NO consolidated FS; when no page is tagged for the requested scope,
+   the whole document is the allowed set (the sole statements serve either scope). Plus an
+   unrestricted retry inside `_signature_pages` when the scope block has zero signature hits.
+6. **`sector.detect_format`**: '&'→'and' normalization — 'CAPITAL & LIABILITIES' banks
+   (Bank of Baroda) were misdetected as manufacturer.
+7. Suite assertion strengthened: the statements-separation test now requires each scope's
+   candidates to include a page tagged EXACTLY that scope (the old assertion passed on a
+   coincidence — hindalco's 'cons BS @179' was a dividend-policy page false-matching the
+   fingerprint; the runtime tie-out had been silently absorbing it).
+**Result: nifty100 share_capital locate 176/190 → 189/190 (99.5%)**, 10 standalone-only
+combos handled via whole-doc fallback, dev suite 14/14 green. Sole residual: INFY.pdf
+standalone (older-vintage AR splitting the capital disclosure with weak per-page wording).
+NOTE: better scope tags benefit EVERY section (allowed-sets feed all locates), so the next
+paid run may shift other sections too — judge per-section.
+
+**Queued next:** (a) selective consensus or determinization for `_statement_lines`. (b) a
+small held-out GT (10-15 nifty100 companies) so accuracy is measured on unseen reports.
+(c) INFY-style split capital disclosures (1/190).
 
 ## 6. Suggested next steps (in order)
 
