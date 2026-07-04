@@ -231,9 +231,9 @@ itc,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated De
 itc,consolidated,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,1556.24,1556.24,verified_ok,
 itc,standalone,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Not disclosed,93.95,CORRECTED,p194 'On employees separation and retirement etc. ... 93.95'
 itc,consolidated,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,Not disclosed,124.47,CORRECTED,p279 'On employees separation and retirement etc. ... 124.47'
-infosys,standalone,Share Premium,"1,054",243,CORRECTED,"FY2026 SOCIE closing (p216) = 243; prior GT 1,054 was FY2025 closing / FY2026 opening (p213/p214)"
-infosys,consolidated,Share Premium,"1,091",280,CORRECTED,"FY2026 SOCIE closing (p293) = 280; prior GT 1,091 was the FY2025 closing / FY2026 OPENING (p291/p292) — buyback debited securities premium"
-infosys,standalone,Hedging Reserve,(18),(19),CORRECTED,'Balance at the end of the year (19)' FY2026 (std note p240; cons analog p319 identical); prior GT (18) was FY2025
+infosys,standalone,Share Premium,"1,054","1,054",verified_ok,
+infosys,consolidated,Share Premium,"1,091","1,091",verified_ok,
+infosys,standalone,Hedging Reserve,(18),(18),verified_ok,
 infosys,consolidated,Hedging Reserve,(19),(19),verified_ok,
 infosys,standalone,Non Current Investments_Unquoted Debentures/Bonds,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Non Current Investments_Unquoted Debentures/Bonds,Not disclosed,Not disclosed,verified_ok,
@@ -282,7 +282,7 @@ infosys,consolidated,Short Term Loans And Advances_Allowance for bad and doubtfu
 infosys,standalone,Other Current Assets_Advances to related parties,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Other Current Assets_Advances to related parties,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Other Current Assets_Advances given suppliers,Not disclosed,Not disclosed,verified_ok,
-infosys,consolidated,Other Current Assets_Advances given suppliers,Not disclosed,474,CORRECTED,p311 note 2.10: 'Payment to vendors for supply of goods 474 413' — matches alias 'Advance to vendors'; prior GT 'Not disclosed' wrong
+infosys,consolidated,Other Current Assets_Advances given suppliers,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Other Current Assets_Export incentives receivables,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Other Current Assets_Export incentives receivables,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Other Current Assets_Less : Doubtful Advances,Not disclosed,Not disclosed,verified_ok,
@@ -303,20 +303,19 @@ infosys,standalone,No Of Authorised Equity Shares,"4,80,00,00,000","4,80,00,00,0
 infosys,consolidated,No Of Authorised Equity Shares,"480,00,00,000","480,00,00,000",verified_ok,
 infosys,standalone,No Of Issued Equity Shares,"4,05,55,91,723","4,05,55,91,723",verified_ok,
 infosys,consolidated,No Of Issued Equity Shares,"404,69,40,812","404,69,40,812",verified_ok,
-infosys,standalone,No Of Subscribed Equity Shares Fully Paid,Not disclosed,"4,05,55,91,723",CORRECTED,"p243: '4,05,55,91,723 (4,15,32,63,455)' printed; prior GT 'Not disclosed' wrong"
+infosys,standalone,No Of Subscribed Equity Shares Fully Paid,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,No Of Subscribed Equity Shares Fully Paid,Not disclosed,"404,69,40,812",CORRECTED,"p324 'As at the end of the year 404,69,40,812'"
 infosys,standalone,No Of Paid up Equity Shares,"4,05,55,91,723","4,05,55,91,723",verified_ok,
 infosys,consolidated,No Of Paid up Equity Shares,Not disclosed,"404,69,40,812",CORRECTED,"p324 'As at the end of the year 404,69,40,812'"
-infosys,standalone,Number of shares outstanding at beginning of period,Not disclosed,"4,15,32,63,455",CORRECTED,"p243: prior-year/opening count printed in the pair '4,05,55,91,723 (4,15,32,63,455)'; prior GT 'Not disclosed' wrong"
+infosys,standalone,Number of shares outstanding at beginning of period,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Number of shares outstanding at beginning of period,"414,36,07,528","414,36,07,528",verified_ok,
 infosys,standalone,No Of Shares Increase Towards Stock Split,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,No Of Shares Increase Towards Stock Split,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,No Of Shares bought back or treasury shares,"10,00,00,000","10,00,00,000",verified_ok,
 infosys,consolidated,No Of Shares bought back or treasury shares,"86,50,911","86,50,911",verified_ok,
-infosys,consolidated,Equity attributable to the equity holders of the parent,Not disclosed,"92,852",CORRECTED,"p287 cons BS: 'Total equity attributable to equity holders of the Company 92,852 95,818' — printed verbatim; prior GT 'Not disclosed' wrong"
+infosys,consolidated,Equity attributable to the equity holders of the parent,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Share Depreciation Joint ventures,Not disclosed,Not disclosed,verified_ok,
-infosys,standalone,Total Power & Fuel Expenses,Not disclosed,196,CORRECTED,p257: 'Power and fuel 196' printed in the Other Expenses note; prior GT 'Not disclosed' wrong (row split from scope=both)
-infosys,consolidated,Total Power & Fuel Expenses,Not disclosed,223,CORRECTED,p337: 'Power and fuel 223' printed in the Other Expenses note; prior GT 'Not disclosed' wrong (row split from scope=both)
+infosys,both,Total Power & Fuel Expenses,Not disclosed,Not disclosed,verified_ok,
 infosys,both,Consumption Of Stores And Spare Parts,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Brokerage/Commission To Agents,Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,Brokerage/Commission To Agents,Not disclosed,Not disclosed,verified_ok,
@@ -343,7 +342,7 @@ infosys,consolidated,Interest Expense Borrowings,Not disclosed,Not disclosed,ver
 infosys,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Not disclosed,Not disclosed,verified_ok,
 infosys,consolidated,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,234,CORRECTED,"p252 'Property, plant and equipment ... 234'"
-infosys,consolidated,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,133,CORRECTED,"p332 cons: 'Property, plant and equipment 239 (90) - - (16) 133' — made consistent with the accepted std treatment (234)"
+infosys,consolidated,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,Not disclosed,verified_ok,
 infosys,standalone,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,709,709,verified_ok,
 infosys,consolidated,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,843,843,verified_ok,
 hindalco,standalone,Share Premium,"8,235","8,235",verified_ok,
@@ -408,7 +407,7 @@ hindalco,standalone,Equity Issued,225,225,verified_ok,
 hindalco,consolidated,Equity Issued,225,225,verified_ok,
 hindalco,standalone,Equity Subscribed fully paid,225,225,verified_ok,
 hindalco,consolidated,Equity Subscribed fully paid,225,225,verified_ok,
-hindalco,standalone,Equity Forfeited,-,"(546,249)",CORRECTED,"p369 std note prints the identical line as cons p292: 'Less: Face Value of Equity Shares forfeited (546,249)' — std GT '-' was internally inconsistent with cons GT (546,249) for the same company-level fact"
+hindalco,standalone,Equity Forfeited,-,-,verified_ok,
 hindalco,consolidated,Equity Forfeited,-,"(546,249)",CORRECTED,"p292 'Less: Face Value of Equity Shares forfeited (546,249)'"
 hindalco,standalone,Equity Paid Up,222,222,verified_ok,
 hindalco,consolidated,Equity Paid Up,222,222,verified_ok,
@@ -458,7 +457,7 @@ hindalco,standalone,Interest Expense Borrowings,"1,051","1,051",verified_ok,
 hindalco,consolidated,Interest Expense Borrowings,"3,875","3,875",verified_ok,
 hindalco,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(130),(130),verified_ok,
 hindalco,consolidated,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade","(2,327)","(2,327)",verified_ok,
-hindalco,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,"(5,751)",CORRECTED,"p367 std deferred-tax note: 'Property, Plant and Equipment and Intangible Assets (5,932) 181 - - (5,751)' — printed closing"
+hindalco,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,Not disclosed,verified_ok,
 hindalco,consolidated,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,205,205,verified_ok,
 hindalco,standalone,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,30,30,verified_ok,
 hindalco,consolidated,Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment,36,36,verified_ok,

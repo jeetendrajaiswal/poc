@@ -79,12 +79,18 @@ def _any(c: str, *toks: str) -> bool:
 # --------------------------------------------------------------------------- #
 # 1. LOCATE — generous candidate pages (financials-region first)
 # --------------------------------------------------------------------------- #
-def candidate_pages(path: str, kind: str) -> list[int]:
+def candidate_pages(path: str, kind: str,
+                    pages_filter: frozenset | None = None) -> list[int]:
     """Return 1-based candidate page numbers for `kind`, best first.
 
     Fingerprints are deliberately broad (title UNION characteristic line-items);
     arithmetic verification downstream discards anything that doesn't tie. The
     financials region (back ~60% of the document) is searched first.
+
+    `pages_filter` (a scope's page block) is applied BEFORE the candidate cap — this is
+    essential, not cosmetic: the cap fills with the standalone block's pages (they come
+    first in the document), so filtering after the cap left the consolidated P&L with ZERO
+    candidates on all 5 corpus companies and the shared page silently served both scopes.
     """
     doc = fitz.open(path)
     n = doc.page_count
@@ -120,6 +126,8 @@ def candidate_pages(path: str, kind: str) -> list[int]:
         if hit:
             hits.append((p + 1, (p + 1) / n))
     doc.close()
+    if pages_filter:
+        hits = [h for h in hits if h[0] in pages_filter]
     hits.sort(key=lambda x: (x[1] < 0.4, x[0]))   # financials region (back ~60%) first
     return [p for p, _ in hits][:_CANDIDATE_CAP]
 
@@ -278,15 +286,26 @@ class ReportResult:
 # public API
 # --------------------------------------------------------------------------- #
 @functools.lru_cache(maxsize=256)
-def validate_statement(path: str, kind: str) -> StatementResult:
+def validate_statement(path: str, kind: str,
+                       pages_filter: frozenset | None = None) -> StatementResult:
     """Locate -> extract -> verify a single statement. First tie wins.
 
-    Memoized per (path, kind): the locate->tie-out loop is the expensive multi-call
-    step, and it is re-needed by the statement layer, by both scopes of the datapoint
-    layer, etc. Caching returns the identical result without re-running it — purely a
-    cost saving, no behaviour change. (Per-process cache; a fresh run recomputes.)
+    Memoized per (path, kind, pages_filter): the locate->tie-out loop is the expensive
+    multi-call step, and it is re-needed by the statement layer, by both scopes of the
+    datapoint layer, etc. Caching returns the identical result without re-running it —
+    purely a cost saving, no behaviour change. (Per-process cache; a fresh run recomputes.)
+
+    `pages_filter` restricts candidates to a page set — the datapoint layer passes each
+    scope's page block so the STANDALONE and CONSOLIDATED statements are located
+    separately. Without it, whichever statement tied out first served BOTH scopes, so one
+    scope's note refs / parent values silently came from the OTHER scope's statement (a
+    latent cross-scope corruption for every BS-anchored section). Degrades to the
+    unfiltered candidate list when the scope block has no candidate (tagging failure) —
+    i.e. never worse than the old behaviour.
     """
-    pages = candidate_pages(path, kind)
+    pages = candidate_pages(path, kind, pages_filter)
+    if pages_filter and not pages:                # scope block has no candidate (tagging
+        pages = candidate_pages(path, kind)       # failure) -> degrade to old behaviour
     if not pages:
         return StatementResult(kind=kind, status="no-candidate")
     for page in pages:

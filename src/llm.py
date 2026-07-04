@@ -58,31 +58,38 @@ def extract_json(
         api_input: Any = [{"role": "user", "content": content}]
     else:
         api_input = user_input
-    resp = client().responses.create(
-        model=mdl,
-        instructions=instructions,
-        input=api_input,
-        text={
-            "format": {
-                "type": "json_schema",
-                "name": schema_name,
-                "schema": schema,
-                "strict": True,
-            }
-        },
-        reasoning={"effort": reasoning},
-        max_output_tokens=max_output_tokens,
-        store=False,  # privacy: never logged on OpenAI dashboard
-    )
-    txt = getattr(resp, "output_text", "") or ""
-    if not txt.strip():
-        # surface incomplete/empty so the caller can mark it, not crash
-        return {"_empty": True, "_status": getattr(resp, "status", "unknown")}
-    try:
-        return json.loads(txt)
-    except json.JSONDecodeError:
-        # truncated/incomplete output (e.g. hit max_output_tokens) -> surface, don't crash
-        return {"_empty": True, "_status": getattr(resp, "status", "incomplete")}
+    # A truncated response ('incomplete': hit max_output_tokens) is DETECTABLE, and returning
+    # _empty for it silently collapses the caller's whole section to absent (2026-07-04 run:
+    # infosys cons share_capital landed on exactly 2000 output tokens -> 12 misses; two other
+    # calls truncated the same way). So retry ONCE with double the budget before surfacing.
+    budgets = [max_output_tokens, min(max_output_tokens * 2, 8000)]
+    resp = None
+    for budget in budgets:
+        resp = client().responses.create(
+            model=mdl,
+            instructions=instructions,
+            input=api_input,
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": schema_name,
+                    "schema": schema,
+                    "strict": True,
+                }
+            },
+            reasoning={"effort": reasoning},
+            max_output_tokens=budget,
+            store=False,  # privacy: never logged on OpenAI dashboard
+        )
+        txt = getattr(resp, "output_text", "") or ""
+        if txt.strip():
+            try:
+                return json.loads(txt)
+            except json.JSONDecodeError:
+                pass                                     # truncated mid-JSON -> maybe retry
+        if getattr(resp, "status", "") != "incomplete":
+            break                                        # empty for another reason: no point retrying
+    return {"_empty": True, "_status": getattr(resp, "status", "unknown")}
 
 
 def upload_file(content: bytes, name: str) -> str:

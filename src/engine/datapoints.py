@@ -24,6 +24,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor
+from itertools import product, zip_longest
 
 import yaml
 
@@ -142,9 +143,12 @@ def load_concepts(path: str | None = None) -> list[Concept]:
     items = yaml.safe_load(open(path or os.path.normpath(_TAXONOMY)))["items"]
     out = []
     for it in items:
-        # a few representative labels purely to CALIBRATE the model on how the concept
-        # tends to look; matching is still by meaning. Capped, never exhaustive.
-        ex = [a.strip() for a in (it.get("aliases") or []) if a.strip()][:3]
+        # representative labels purely to CALIBRATE the model on how the concept tends to look;
+        # matching is still by meaning. Was capped at 3, but the cap directly caused misses —
+        # e.g. adani prints 'Employee Benefits Liability' for leave-encashment DTA, which IS
+        # alias #5; the strict never-substitute rule then refused the line. Alias lists are
+        # small (max 8), so pass them all.
+        ex = [a.strip() for a in (it.get("aliases") or []) if a.strip()]
         out.append(Concept(
             key=it["key"],
             meaning=(it.get("concept") or "").strip(),
@@ -180,8 +184,14 @@ _SCHEMA = {
                     "present": {"type": "boolean"},
                     "value": {"type": ["string", "null"]},
                     "evidence": {"type": "string"},
+                    # COMPOSITE support: printed components CODE will sum (see _INSTR). The
+                    # single-line contract structurally cannot produce items the report splits
+                    # across lines (treasury shares held via two trusts; auditor remuneration
+                    # as several fee lines; subtotal minus a 'Less:' line) — the model returns
+                    # the printed addends, deterministic code does the arithmetic.
+                    "addends": {"type": ["array", "null"], "items": {"type": "string"}},
                 },
-                "required": ["key", "present", "value", "evidence"],
+                "required": ["key", "present", "value", "evidence", "addends"],
                 "additionalProperties": False,
             },
         }
@@ -201,6 +211,7 @@ _INSTR = (
     "- Return a value ONLY if a line in the provided text genuinely represents this exact item. If it "
     "is not present here, set present=false and value=null. NEVER substitute a broader, narrower, "
     "total, parent, or merely similar line — a wrong line is worse than 'absent'.\n"
+    "{composite}"
     "- Contra/deduction lines ('less: allowance/doubtful') keep their deduction sign.\n"
     "- Numbers exactly as printed; parentheses or a leading minus mean negative; a bare '-' = null.\n"
     "- value = the NUMBER ONLY: keep digit-grouping commas, the decimal point, and a leading minus or "
@@ -215,6 +226,51 @@ _INSTR = (
 
 def _digits(s) -> str:
     return re.sub(r"[^\d]", "", str(s or ""))
+
+
+# COMPOSITE datapoints — items that are the SUM/NET of several printed lines with no single
+# printed line to cite (treasury shares held via multiple trusts; auditor remuneration split
+# into fee lines). The model returns the printed components in `addends`; CODE does the
+# arithmetic. Opted in per section on evidence (same discipline as the prompt-enrichment sets
+# below): share_capital (hindalco treasury = 2 trust lines) and other_expenses (itc auditor
+# total = 5 fee lines). Elsewhere the rule is a one-line "addends=null", so the strict-schema
+# field can never invite improvised summation.
+_COMPOSITE_SECTIONS = {"share_capital", "other_expenses"}
+_COMPOSITE_RULE = (
+    "- COMPOSITE items: when the item is genuinely the SUM/NET of SEVERAL printed lines and no single "
+    "printed line IS the item (e.g. shares held via multiple trusts; several fee lines making up a "
+    "total; a printed figure minus a printed 'Less:' line), set value=null and return each component "
+    "in `addends` EXACTLY as printed (parentheses = negative), quoting those lines in evidence — the "
+    "code will do the arithmetic. Otherwise addends=null. Never use addends to combine unrelated or "
+    "guessed numbers.\n")
+_NO_COMPOSITE_RULE = "- Set addends=null for every item.\n"
+
+
+# Sections whose PROMPTS get enrichment, each opted in on RUN EVIDENCE (extending enrichment to
+# all sections regressed other_expenses 17 -> 25 on 2026-07-04 — extra refusal pressure + shifted
+# calibration — so it is per-section opt-in, never global):
+#   deferred_tax  — hint + FULL aliases: umbrella labels dominate there ('Employee Benefits
+#                   Liability' IS leave encashment, alias #5 beyond the [:3] cap); confirmed
+#                   10 -> 5 errors on the 2026-07-04 run.
+#   share_capital — hint only: the capital block's paid-up subtotal (after forfeiture) and final
+#                   total (after treasury, = the BS carrying amount) are printed as UNLABELED
+#                   bare-number rows under the 'Less:' lines (hindalco p369/p292, both scopes) —
+#                   without the structural hint the model can't cite them and returns the gross
+#                   line (225 vs 222) or nothing.
+# Every OTHER section keeps the validated baseline [:3] examples and no fallback hint.
+_FALLBACK_HINT_SECTIONS = {"deferred_tax", "share_capital"}
+_FULL_EXAMPLE_SECTIONS = {"deferred_tax"}
+
+
+def _examples(c: "Concept", section: str) -> list[str]:
+    return c.examples if section in _FULL_EXAMPLE_SECTIONS else c.examples[:3]
+
+
+def _fmt_num(x: float) -> str:
+    """Indian-report style: thousands commas, 2dp only when fractional, parens for negative."""
+    whole = abs(x - round(x)) < 0.005
+    body = f"{int(round(abs(x))):,}" if whole else f"{abs(x):,.2f}"
+    return f"({body})" if x < 0 else body
 
 
 def _collapse(s: str) -> str:
@@ -263,7 +319,7 @@ def _extract_section(index: PageIndex, scope: str, section: str,
                     pages.append(q)
     else:
         # enrich the retrieval query with example labels -> pages bearing real line wording rank higher
-        ex_terms = " ".join(e for c in concepts for e in c.examples)
+        ex_terms = " ".join(e for c in concepts for e in _examples(c, section))
         ranked = index.search(SECTIONS[section] + " " + scope + " " + ex_terms, k=20)
         if allowed:
             in_scope = [p for p in ranked if p in allowed]
@@ -277,11 +333,23 @@ def _extract_section(index: PageIndex, scope: str, section: str,
         f"- key: {c.key}\n  meaning: {c.meaning[:400]}"
         + (f"\n  selector: {c.selector}" if c.selector else "")
         + (f"\n  may look like (EXAMPLES ONLY, real label may differ — map by meaning): "
-           f"{'; '.join(c.examples)}" if c.examples else "")
+           f"{'; '.join(_examples(c, section))}" if c.examples else "")
         for c in concepts)
+    # structural note-type guidance for the fallback read — deferred_tax ONLY (its mixed-sign
+    # matrix never reconciles, so it always lands here and was reading blind; the hint + full
+    # aliases took it 10 -> 5 errors). Threading hints into every section's fallback was tried
+    # on the 2026-07-04 run and REGRESSED other_expenses 17 -> 25: the other_expenses hint text
+    # ('return only if that exact line exists') adds refusal pressure to a prompt that was
+    # already the strictest, so the model started refusing garbled-but-present lines. Keep every
+    # other section's fallback prompt byte-identical to the validated baseline.
+    hint = _SECTION_HINT.get(section, "") if section in _FALLBACK_HINT_SECTIONS else ""
     out = llm.extract_json(
-        instructions=_INSTR.format(scope=scope),
-        user_input=(f"SECTION: {SECTION_LABEL[section]}\n\nThere are EXACTLY {len(concepts)} items below — "
+        instructions=_INSTR.format(
+            scope=scope,
+            composite=_COMPOSITE_RULE if section in _COMPOSITE_SECTIONS else _NO_COMPOSITE_RULE),
+        user_input=(f"SECTION: {SECTION_LABEL[section]}\n"
+                    + (f"STRUCTURE: {hint}\n" if hint else "")
+                    + f"\nThere are EXACTLY {len(concepts)} items below — "
                     f"your `results` array MUST contain all {len(concepts)}, one per key, none omitted "
                     f"(present=false only if genuinely absent).\n\nITEMS:\n{items_desc}\n\nTEXT:\n{text}"),
         schema_name="datapoints", schema=_SCHEMA,
@@ -292,11 +360,27 @@ def _extract_section(index: PageIndex, scope: str, section: str,
     results = []
     for c in concepts:
         r = found.get(c.key)
-        if not r or not r.get("present") or r.get("value") in (None, "", "-"):
+        if not r:
             results.append(Datapoint(key=c.key, present=False, section=section, pages=pages))
             continue
         ev = r.get("evidence", "")
-        val = _hygiene(r["value"], ev)
+        # COMPOSITE path (opt-in sections only): the model returned printed components; CODE
+        # does the arithmetic — and code always WINS over any model-computed value, since the
+        # model's own arithmetic is exactly what we don't trust. Grounding = EVERY addend's
+        # digits appear in the read text, so a fabricated component kills the whole composite.
+        adds = [a for a in (r.get("addends") or []) if _num(_clean_value(a)) is not None]
+        if section in _COMPOSITE_SECTIONS and r.get("present") and 2 <= len(adds) <= 12:
+            grounded = all(len(_digits(a)) >= 3 and _digits(a) in page_digits for a in adds)
+            total = sum(_num(_clean_value(a)) for a in adds)
+            results.append(Datapoint(
+                key=c.key, present=True, value=_fmt_num(total),
+                evidence="(code-summed addends) " + " + ".join(a.strip() for a in adds) + f" | {ev}",
+                grounded=grounded, section=section, pages=pages))
+            continue
+        if not r.get("present") or r.get("value") in (None, "", "-"):
+            results.append(Datapoint(key=c.key, present=False, section=section, pages=pages))
+            continue
+        val = _hygiene(r["value"], ev, sign=c.value_type != "count")
         vd = _digits(val)
         grounded = len(vd) >= 3 and vd in page_digits          # anti-hallucination backstop
         results.append(Datapoint(key=c.key, present=True, value=val, evidence=ev,
@@ -325,11 +409,21 @@ _CURRENCY_RE = re.compile(r"₹|`|(?i:\bRs\.?)|(?i:\bINR\b)|[*#†‡]")
 
 # A datapoint whose DEFINITION says to return the note/BS TOTAL (an aggregate), not a sub-line.
 # Such targets legitimately equal the note total, so the refusal guard must NOT demote them.
-# Driven by the definition text, never the key name.
-def _wants_total(meaning: str) -> bool:
+# Driven by the definition text, never the key name. Scans the SELECTOR too: taxonomy authors
+# state total-ness either in the concept prose ("— total trade payables") or tersely in the
+# selector ("TOTAL trade payables (MSME + others)") — scanning only the meaning force-demoted
+# adani's correctly-reconciled Sundry Creditors 4,474.96 to absent (its MSME split is material,
+# so the >=2-material-components exemption didn't save it as it silently does elsewhere).
+def _wants_total(meaning: str, selector: str = "") -> bool:
     m = (meaning or "").lower()
-    return any(p in m for p in ("the total", "aggregate figure", "note's total", "total line",
-                                "single aggregate"))
+    s = (selector or "").lower()
+    if any(p in m or p in s for p in ("the total", "aggregate figure", "note's total",
+                                      "total line", "single aggregate")):
+        return True
+    # a selector that OPENS with 'total', or a dash-appositive '— total X' in the meaning, is
+    # the same instruction written tersely. The dash must be a standalone appositive (preceded
+    # by whitespace/start), so 'sub-total' can never falsely exempt an item.
+    return bool(re.match(r"\s*total\b", s) or re.search(r"(?:^|\s)[—–-]\s*total\b", m))
 
 
 def _clean_value(v):
@@ -363,9 +457,15 @@ def _reconcile_sign(value, evidence):
     return value
 
 
-def _hygiene(value, evidence):
-    """Clean noise then restore dropped negative signs. Applied to every accepted value."""
-    return _reconcile_sign(_clean_value(value), evidence)
+def _hygiene(value, evidence, sign: bool = True):
+    """Clean noise then restore dropped negative signs. Applied to every accepted value.
+    sign=False skips the negative-restore — used for COUNT-type datapoints, where a
+    parenthesized number on the evidence line is typography, not a negative (infosys prints
+    'current (prior)' share-count pairs: '404,69,40,812 (414,36,07,528)' — the restore turned
+    the opening share count negative on the 2026-07-04 run). A genuine contra count
+    (buyback/treasury) is returned parenthesized by the model itself and passes through."""
+    v = _clean_value(value)
+    return _reconcile_sign(v, evidence) if sign else v
 
 
 # section -> (statement, keywords identifying the PARENT line whose value the note
@@ -406,10 +506,14 @@ _NOTE_SCHEMA = {"type": "object", "properties": {
     "required": ["components", "total", "targets"], "additionalProperties": False}
 
 
-def _statement_lines(index: PageIndex, scope: str, kind: str) -> list[dict]:
-    """Extract a statement's line items (label,value) for `scope` — the parent anchors."""
+def _statement_lines(index: PageIndex, scope: str, kind: str,
+                     allowed: set[int] | None = None) -> list[dict]:
+    """Extract a statement's line items (label,value) for `scope` — the parent anchors.
+    `allowed` = the scope's page block: the statement is located INSIDE it, so standalone
+    and consolidated get their own statements (previously one shared page served both
+    scopes and cross-contaminated note refs/parents for every BS-anchored section)."""
     from src.engine import statements as st
-    r = st.validate_statement(index.path, kind)
+    r = st.validate_statement(index.path, kind, frozenset(allowed) if allowed else None)
     if not r.page:
         return []
     o = llm.extract_json(
@@ -428,8 +532,17 @@ def _statement_lines(index: PageIndex, scope: str, kind: str) -> list[dict]:
 # Other-Expenses table sits beside an unrelated note (EPS, Finance costs, …), so -layout welds the
 # two together and the line items (CSR, Donations, Professional Fees, Power & fuel, Auditor) can't be
 # parsed. The reflow is a no-op on single-column notes (e.g. ITC's full-width table) so it is safe to
-# opt a section in whenever its note is two-up. Every section NOT here uses the exact prior baseline.
-COLUMN_SECTIONS = {"share_capital", "other_expenses"}
+# opt a section in whenever its note is two-up.
+# 2026-07-03 forensics (all 104 errors traced to printed lines, $0): the same interleave was the
+# proven cause of misses in deferred_tax (6 of its 10 errors — worst case: the two-up weld detaches
+# the 'Deferred tax assets'/'Deferred tax liabilities' block headers, so the model picks the
+# same-labelled row from the WRONG orientation matrix), loans_advances, finance_costs,
+# other_cur_assets, other_cur_liabilities and trade_payables (GT digits + labels verified intact on
+# ONE reflowed line for every affected page; zero numeric-token loss layout->reflow; single-column
+# pages byte-identical). So ALL text-read note sections now opt in. Sections reading via other
+# machinery (ppe matrix, borrowings vision, investments vision) are unaffected by this set.
+COLUMN_SECTIONS = {"share_capital", "other_expenses", "deferred_tax", "loans_advances",
+                   "finance_costs", "other_cur_assets", "other_cur_liabilities", "trade_payables"}
 
 # Sections that additionally use the deterministic note-ref / signature-page LOCATE fallback. This is
 # BS-anchored (navigates from a balance-sheet note ref, or ranks pages by the section's signature
@@ -437,6 +550,21 @@ COLUMN_SECTIONS = {"share_capital", "other_expenses"}
 # the signature actively mislands (reliance -> p157/p101, not the true note p117), whereas plain BM25
 # already surfaces the correct note page for every company. So other_expenses keeps baseline locate.
 _NOTE_LOCATE_SECTIONS = {"share_capital"}
+
+# Notes whose printed lines are NOT additive components of the balance-sheet parent, so the
+# "components sum to total == parent" reconciliation is STRUCTURALLY MEANINGLESS for them and must
+# never be used to SELECT a page. Share capital is the canonical case: Authorised / Issued /
+# Subscribed & Paid-up are successive STAGES of the same capital (250 / 225 / 225), not addends —
+# the true note can never reconcile. Worse, wrong pages DO tie out arithmetically and win instead:
+#   - the Statement of Changes in Equity (opening + changes = closing == BS parent)  [hindalco p345]
+#   - rights-issue prose ("increased from 115.42 to 129.27": 115.42+13.85=129.27)    [adani p315]
+#   - a shares-movement/buyback sub-table (opening - buyback = closing)              [infosys p324]
+# each of which then returns the whole note as absent (the 2026-07-03 run's 3 whole-note collapses,
+# 24 misses). This is a property of the Schedule III note TYPE — it holds for every Indian company —
+# so these sections skip _reconciled_section and go straight to the deterministically-located,
+# grounded _extract_section read (the path that produced the validated 9/11 & 10/10 share_capital
+# results). Verification for them is groundedness (digits present on the page), not arithmetic.
+NON_ADDITIVE_SECTIONS = {"share_capital"}
 
 
 def _parent(section: str, bs_lines: list[dict], pl_lines: list[dict]) -> tuple[float | None, list[str]]:
@@ -482,16 +610,32 @@ def _note_pages(index: PageIndex, note_refs: list[str], title_kws: list[str],
     return out
 
 
+# Per-section CORE term groups for the signature locate. Each group is the alternative spellings of
+# ONE structural element that the note's CORE page must carry (framework vocabulary — Schedule III
+# mandates these stages for every Indian company, so this scales; never a company's label). Pages are
+# ranked by how many groups they hit BEFORE raw term count: raw counts alone let wordy look-alikes
+# outrank the real note (a Directors'-Report/Shareholder-Information page mentions share capital
+# vocabulary a lot, but only the note's core table prints Authorised AND Issued AND Subscribed
+# together — verified: the core-group rank uniquely tops the true note page on all 10 corpus
+# scope-combos). Purely a re-ranking: with no core groups defined (or none hit) the behaviour
+# degrades to the original distinct-term-count order.
+_SIGNATURE_CORE: dict[str, list[list[str]]] = {
+    "share_capital": [["authorised", "authorized"], ["issued"], ["subscribed"]],
+}
+
+
 def _signature_pages(index: PageIndex, section: str, allowed: set[int]) -> list[int]:
     """DETERMINISTIC structural locate — find the note by the co-occurrence of its own defining
     terms, with NO dependence on the stochastic balance-sheet LLM read. `_note_pages` navigates from
     the note ref, which vanishes whenever `_statement_lines` drops the parent line and collapses the
-    whole section; this is the fallback that finds the note anyway. Fires only when the term signature
-    is strong (>=4 distinct terms on the page) so weak/ambiguous signatures don't return a wrong page
-    (better a miss than a confident wrong). Returns the top pages by distinct-term count."""
+    whole section; this finds the note anyway. Fires only when the term signature is strong (>=4
+    distinct terms on the page) so weak/ambiguous signatures don't return a wrong page (better a miss
+    than a confident wrong). Ranks by CORE-group co-occurrence first (see _SIGNATURE_CORE), then
+    distinct-term count. Returns the top pages."""
     terms = {t for t in SECTIONS.get(section, "").lower().split() if len(t) > 3}
     if len(terms) < 4:
         return []
+    core = _SIGNATURE_CORE.get(section, [])
     scored = []
     for i, t in enumerate(index.page_text):
         if allowed and (i + 1) not in allowed:
@@ -499,9 +643,10 @@ def _signature_pages(index: PageIndex, section: str, allowed: set[int]) -> list[
         tl = t.lower()
         hits = sum(1 for w in terms if w in tl)
         if hits >= 4:
-            scored.append((hits, i + 1))
-    scored.sort(key=lambda x: (-x[0], x[1]))
-    return [p for _, p in scored[:2]]
+            ch = sum(1 for grp in core if any(w in tl for w in grp))
+            scored.append((ch, hits, i + 1))
+    scored.sort(key=lambda x: (-x[0], -x[1], x[2]))
+    return [p for *_, p in scored[:2]]
 
 
 _NOTE_INSTR = (
@@ -534,6 +679,25 @@ _SECTION_HINT: dict[str, str] = {
                        "expenses. Targets are specific expense lines — return only if that exact line exists.\n"),
     "finance_costs": ("Components are the finance-cost lines summing to total finance costs; 'interest on "
                       "borrowings' is usually one of them.\n"),
+    "share_capital": ("The capital block runs: Authorised -> Issued -> Subscribed & Paid-up -> "
+                      "'Less: shares/calls forfeited' -> [SUBTOTAL row] -> 'Less: Treasury Shares' "
+                      "(sometimes several trust lines) -> [FINAL TOTAL row = the balance-sheet carrying "
+                      "amount]. The subtotal/final rows are often UNLABELED bare-number rows directly "
+                      "under the 'Less:' lines — they ARE valid answer lines: the paid-up share COUNT "
+                      "after forfeiture is the subtotal row's count; the final paid-up AMOUNT is the "
+                      "final total row (after ALL deductions). Columns pair COUNT columns with AMOUNT "
+                      "columns and current-year with prior-year — take the current-year column matching "
+                      "the item's COUNT-vs-AMOUNT type. Treasury/buyback shares held via several trusts "
+                      "are a COMPOSITE — return the trust lines as addends.\n"),
+    "deferred_tax": ("The deferred-tax note is usually a MOVEMENT MATRIX: rows are tax components, columns "
+                     "are opening balance / recognised in P&L / recognised in OCI / closing balance — ALWAYS "
+                     "take the CLOSING (latest 'As at') column, never opening or movement columns. Component "
+                     "rows sit under 'Deferred tax assets' vs 'Deferred tax liabilities' blocks (or carry "
+                     "signs in a single 'assets/(liabilities)' table) — honour the block/orientation the "
+                     "target names; the same row label can appear in BOTH orientations' matrices. Component "
+                     "labels are idiosyncratic umbrellas: a depreciation / PP&E / written-down-value line IS "
+                     "the accumulated-depreciation component; a leave / compensated-absences / employee-"
+                     "benefits / 'separation and retirement' line IS the leave-encashment component.\n"),
 }
 
 
@@ -545,14 +709,14 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
     keyword retrieval. Returns trusted Datapoints, or None if none reconcile."""
     if parent is None:
         return None
-    ex_terms = " ".join(e for c in concepts for e in c.examples)
+    ex_terms = " ".join(e for c in concepts for e in _examples(c, section))
     bm25 = [p for p in index.search(SECTIONS[section] + " " + scope + " " + ex_terms, k=20)
             if not allowed or p in allowed]
     ranked = note_pages + [p for p in bm25 if p not in note_pages]   # note-ref first
     items_desc = "\n".join(
-        f"- key: {c.key}\n  meaning: {c.meaning[:180]}"
+        f"- key: {c.key}\n  meaning: {c.meaning[:400]}"
         + (f"\n  selector: {c.selector}" if c.selector else "")
-        + (f"\n  examples: {'; '.join(c.examples)}" if c.examples else "")
+        + (f"\n  examples: {'; '.join(_examples(c, section))}" if c.examples else "")
         for c in concepts)
     hint = _SECTION_HINT.get(section, "")
     # `_note_pages` puts the correct note page FIRST in `ranked`, so the forward [0,1]
@@ -570,11 +734,10 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
             if w and w not in cand_windows:
                 cand_windows.append(w)
 
-    # Read the note with column reflow for two-up P&L notes (other_expenses), but keep the BS
-    # note-locate sections (share_capital) on their VALIDATED -layout reconcile read — their win
-    # already comes from the reflow read in _extract_section, so leaving reconcile untouched keeps
-    # that section byte-identical while other_expenses gains the de-garbled read here.
-    _reconcile_reflow = section in COLUMN_SECTIONS and section not in _NOTE_LOCATE_SECTIONS
+    # Column-sections read reflowed here too. (A historical carve-out excluded share_capital to
+    # keep its reconcile read byte-identical, but share_capital is NON_ADDITIVE now and never
+    # reaches this function — the carve-out was dead complexity and is gone.)
+    _reconcile_reflow = section in COLUMN_SECTIONS
     best = None  # (n_targets_present, datapoints)
     for pages in cand_windows[:6]:        # bound cost (reconcile early-exits when found)
         o = llm.extract_json(
@@ -603,7 +766,7 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
                                      confidence="absent"))
             else:
                 ev = t.get("evidence", "")
-                val = _hygiene(t["value"], ev)
+                val = _hygiene(t["value"], ev, sign=c.value_type != "count")
                 vnum = _num(val)
                 # REFUSAL GUARD: a specific sub-item cannot equal the note's grand TOTAL when
                 # that total is a genuine sum of >=2 MATERIALLY non-zero components — that is a
@@ -613,7 +776,7 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
                 # total (e.g. 'Other Long Term Liabilities' = the BS total line) — they SHOULD equal it.
                 material = [cc for cc in comps
                            if abs(_num(cc.get("value")) or 0) > max(abs(tot) * 0.005, 0.5)]
-                if (vnum is not None and not _wants_total(c.meaning) and len(material) >= 2
+                if (vnum is not None and not _wants_total(c.meaning, c.selector) and len(material) >= 2
                         and abs(vnum - tot) < max(abs(tot) * 0.005, 0.5)):
                     out.append(Datapoint(key=c.key, present=False, section=section, pages=pages,
                                          confidence="absent"))
@@ -689,13 +852,249 @@ def _ppe_backstop(key: str, assets: list[dict]):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Deterministic per-ROW PPE reader, self-validated by the Ind AS 16 movement identity.
+# WHY: the page-level Σnet==BS-parent gate in _matrix_text structurally FAILS on mixed schedules
+# (reliance prints PPE+Spectrum+Intangibles+Goodwill in ONE table; adani mixes PPE+ROU+Intangible
+# columns), so correct grounded text reads were discarded and the vision fallback produced ALL 12
+# ppe errors of the 2026-07-03 run (wrong "(Contd.)" pages, prior-year blocks, and outright digit
+# hallucinations). The movement identity is PER-ROW and mandated by Schedule III for every Indian
+# company: gross_open ± movements = gross_close;  dep_open ± movements = dep_close;
+# gross_close − dep_close = net. A row parse is accepted ONLY when all three close — far stronger
+# and more general than Σnet==parent, and immune to mixed schedules. Proven deterministically
+# ($0): recovers 16/16 GT values across the four failing company/scope cases, including the
+# pdftotext-shredded adani p304 via PyMuPDF word y-clusters.
+# ---------------------------------------------------------------------------
+
+def _yc_lines(path: str, pno: int) -> list[str]:
+    """Rebuild a page's visual rows from PyMuPDF word y-clusters. When pdftotext shreds a wide
+    table (each cell dumped one-per-line) or the table is stored rotated, the words still carry
+    true coordinates — clustering by y reconstitutes each visual row (for a rotated table a
+    visual column becomes one y-run, which is exactly the asset row we need)."""
+    import fitz
+    doc = fitz.open(path)
+    rows: dict[int, list] = {}
+    for w in doc[pno - 1].get_text("words"):
+        if w[4].strip():
+            rows.setdefault(round(w[1] / 4.0), []).append(w)
+    out = []
+    for k in sorted(rows):
+        out.append(" ".join(w[4] for w in sorted(rows[k], key=lambda w: w[0])))
+    doc.close()
+    return out
+
+
+def _row_nums(s: str) -> list[float]:
+    """Numeric tokens of a schedule row, in print order; a lone '-' cell is 0."""
+    out = []
+    for t in re.findall(r"\(?-?[\d,]*\.?\d+\)?|(?<=\s)-(?=\s)", s):
+        t = t.strip()
+        if t == "-":
+            out.append(0.0)
+        elif any(c.isdigit() for c in t):
+            neg = t.startswith("(")
+            v = float(t.strip("()").replace(",", ""))
+            out.append(-v if neg else v)
+    return out
+
+
+def _block_closes(vals: list[float], tol: float = 0.02) -> bool:
+    """True if vals = [open, m1..mk, close] satisfies open ± m_i == close for some signs."""
+    if len(vals) < 2:
+        return False
+    o, c, mids = vals[0], vals[-1], vals[1:-1]
+    if len(mids) > 8:
+        return False
+    for signs in product((1, -1), repeat=len(mids)):
+        if abs(o + sum(s * m for s, m in zip(signs, mids)) - c) < tol:
+            return True
+    return False
+
+
+def _solve_ppe_row(v: list[float], tol: float = 0.02) -> list[tuple[float, float, float]]:
+    """Split a row's number sequence into gross block | dep block | net and return every
+    arithmetic-consistent (gross_close, dep_close, net) split."""
+    n = len(v)
+    sols = []
+    for ge in range(1, n - 2):
+        for de in range(ge + 2, n - 1):
+            net = v[de + 1]
+            if abs((v[ge] - v[de]) - net) > tol:
+                continue
+            if _block_closes(v[:ge + 1], tol) and _block_closes(v[ge + 1:de + 1], tol):
+                sols.append((v[ge], v[de], net))
+    return sols
+
+
+def _row_segments(ln: str, kws: list[str]) -> list[list[float]]:
+    """Split a line at repeated asset-label occurrences (two year-blocks printed side by side)
+    into per-year number segments. Numbers BEFORE the first label are dropped: the label column
+    is leftmost in a per-row schedule, so anything numeric ahead of it is foreign weld (hindalco
+    p348 welds policy prose '…Rules, 2024 and' onto the row — the stray 2024 poisoned the
+    movement identity and let the clean PRIOR-year row win instead)."""
+    low = ln.lower()
+    idxs = sorted({m.start() for kw in kws for m in re.finditer(re.escape(kw), low)})
+    merged: list[int] = []
+    for i in idxs:
+        if not merged or i - merged[-1] > 40:
+            merged.append(i)
+    if not merged:
+        return [_row_nums(ln)]                # label matched via the ±2 window, not this line
+    if len(merged) == 1:
+        return [_row_nums(ln[merged[0]:])]
+    segs = [_row_nums(ln[a:b]) for a, b in zip(merged, merged[1:] + [len(ln)])]
+    return [s for s in segs if len(s) >= 6]
+
+
+def _current_ppe_segment(segs: list[list[float]], tol: float = 0.02) -> list[float]:
+    """Pick the CURRENT-year segment by year chaining: the segment whose opening equals another
+    segment's solved gross_close is the LATER year. No date parsing needed. A single segment that
+    actually welds BOTH years into one number run (rotated grids print the label once) is split
+    numerically: both halves must independently satisfy the movement identity AND chain."""
+    if len(segs) == 1:
+        seg = segs[0]
+        for k in range(6, len(seg) - 5):
+            a, b = seg[:k], seg[k:]
+            sa, sb = _solve_ppe_row(a, tol), _solve_ppe_row(b, tol)
+            if sa and sb:
+                if any(abs(b[0] - gc) < tol for gc, _, _ in sa):
+                    return b                 # b opens where a closed -> b is the later year
+                if any(abs(a[0] - gc) < tol for gc, _, _ in sb):
+                    return a
+        return seg
+    solved = [(i, _solve_ppe_row(s)) for i, s in enumerate(segs)]
+    for i, s in enumerate(segs):
+        for j, sols in solved:
+            if j == i or not sols:
+                continue
+            if any(abs(s[0] - gc) < tol for gc, _, _ in sols):
+                return s
+    return segs[-1]
+
+
+def _matrix_rows(index: PageIndex, scope: str, section: str, concepts: list[Concept],
+                 note_pages: list[int], allowed: set[int]) -> dict[str, "Datapoint"]:
+    """Deterministic asset-per-ROW reader: returns {key: Datapoint} ONLY for targets whose row
+    parse self-validates by the movement identity — never a guess, so callers can trust every
+    entry and let the model paths fill the rest. Empty dict when nothing validates."""
+    bm25 = [p for p in index.search(SECTIONS[section] + " " + scope, k=12) if not allowed or p in allowed]
+    cands = note_pages + [p for p in bm25 if p not in note_pages]
+    all_stems = [kw for _, kws in _PPE_ASSET_KW for kw in kws]
+
+    def yr(t: str) -> int:
+        # the page's FISCAL year = the LATEST year appearing at least TWICE (a genuine
+        # statement year repeats in headers/'As at' column dates; a stray future year like a
+        # lease maturing 2040 appears once and must not outrank it). Plain max is vulnerable
+        # to the stray; plain mode mis-ranks rotated grids where the prior year is the modal
+        # token (adani p304) — rep-max matches max on every corpus schedule page AND survives
+        # the stray-year case. Falls back to plain max when no year repeats.
+        ys = [int(y) for y in re.findall(r"\b(20\d{2})\b", t)]
+        rep = [y for y in set(ys) if ys.count(y) >= 2]
+        return max(rep) if rep else (max(ys) if ys else 0)
+
+    def _target_map(key: str) -> tuple[str | None, list[str]]:
+        kl = key.lower()
+        block = "gross" if kl.startswith("gross") else "dep" if kl.startswith("accumulated") else None
+        if block is None:
+            return None, []
+        leaf = kl.split("_")[-1]
+        return block, next((kw for stem, kw in _PPE_ASSET_KW if stem in leaf), [])
+
+    def _line_ok(low: str, kws: list[str]) -> bool:
+        # the row must be THIS asset: specific keyword always accepted; a generic secondary
+        # keyword (e.g. 'equipment' for office equipment) is accepted only when no OTHER asset
+        # stem shares the line (rejects 'Plant and Equipment', ROU 'Right-of-Use ... Equipment')
+        if "right of use" in low or "right-of-use" in low:
+            return False
+        if kws[0] in low:
+            return True
+        others = [s for s in all_stems if s not in kws]
+        return any(kw in low for kw in kws[1:]) and not any(s in low for s in others)
+
+    found: dict[str, tuple[float, str, int, int]] = {}   # key -> (value, line, page, page_year)
+    for pg in cands[:6]:
+        page_year = yr(index.page_text[pg - 1])
+        lay, *_ = _ppe_layout(index.text_of([pg]))
+        if lay == "shredded":
+            # -layout destroyed the grid: its welded fragments can still 'solve' arithmetically
+            # by accident, so DON'T scan them — rebuild the true rows from word coordinates only
+            sources = [_yc_lines(index.path, pg)]
+        else:
+            # layout rows first; y-clusters as a second chance (a rotated/per-column table has no
+            # asset-label rows in layout text, but its visual columns become y-cluster rows)
+            sources = [index.page_text[pg - 1].splitlines(), _yc_lines(index.path, pg)]
+        for lines in sources:
+            low_lines = [ln.lower() for ln in lines]
+            for c in concepts:
+                block, kws = _target_map(c.key)
+                if not kws or c.key in found and found[c.key][3] >= page_year:
+                    continue
+                # Candidate rows are SCORED, not first-match: rotated grids scatter the label's
+                # words into ADJACENT y-cluster lines ('Office' lands one y-run over from the
+                # 'Equipment 344.90 …' data run) while an unrelated 'Equipments' fragment (the
+                # tail of a wrapped 'Plant & Equipments' header) sits earlier in y-order — so a
+                # specific label ON the row (2) beats label words in the ±2 window (1) beats a
+                # bare generic fragment (0.5). Verified to separate the true office-equipment
+                # run from the plant/'Equipments' fragment runs on both adani schedules while
+                # keeping the reliance 'Equipments $' merged-row match.
+                best = None                   # (score, -line_idx) -> value, line
+                others = [k[0] for _, k in _PPE_ASSET_KW if k[0] not in kws]
+                for i, ln in enumerate(lines):
+                    low = low_lines[i]
+                    if "right of use" in low or "right-of-use" in low or "total" in low:
+                        continue
+                    if any(all(w in low for w in k0.split()) for k0 in others):
+                        continue              # the row itself names a DIFFERENT asset
+                    win = " ".join(low_lines[max(0, i - 2):i + 3])
+                    if all(w in low for w in kws[0].split()):
+                        score = 2.0
+                    elif all(w in win for w in kws[0].split()):
+                        score = 1.0
+                    elif _line_ok(low, kws):
+                        score = 0.5
+                    else:
+                        continue
+                    if best is not None and best[0] >= score:
+                        continue              # already have an equal-or-better candidate
+                    if len(_row_nums(ln)) < 6:
+                        continue
+                    seg = _current_ppe_segment(_row_segments(ln, kws))
+                    sols = _solve_ppe_row(seg)
+                    if not sols:
+                        continue
+                    gcs, dcs = {round(s[0], 2) for s in sols}, {round(abs(s[1]), 2) for s in sols}
+                    val = None
+                    if block == "gross" and len(gcs) == 1:
+                        val = sols[0][0]
+                    elif block == "dep" and len(dcs) == 1:
+                        val = abs(sols[0][1])
+                    if val is None:           # ambiguous splits disagree -> refuse (miss > wrong)
+                        continue
+                    best = (score, val, ln.strip())
+                if best is not None:
+                    found[c.key] = (best[1], best[2], pg, page_year)
+    if not found:
+        return {}
+    latest = max(v[3] for v in found.values())
+    out: dict[str, Datapoint] = {}
+    for key, (val, ln, pg, py) in found.items():
+        if py < latest:                       # prior-year comparative page — its closing is stale
+            continue
+        whole = abs(val - round(val)) < 0.005
+        sval = f"{int(round(val)):,}" if whole else f"{val:,.2f}"
+        out[key] = Datapoint(key=key, present=True, value=sval,
+                             evidence=f"(movement-identity validated row) {ln[:140]}",
+                             grounded=True, section=section, pages=[pg], confidence="grounded")
+    return out
+
+
 def _matrix_vision(index: PageIndex, scope: str, section: str, concepts: list[Concept],
                    parent: float | None, note_pages: list[int], allowed: set[int]) -> list[Datapoint] | None:
     """Vision read of a wide schedule; reconcile Σnet to the BS line; map targets."""
     from src.engine import vision
     bm25 = [p for p in index.search(SECTIONS[section] + " " + scope, k=12) if not allowed or p in allowed]
     cands = note_pages + [p for p in bm25 if p not in note_pages]
-    items = "\n".join(f"- {c.key}: {c.meaning[:120]} [{c.selector}]" for c in concepts)
+    items = "\n".join(f"- {c.key}: {c.meaning[:400]} [{c.selector}]" for c in concepts)
     best = None
     for pg in cands[:4]:
         img = vision.render_page(index.path, pg, 400)   # dense multi-column grid: 300 misreads digits
@@ -712,6 +1111,17 @@ def _matrix_vision(index: PageIndex, scope: str, section: str, concepts: list[Co
         snet = sum(_num(a["net"]) or 0 for a in assets)
         reconciled = parent is not None and abs(snet - parent) < max(abs(parent) * 0.01, 1)
         tmap = {t["key"]: t for t in o.get("targets", [])}
+        # GROUNDING GUARD: vision misreads/invents digits on dense wide grids (reliance cons
+        # returned 13,287 and 61,473 — printed NOWHERE in the whole PDF — and a page-level Σnet
+        # tie-out even blessed a 6->8 single-digit misread as 'reconciled'). Shredding destroys
+        # the text's GEOMETRY, never its DIGITS, so any true cell value appears verbatim in the
+        # page's raw text — a vision value whose digit-string doesn't is a fabrication. Skipped
+        # only on genuinely image-only pages (no extractable text to ground against).
+        page_digits = _digits(index.page_text[pg - 1])
+        can_ground = len(index.page_text[pg - 1].strip()) >= 200
+        def _ungrounded(v) -> bool:
+            vd = _digits(v)
+            return can_ground and len(vd) >= 3 and vd not in page_digits
         out, n = [], 0
         for c in concepts:
             t = tmap.get(c.key)
@@ -720,14 +1130,15 @@ def _matrix_vision(index: PageIndex, scope: str, section: str, concepts: list[Co
             # back to the deterministic asset-row backstop ONLY when the model didn't map the target.
             # (Making the backstop authoritative regressed gross — its 'equipment' keyword matched a
             # wrong asset row, 21,042 vs the correct 71,504.)
-            if t and t.get("present") and t.get("value") not in (None, "", "-"):
+            if t and t.get("present") and t.get("value") not in (None, "", "-") \
+                    and not _ungrounded(t["value"]):
                 n += 1
                 ev = t.get("evidence", "")
                 out.append(Datapoint(key=c.key, present=True, value=_hygiene(t["value"], ev), evidence=ev,
                                      grounded=reconciled, section=section, pages=[pg], confidence=conf))
             else:
                 bv = _ppe_backstop(c.key, assets)
-                if bv is not None:
+                if bv is not None and not _ungrounded(str(bv)):
                     n += 1
                     out.append(Datapoint(key=c.key, present=True, value=_hygiene(str(bv), ""),
                                          evidence="(matrix backstop: asset-row map)", grounded=reconciled,
@@ -947,7 +1358,7 @@ def _matrix_text(index: PageIndex, scope: str, section: str, concepts: list[Conc
     per-row schedule (likely an asset-per-COLUMN layout), so the caller falls back to vision."""
     bm25 = [p for p in index.search(SECTIONS[section] + " " + scope, k=12) if not allowed or p in allowed]
     cands = note_pages + [p for p in bm25 if p not in note_pages]
-    items = "\n".join(f"- {c.key}: {c.meaning[:120]} [{c.selector}]" for c in concepts)
+    items = "\n".join(f"- {c.key}: {c.meaning[:400]} [{c.selector}]" for c in concepts)
     best = None
     best_grounded = None  # most-grounded read seen across candidates (fallback when none reconcile)
     for pg in cands[:6]:
@@ -1051,11 +1462,14 @@ def _targets_vision(index: PageIndex, scope: str, section: str, concepts: list[C
     from src.engine import vision
     bm25 = [p for p in index.search(SECTIONS[section] + " " + scope, k=12) if not allowed or p in allowed]
     cands = note_pages + [p for p in bm25 if p not in note_pages]
-    items = "\n".join(f"- {c.key}: {c.meaning[:140]}" + (f" [{c.selector}]" if c.selector else "")
+    items = "\n".join(f"- {c.key}: {c.meaning[:400]}" + (f" [{c.selector}]" if c.selector else "")
                       for c in concepts)
     best = None
     for pg in cands[:3]:
-        pages = [pg, pg + 1] if pg + 1 <= index.n_pages else [pg]   # note often spans 2 pages
+        # symmetric window: the note often spans 2 pages, and it can START one page BEFORE the
+        # top-ranked candidate (adani cons: unsecured Inter-Corporate Loans 9,726.16 sits on p316
+        # while ranking surfaced p317 — the forward-only window missed the whole unsecured block)
+        pages = [q for q in (pg - 1, pg, pg + 1) if 1 <= q <= index.n_pages]
         imgs = [vision.render_page(index.path, p, 320) for p in pages]
         o = llm.extract_json(
             instructions=instr.format(scope=scope),
@@ -1146,6 +1560,32 @@ def _investments_pages(index: PageIndex, allowed: set[int]) -> list[int]:
     return []
 
 
+# CONSOLIDATED statements carry JV/associate stakes in a separate EQUITY-METHOD note (Ind AS 28
+# 'accounted for using the equity method'), NOT inside the fair-value investments note that
+# _investments_pages locates — so consolidated JV targets were structurally invisible (hindalco's
+# MNH Shakti 7 on p263, itc's ITC Filtrona 146.42 on p272, adani's 6,705.74 on p283 all live
+# outside the read window). Framework vocabulary only; investee tables have >=3 numeric rows.
+_EQUITY_METHOD_SIG = ("equity method", "equity accounted", "interests in joint ventures",
+                      "investment in joint ventures")
+
+
+def _equity_method_pages(index: PageIndex, allowed: set[int]) -> list[int]:
+    """Top pages of the consolidated equity-method (JV/associates) note, best first."""
+    hits = []
+    for p in range(1, index.n_pages + 1):
+        if allowed and p not in allowed:
+            continue
+        t = index.page_text[p - 1]
+        tl = t.lower()
+        s = sum(1 for k in _EQUITY_METHOD_SIG if k in tl)
+        if s >= 1 and ("joint venture" in tl or "associate" in tl):
+            nrows = sum(1 for ln in t.splitlines() if len(re.findall(r"\d[\d,]*\.?\d*", ln)) >= 2)
+            if nrows >= 3:
+                hits.append((s, nrows, p))
+    hits.sort(key=lambda x: (-x[0], -x[1]))
+    return [p for *_, p in hits[:2]]
+
+
 def _category_vision(index: PageIndex, scope: str, section: str,
                      concepts: list[Concept], allowed: set[int]) -> list[Datapoint]:
     """Vision read of the garbled class-listing investments note. Each target is a CLASS; the
@@ -1153,15 +1593,19 @@ def _category_vision(index: PageIndex, scope: str, section: str,
     from src.engine import vision
     pages = _investments_pages(index, allowed)
     if not pages:                            # fallback: BM25 if the signature locator finds nothing
-        ex_terms = " ".join(e for c in concepts for e in c.examples)
+        ex_terms = " ".join(e for c in concepts for e in _examples(c, section))
         pages = [p for p in index.search(SECTIONS[section] + " " + scope + " " + ex_terms, k=20)
                  if not allowed or p in allowed][:3]
+    if scope == "consolidated":
+        # consolidated JV/associate stakes live in the separate equity-method note, never in the
+        # fair-value investments note — append its pages or those targets are structurally absent
+        pages = pages + [p for p in _equity_method_pages(index, allowed) if p not in pages]
     if not pages:
         return [Datapoint(key=c.key, present=False, section=section) for c in concepts]
     imgs = [vision.render_page(index.path, p, 320) for p in pages]
     items_desc = "\n".join(
         f"- key: {c.key}\n  class: {c.meaning[:320]}"
-        + (f"\n  examples: {'; '.join(c.examples)}" if c.examples else "")
+        + (f"\n  examples: {'; '.join(_examples(c, section))}" if c.examples else "")
         for c in concepts)
     o = llm.extract_json(
         instructions=_CATEGORY_VISION_INSTR.format(scope=scope),
@@ -1208,8 +1652,8 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
 
     tags = page_scopes(index)
     allowed = {i + 1 for i, t in enumerate(tags) if t in (scope, "unknown")}
-    bs_lines = _statement_lines(index, scope, "bs")
-    pl_lines = _statement_lines(index, scope, "pl")
+    bs_lines = _statement_lines(index, scope, "bs", allowed)
+    pl_lines = _statement_lines(index, scope, "pl", allowed)
 
     def _run_core(sec: str, cs: list[Concept]) -> list[Datapoint]:
         if sec in VISION_CATEGORY_SECTIONS:   # garbled class-listing note (investments) -> vision + code-sum
@@ -1217,27 +1661,53 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
         parent, refs = _parent(sec, bs_lines, pl_lines)
         title_kws = _PARENT.get(sec, (None, []))[1]
         npages = _note_pages(index, refs, title_kws, allowed)
-        if not npages and sec in _NOTE_LOCATE_SECTIONS:
-            # ref-based locate found nothing (the stochastic balance-sheet read dropped the parent
-            # line, collapsing the whole section). Fall back to the DETERMINISTIC signature locate.
-            npages = _signature_pages(index, sec, allowed)
+        if sec in _NOTE_LOCATE_SECTIONS:
+            # The DETERMINISTIC signature locate ALWAYS runs for these sections — not only when the
+            # ref navigation comes up empty. The note refs inherit the stochastic balance-sheet LLM
+            # read: a bad draw drops or corrupts the parent's note ref, and the ref can also land a
+            # look-alike page (the SOCIE carries the same note number; a '(Contd.)' continuation page
+            # matches the heading). The signature pages are computed from the page text alone, and on
+            # the 5-company corpus their top-2 contain the note's core table for all 10 scope-combos.
+            # Interleave signature-first with the ref pages so the read window always covers BOTH
+            # locate mechanisms (window = top-2 pages ±1 in _extract_section).
+            sig = _signature_pages(index, sec, allowed)
+            merged: list[int] = []
+            for pair in zip_longest(sig, npages):
+                for p in pair:
+                    if p and p not in merged:
+                        merged.append(p)
+            npages = merged
         if sec in MATRIX_SECTIONS:
             # Read each layout by the method that fits how it survived extraction:
             #   asset-per-COLUMN clean text -> deterministic code read (no model, no variance);
-            #   asset-per-ROW              -> model text read of the de-rotated rows;
-            #   shredded / rotated         -> vision.
+            #   asset-per-ROW              -> deterministic movement-identity row read first,
+            #                                 model text read for what it can't prove;
+            #   shredded / rotated         -> y-cluster row read, then vision.
             m = _matrix_columns(index, scope, sec, cs, parent, npages, allowed)
             if m is None:
+                det = _matrix_rows(index, scope, sec, cs, npages, allowed)
+                if len(det) == len(cs):       # every target proven arithmetically — done, no model
+                    return [det[c.key] for c in cs]
                 m = _matrix_text(index, scope, sec, cs, parent, npages, allowed)
-            if m is None:
-                m = _matrix_vision(index, scope, sec, cs, parent, npages, allowed)
+                if m is None:
+                    m = _matrix_vision(index, scope, sec, cs, parent, npages, allowed)
+                if det:                       # proven values override the model's, never vice versa
+                    if m is None:
+                        m = [det.get(c.key) or Datapoint(key=c.key, present=False, section=sec,
+                                                         confidence="absent") for c in cs]
+                    else:
+                        m = [det.get(d.key, d) for d in m]
             if m is not None:
                 return m
         if sec in VISION_TARGET_SECTIONS:     # garbled specific-line note -> vision cell-read
             v = _targets_vision(index, scope, sec, cs, _BORROW_VISION_INSTR, npages, allowed)
             if v is not None:
                 return v
-        rec = _reconciled_section(index, scope, sec, cs, parent, npages, allowed)
+        # Non-additive notes NEVER go through reconciliation — for them the tie-out selects the
+        # WRONG page (see NON_ADDITIVE_SECTIONS) and its near-empty result would short-circuit the
+        # grounded fallback read below, collapsing the whole note to absent.
+        rec = (None if sec in NON_ADDITIVE_SECTIONS
+               else _reconciled_section(index, scope, sec, cs, parent, npages, allowed))
         if rec is not None:
             return rec
         # Column-sections read their note with column reflow (share_capital + other_expenses); every

@@ -365,18 +365,24 @@ items:
 - key: Equity Forfeited
   scope: both
   value_type: monetary
-  concept: Amount of equity shares / calls forfeited (forfeited shares account). Often nil. Companies
-    Act.
+  concept: Amount of equity shares / calls forfeited (forfeited shares account). Often nil. Usually
+    disclosed as a 'Less … Face Value of Equity Shares forfeited' line — take that printed forfeited
+    figure (it may sit in the shares column in absolute rupees when face value is Rs 1) even when the
+    Rs-crore column rounds it to '-'. NOT 'calls unpaid' / 'calls in arrears' — unpaid calls are
+    a different deduction, not forfeiture. Companies Act.
   aliases:
   - Forfeited shares
-  - 'Less: Calls in arrears / forfeited'
+  - Face Value of Equity Shares forfeited
   - Forfeited equity shares
   - Amount of forfeited shares
   location_hint: Share Capital note (forfeiture adjustment)
 - key: Equity Paid Up
   scope: both
   value_type: monetary
-  concept: Paid-up EQUITY share capital amount (Rs) as at year-end — the final paid-up line after forfeiture.
+  concept: Paid-up EQUITY share capital amount (Rs) as at year-end — the FINAL total after ALL
+    deduction lines (forfeiture AND treasury shares); this equals the balance sheet's Equity Share
+    Capital carrying amount. It is often an unlabeled bare-number total row at the bottom of the
+    capital block.
   aliases:
   - Total equity share capital
   - Paid-up equity share capital
@@ -465,7 +471,8 @@ items:
   scope: both
   value_type: count
   concept: Number of equity shares bought back during the year OR held as treasury shares (ESOP trust).
-    Companies Act §68.
+    When treasury shares are held via MULTIPLE trusts (several 'Less … Treasury Shares' lines), the
+    answer is the SUM of all trust lines — return them as addends. Companies Act §68.
   aliases:
   - Shares bought back
   - Buy-back of equity shares

@@ -38,3 +38,4 @@ output/*_mini*.json
 output/*_wd.json
 output/*_wholedoc.json
 data/*.bak
+logs/*

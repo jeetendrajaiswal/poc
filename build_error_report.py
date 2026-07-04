@@ -1,17 +1,69 @@
 """Build a per-company error report (one Excel sheet per company).
 Runs the full engine on each company/scope, diffs against gt_master_corrected.csv,
-and lists every error with page, item, model value, GT value, confidence, reason."""
-import csv, re, os
+and lists every error with page, item, model value, GT value, confidence, reason.
+
+Detailed run logging (for post-run forensics, all under logs/run_<ts>/):
+  llm_calls.jsonl              one record per API call: company/scope, schema, pages sent,
+                               tokens in/out, cost, duration, status
+  datapoints_<comp>_<scope>.json  EVERY datapoint (correct ones too): value, confidence,
+                               pages, grounded, evidence — lets you trace any error to the
+                               exact read without re-running
+  errors.json                  the diff rows in machine-readable form
+  summary.json                 totals: per-company/per-section error counts, tokens, cost
+"""
+import csv, json, os, re, threading, time
+from datetime import datetime
+
 import src.llm as llm
 
-# --- cost meter -------------------------------------------------------------
-_cli = llm.client(); _real = _cli.responses.create; ACC = {"calls": 0, "in": 0, "out": 0}
+# --- run log ------------------------------------------------------------------
+RUN_DIR = os.path.join("logs", f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+os.makedirs(RUN_DIR, exist_ok=True)
+_LOG_LOCK = threading.Lock()
+CURRENT = {"company": "", "scope": ""}          # set by the outer loop, read by the wrapper
+
+
+def _log(rec: dict):
+    with _LOG_LOCK:
+        with open(os.path.join(RUN_DIR, "llm_calls.jsonl"), "a") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+# --- cost meter + call logger ---------------------------------------------------
+_cli = llm.client(); _real = _cli.responses.create
+ACC = {"calls": 0, "in": 0, "out": 0}
+PRICE_IN, PRICE_OUT = 0.75 / 1e6, 4.5 / 1e6     # $/token (keep in sync with the model)
+
+
 def _w(*a, **k):
-    r = _real(*a, **k); u = getattr(r, "usage", None); ACC["calls"] += 1
-    if u:
-        ACC["in"] += getattr(u, "input_tokens", 0) or 0
-        ACC["out"] += getattr(u, "output_tokens", 0) or 0
+    t0 = time.time()
+    r = _real(*a, **k)
+    dt = time.time() - t0
+    u = getattr(r, "usage", None)
+    ti = (getattr(u, "input_tokens", 0) or 0) if u else 0
+    to = (getattr(u, "output_tokens", 0) or 0) if u else 0
+    with _LOG_LOCK:
+        ACC["calls"] += 1; ACC["in"] += ti; ACC["out"] += to
+    inp = k.get("input", "")
+    txt = inp if isinstance(inp, str) else " ".join(
+        c.get("text", "") for m in inp for c in m.get("content", []) if isinstance(c, dict))
+    n_imgs = 0 if isinstance(inp, str) else sum(
+        1 for m in inp for c in m.get("content", []) if c.get("type") == "input_image")
+    sec = re.search(r"SECTION: ([^\n]*)", txt)
+    _log({
+        "ts": round(time.time(), 2), "company": CURRENT["company"], "scope": CURRENT["scope"],
+        "schema": (k.get("text") or {}).get("format", {}).get("name", "?"),
+        "section": sec.group(1).strip() if sec else "",
+        "pages": [int(p) for p in re.findall(r"=== PAGE (\d+) ===", txt)],
+        "images": n_imgs, "model": k.get("model", ""),
+        "input_tokens": ti, "output_tokens": to,
+        "cost": round(ti * PRICE_IN + to * PRICE_OUT, 5),
+        "duration_s": round(dt, 2), "status": getattr(r, "status", ""),
+        "instr": (k.get("instructions") or "")[:90],
+    })
     return r
+
+
 _cli.responses.create = _w
 
 from src.engine.index import PageIndex
@@ -62,13 +114,25 @@ def classify(gt_val, dp_obj):
 
 # --- run --------------------------------------------------------------------
 errors = {c: [] for c in COMPANIES}
+per_company_cost = {}
 for comp in COMPANIES:
+    calls0, in0, out0 = ACC["calls"], ACC["in"], ACC["out"]
     idx = PageIndex(os.path.expanduser(f"~/Downloads/{comp}.pdf"))
     got = {}   # (scope, key) -> Datapoint
     for eng_scope, gt_scope in SCOPES:
+        CURRENT["company"], CURRENT["scope"] = comp, eng_scope
+        t0 = time.time()
         res = dp.extract_datapoints(idx, eng_scope, concepts)
         for k, d in res.items():
             got[(gt_scope, k)] = d
+        # full per-datapoint dump — correct values included (forensics without re-running)
+        with open(os.path.join(RUN_DIR, f"datapoints_{comp}_{eng_scope}.json"), "w") as f:
+            json.dump({k: {"section": d.section, "present": d.present, "value": d.value,
+                           "confidence": d.confidence, "grounded": d.grounded,
+                           "pages": d.pages, "evidence": d.evidence}
+                       for k, d in res.items()}, f, indent=1, ensure_ascii=False)
+        print(f"  {comp}/{eng_scope}: {len(res)} datapoints in {time.time()-t0:.0f}s "
+              f"(running cost ~${ACC['in']*PRICE_IN + ACC['out']*PRICE_OUT:.2f})", flush=True)
     # diff every GT row for this company
     for (cc, scope, key), info in GT.items():
         if cc != comp: continue
@@ -92,7 +156,29 @@ for comp in COMPANIES:
             "confidence": conf, "error_type": etype, "reason": reason,
             "gt_evidence": info["evidence"],
         })
-    print(f"{comp:9}: {len(errors[comp])} errors")
+    dc, din, dout = ACC["calls"] - calls0, ACC["in"] - in0, ACC["out"] - out0
+    per_company_cost[comp] = {"calls": dc, "input_tokens": din, "output_tokens": dout,
+                              "cost": round(din * PRICE_IN + dout * PRICE_OUT, 3)}
+    print(f"{comp:9}: {len(errors[comp])} errors | {dc} calls, {din:,} in / {dout:,} out tok, "
+          f"~${per_company_cost[comp]['cost']:.2f}", flush=True)
+
+# --- machine-readable outputs -------------------------------------------------
+with open(os.path.join(RUN_DIR, "errors.json"), "w") as f:
+    json.dump(errors, f, indent=1, ensure_ascii=False)
+sec_counts = {}
+for comp, es in errors.items():
+    for e in es:
+        sec_counts[e["section"]] = sec_counts.get(e["section"], 0) + 1
+summary = {
+    "total_errors": sum(len(v) for v in errors.values()),
+    "per_company": {c: len(errors[c]) for c in COMPANIES},
+    "per_section": dict(sorted(sec_counts.items(), key=lambda x: -x[1])),
+    "api": {"calls": ACC["calls"], "input_tokens": ACC["in"], "output_tokens": ACC["out"],
+            "cost": round(ACC["in"] * PRICE_IN + ACC["out"] * PRICE_OUT, 2)},
+    "per_company_cost": per_company_cost,
+}
+with open(os.path.join(RUN_DIR, "summary.json"), "w") as f:
+    json.dump(summary, f, indent=1)
 
 # --- write Excel ------------------------------------------------------------
 from openpyxl import Workbook
@@ -142,5 +228,8 @@ for comp in COMPANIES:
 
 out = "error_report.xlsx"
 wb.save(out)
-print(f"\nWrote {out}  ({sum(len(v) for v in errors.values())} total errors)")
-print(f"API: calls={ACC['calls']} cost~${ACC['in']/1e6*0.75 + ACC['out']/1e6*4.5:.2f}")
+print(f"\nWrote {out}  ({summary['total_errors']} total errors)")
+print(f"Per-section: {summary['per_section']}")
+print(f"API: calls={ACC['calls']} in={ACC['in']:,} out={ACC['out']:,} "
+      f"cost~${summary['api']['cost']:.2f}")
+print(f"Logs: {RUN_DIR}/")

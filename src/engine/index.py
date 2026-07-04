@@ -198,15 +198,36 @@ class PageIndex:
         doc.close()
         return out
 
+    def _reflow_safe(self, p: int) -> bool:
+        """The reflow may only REORDER content, never lose it: accept a page's reflowed text
+        only when it preserves the -layout text's full numeric-token multiset. On the 5-company
+        dev corpus this always held (0/197 two-up pages), but the 95-PDF nifty100 sweep found
+        ~9%% of two-up pages lose tokens in reflow (gutter mis-detection on unusual layouts) —
+        those pages silently dropped values. This guard turns that failure mode into a plain
+        -layout read, by construction."""
+        cached = getattr(self, "_reflow_ok", None)
+        if cached is None:
+            cached = self._reflow_ok = {}
+        if p not in cached:
+            c = self.column_text[p - 1]
+            if c is None:
+                cached[p] = False
+            else:
+                num = re.compile(r"\d[\d,]*\.?\d*")
+                from collections import Counter
+                a = Counter(t.replace(",", "") for t in num.findall(self.page_text[p - 1]))
+                b = Counter(t.replace(",", "") for t in num.findall(c))
+                cached[p] = not (a - b)
+        return cached[p]
+
     def text_of(self, pages: list[int], columns: bool = False) -> str:
         """Concatenate the layout text of the given 1-based pages, labelled.
         columns=True uses the column-reflowed text on genuine multi-column pages
-        (falls back to -layout where the page is single-column)."""
+        (falls back to -layout where the page is single-column OR where the reflow
+        fails the numeric-token preservation guard)."""
         def _txt(p: int) -> str:
-            if columns:
-                c = self.column_text[p - 1]
-                if c:
-                    return c
+            if columns and self._reflow_safe(p):
+                return self.column_text[p - 1]
             return self.page_text[p - 1]
         return "\n".join(f"=== PAGE {p} ===\n{_txt(p)}"
                          for p in pages if 1 <= p <= self.n_pages)
