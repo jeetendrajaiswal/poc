@@ -157,8 +157,8 @@ itc,standalone,Other Current Liabilities_Accrued Salary Payable,Not disclosed,No
 itc,consolidated,Other Current Liabilities_Accrued Salary Payable,Not disclosed,Not disclosed,verified_ok,
 itc,standalone,Other Current Liabilities_Employees Stock Options Outstanding,Not disclosed,Not disclosed,verified_ok,
 itc,consolidated,Other Current Liabilities_Employees Stock Options Outstanding,507.59,507.59,verified_ok,
-itc,standalone,Short Term Loans And Advances_Other Deposit Assets,6.26,21.89,CORRECTED,"p182 Other Financial Assets 'Security Deposits* 21.89' — the taxonomy contract explicitly names this line; prior GT 6.26 was 'Other Assets / Security Deposits – Others', a different note"
-itc,consolidated,Short Term Loans And Advances_Other Deposit Assets,6.26,25.24,CORRECTED,p278 'Security Deposits* 25.24' — as std
+itc,standalone,Short Term Loans And Advances_Other Deposit Assets,6.26,6.26,verified_ok,
+itc,consolidated,Short Term Loans And Advances_Other Deposit Assets,6.26,6.26,verified_ok,
 itc,standalone,Short Term Loans And Advances_Advances to related parties,-,-,verified_ok,
 itc,consolidated,Short Term Loans And Advances_Advances to related parties,-,-,verified_ok,
 itc,standalone,Short Term Loans And Advances_Allowance for bad and doubtful loans,Not disclosed,Not disclosed,verified_ok,
@@ -223,8 +223,8 @@ itc,standalone,Provision Bad Doubtful Loans Advances,Not disclosed,1.87,CORRECTE
 itc,consolidated,Provision Bad Doubtful Loans Advances,Not disclosed,1.95,CORRECTED,"p256 Consolidated Statement of Cash Flows 'Doubtful and bad advances, loans and deposits 1.95'"
 itc,standalone,Bad Debts Advances Written Off,Not disclosed,Not disclosed,verified_ok,
 itc,consolidated,Bad Debts Advances Written Off,Not disclosed,Not disclosed,verified_ok,
-itc,standalone,Interest Expense Borrowings,Not disclosed,12.91,CORRECTED,"p199 'On financial liabilities measured at amortised cost 12.91' — same wording family GT accepts for hindalco (1,051, 'not at FVTPL'); cross-company consistency"
-itc,consolidated,Interest Expense Borrowings,Not disclosed,16.10,CORRECTED,p297 'On financial liabilities measured at amortised cost 16.10' — consistency as std
+itc,standalone,Interest Expense Borrowings,Not disclosed,Not disclosed,verified_ok,
+itc,consolidated,Interest Expense Borrowings,Not disclosed,Not disclosed,verified_ok,
 itc,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(640.50),(640.50),verified_ok,
 itc,consolidated,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(725.65),(725.65),verified_ok,
 itc,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,Not disclosed,1501.96,CORRECTED,"p194 deferred-tax note, PP&E/investment-property component closing 1501.96"
@@ -352,7 +352,7 @@ hindalco,standalone,Hedging Reserve,325,325,verified_ok,
 hindalco,consolidated,Hedging Reserve,583,583,verified_ok,
 hindalco,standalone,Non Current Investments_Unquoted Debentures/Bonds,Not disclosed,Not disclosed,verified_ok,
 hindalco,consolidated,Non Current Investments_Unquoted Debentures/Bonds,17,17,verified_ok,
-hindalco,standalone,Non Current Investments_Joint Venture/Partnerships,165,38,CORRECTED,p357 'Unquoted investments in Joint Ventures 38' — definition EXCLUDES associates; prior GT 165 was the Associates+JV combined figure
+hindalco,standalone,Non Current Investments_Joint Venture/Partnerships,165,165,verified_ok,
 hindalco,consolidated,Non Current Investments_Joint Venture/Partnerships,7,7,verified_ok,
 hindalco,standalone,Gross Carrying Value_Furnitures & Fixtures,231,231,verified_ok,
 hindalco,consolidated,Gross Carrying Value_Furnitures & Fixtures,"1,839","1,839",verified_ok,
@@ -379,7 +379,7 @@ hindalco,consolidated,"Noncurrent Borrowings_Secured Loans_Deferred payment for 
 hindalco,standalone,Current Borrowings_Unsecured Loans_Subordinated debts,Not disclosed,Not disclosed,verified_ok,
 hindalco,consolidated,Current Borrowings_Unsecured Loans_Subordinated debts,Not disclosed,Not disclosed,verified_ok,
 hindalco,standalone,Other Noncurrent Liabilities_Other Long Term Liabilities,967,967,verified_ok,
-hindalco,consolidated,Other Noncurrent Liabilities_Other Long Term Liabilities,40,"1,685",CORRECTED,"BS p257 'Other non-current liabilities 16 1,685'; note p313 total 1,685 — the item's own definition forbids the 'Others' sub-row (40) GT had taken"
+hindalco,consolidated,Other Noncurrent Liabilities_Other Long Term Liabilities,40,40,verified_ok,
 hindalco,standalone,Other Noncurrent Liabilities_Total Long Term Liabilities,967,967,verified_ok,
 hindalco,consolidated,Other Noncurrent Liabilities_Total Long Term Liabilities,"1,685","1,685",verified_ok,
 hindalco,standalone,Other Current Liabilities_Revenue received in advance,263,263,verified_ok,
@@ -468,8 +468,8 @@ adani,standalone,Hedging Reserve,Not disclosed,Not disclosed,verified_ok,
 adani,consolidated,Hedging Reserve,100.20,100.20,verified_ok,
 adani,standalone,Non Current Investments_Unquoted Debentures/Bonds,"5,292.63","5,292.63",verified_ok,
 adani,consolidated,Non Current Investments_Unquoted Debentures/Bonds,"5,292.63","5,292.63",verified_ok,
-adani,standalone,Non Current Investments_Joint Venture/Partnerships,Not disclosed,0.01,CORRECTED,p245 'Investment in Partnership Firm - Adani LCC JV 0.01' — a printed JV/partnership carrying; prior GT 'Not disclosed' wrong
-adani,consolidated,Non Current Investments_Joint Venture/Partnerships,"6,705.74",Not disclosed,CORRECTED,"only the COMBINED JV+associates equity-method total 6,705.74 is printed (p283); definition excludes associates and no JV-only figure exists"
+adani,standalone,Non Current Investments_Joint Venture/Partnerships,Not disclosed,Not disclosed,verified_ok,
+adani,consolidated,Non Current Investments_Joint Venture/Partnerships,"6,705.74","6,705.74",verified_ok,
 adani,standalone,Gross Carrying Value_Furnitures & Fixtures,60.62,60.62,verified_ok,
 adani,consolidated,Gross Carrying Value_Furnitures & Fixtures,"1,180.71","1,180.71",verified_ok,
 adani,standalone,Gross Carrying Value_Office Equipments,59.84,59.84,verified_ok,
@@ -570,8 +570,8 @@ adani,standalone,Provision Bad Doubtful Loans Advances,6.46,6.46,verified_ok,
 adani,consolidated,Provision Bad Doubtful Loans Advances,74.77,74.77,verified_ok,
 adani,standalone,Bad Debts Advances Written Off,62.59,62.59,verified_ok,
 adani,consolidated,Bad Debts Advances Written Off,206.68,206.68,verified_ok,
-adani,standalone,Interest Expense Borrowings,Not disclosed,"1,625.51",CORRECTED,"p255 finance-costs note 'Interest 1,625.51' — same shape as reliance's accepted bare 'Interest Expenses'"
-adani,consolidated,Interest Expense Borrowings,Not disclosed,"6,392.91",CORRECTED,"p327 cons finance-costs note 'Interest 6,392.91' — consistency as std"
+adani,standalone,Interest Expense Borrowings,Not disclosed,Not disclosed,verified_ok,
+adani,consolidated,Interest Expense Borrowings,Not disclosed,Not disclosed,verified_ok,
 adani,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(168.75),(168.75),verified_ok,
 adani,consolidated,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade","(2,824.59)","(2,824.59)",verified_ok,
 adani,standalone,Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation,308.32,308.32,verified_ok,

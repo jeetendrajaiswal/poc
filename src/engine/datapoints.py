@@ -1637,6 +1637,161 @@ def _category_vision(index: PageIndex, scope: str, section: str,
 
 
 # ---------------------------------------------------------------------------
+# Deterministic DEFERRED-TAX movement-matrix reader — the same "arithmetic identity, silent
+# when ambiguous" pattern that took ppe 12 -> 0. Every corpus format prints the DT note as a
+# movement matrix whose rows satisfy   opening ± movements = closing   (reliance 37,869-334=
+# 37,535; itc 1843.74+97.91-439.69=1501.96; adani 204.80+103.52=308.32; hindalco (5,932)+181=
+# (5,751); infosys 296-62=234). A value is returned ONLY from an identity-validated row whose
+# label matches the target's framework keywords; when the SAME target matches identity-valid
+# rows with different closings (hindalco cons prints per-orientation matrices with identical
+# row labels), the reader stays SILENT and the model path decides — miss beats wrong.
+# ---------------------------------------------------------------------------
+
+# framework keyword ALTERNATIVES per deferred-tax target (key-substring -> list of token
+# sets; a row matches when ALL tokens of one set appear in its label context). Data, not code.
+_DT_TARGET_KW: dict[str, list[set]] = {
+    "Accumulated Depreciation": [{"property", "plant"}, {"ppe"},
+                                 {"depreciation", "intangible"}, {"written", "down", "value"}],
+    "Leave Encashment": [{"leave"}, {"compensated"}, {"employee", "benefit"},
+                         {"separation", "retirement"}],
+}
+
+
+def _dt_row_identity(nums: list[float], tol_frac: float = 0.001) -> bool:
+    """opening ± movements = closing, movements 1..6, signs as printed (enumeration-free:
+    DT matrices print signed cells, so a plain sum must close). Tolerance is TIGHT (0.1%):
+    the identity is printed-exact in every corpus format, and a loose 1% let a balance-sheet
+    line ('PPE [note] 1 2,68,923 2,67,096') pass at large magnitudes."""
+    if len(nums) < 3 or len(nums) > 8:
+        return False
+    tol = max(abs(nums[-1]) * tol_frac, 0.6)
+    return abs(sum(nums[:-1]) - nums[-1]) < tol
+
+
+def _dt_rows(index: PageIndex, scope: str, concepts: list[Concept],
+             allowed: set[int]) -> dict[str, "Datapoint"]:
+    """{key: Datapoint} for deferred-tax targets proven by the movement identity. Empty when
+    nothing validates or matches are ambiguous."""
+    targets = [(c, kws) for c in concepts
+               for frag, kws in _DT_TARGET_KW.items() if frag in c.key]
+    if not targets:
+        return {}
+    bm25 = [p for p in index.search(SECTIONS["deferred_tax"] + " " + scope, k=10)
+            if not allowed or p in allowed]
+    # the note often ANNOUNCES the matrix at a page's foot ('the gross movement in the
+    # deferred tax account…') with the matrix itself overleaf — scan each hit's successor too
+    pages = []
+    for p in bm25[:8]:
+        for q in (p, p + 1):
+            if 1 <= q <= index.n_pages and q not in pages and (not allowed or q in allowed):
+                pages.append(q)
+    rows: list[tuple[int, str, list[float], str]] = []  # (page, label_context, nums, block)
+    for p in pages:
+        text = index.column_text[p - 1] if index._reflow_safe(p) else index.page_text[p - 1]
+        low_all = text.lower()
+        if "deferred tax" not in low_all and "tax asset" not in low_all \
+                and "tax liabilit" not in low_all:
+            continue
+        lines = text.splitlines()
+        # ORIENTATION block per line: a row belongs to the block CLOSED by the next
+        # 'Total deferred tax liabilities/assets' line below it (itc prints the DTL rows,
+        # then that total, then the DTA rows). '' when the format doesn't print such totals.
+        blocks = [""] * len(lines)
+        nxt = ""
+        for i in range(len(lines) - 1, -1, -1):
+            li = lines[i].lower()
+            if "total deferred tax liabilit" in li:
+                nxt = "dtl"
+            elif "total deferred tax asset" in li:
+                nxt = "dta"
+            blocks[i] = nxt
+        for i, ln in enumerate(lines):
+            s = ln.strip()
+            nums = _row_nums(s)
+            if not _dt_row_identity(nums):
+                continue
+            # label context = the row's own text plus up to 2 preceding NUMBERLESS lines
+            # (itc wraps 'On fiscal allowances on property, plant and equipment,' onto the
+            # line above the numeric row)
+            ctx = [s]
+            for j in (i - 1, i - 2):
+                if j >= 0 and not re.search(r"\d", lines[j]):
+                    ctx.append(lines[j].strip())
+            label = " ".join(ctx).lower()
+            if "total" in label or label.startswith("net "):
+                continue
+            rows.append((p, label, nums, blocks[i]))
+        # mode B — 2-column COMPONENT TABLE (adani prints 'Major Components … / DEFERRED TAX
+        # LIABILITIES … Gross Deferred Tax Liabilities'): a block is accepted only when the
+        # component rows sum to the Gross/Total row in BOTH printed columns (CY and PY — two
+        # independent constraints). Restricted to totals with EXACTLY 2 numeric columns so it
+        # can never fire on a movement matrix (whose first column is the OPENING balance).
+        for i, ln in enumerate(lines):
+            m = re.match(r"\s*(gross|total)\s+deferred\s+tax\s+(asset|liabilit)", ln.strip().lower())
+            if not m:
+                continue
+            tot = _row_nums(ln.strip())
+            if len(tot) != 2:
+                continue
+            blk = "dta" if m.group(2) == "asset" else "dtl"
+            comps: list[tuple[str, list[float]]] = []
+            for j in range(i - 1, max(0, i - 14), -1):
+                s2 = lines[j].strip()
+                nums2 = _row_nums(s2)
+                low2 = s2.lower()
+                if not s2 or not nums2:
+                    if re.search(r"deferred\s+tax\s+(asset|liabilit)", low2):
+                        break                            # block heading reached
+                    continue                             # label-wrap line
+                if len(nums2) != 2 or "total" in low2 or "gross" in low2:
+                    break
+                # wrapped labels: prepend up to 2 preceding numberless lines
+                ctx2 = [s2] + [lines[q].strip() for q in (j - 1, j - 2)
+                               if q >= 0 and not re.search(r"\d", lines[q])]
+                comps.append((" ".join(ctx2).lower(), nums2))
+            if len(comps) < 2:
+                continue
+            ok_cols = all(abs(sum(n[col] for _, n in comps) - tot[col])
+                          < max(abs(tot[col]) * 0.001, 0.6) for col in (0, 1))
+            if ok_cols:
+                for lab2, nums2 in comps:
+                    # value = current-year column; store as [v, v] so the year-chaining and
+                    # closing logic treat it uniformly
+                    rows.append((p, lab2, [nums2[0], nums2[0]], blk))
+    out: dict[str, Datapoint] = {}
+    for c, kws in targets:
+        matches = [(p, lab, nums, blk) for p, lab, nums, blk in rows
+                   if any(ts <= {_stem(w) for w in re.findall(r"[a-z][a-z&/\-]+", lab)}
+                          for ts in kws)]
+        if not matches:
+            continue
+        # YEAR CHAINING: a prior-year matrix's row closes where the current-year row opens —
+        # drop any match whose CLOSING equals another match's OPENING (it is the earlier year)
+        current = [m for m in matches
+                   if not any(abs(m[2][-1] - o[2][0]) < max(abs(m[2][-1]) * 0.005, 0.02)
+                              for o in matches if o is not m)]
+        # ORIENTATION: the target key names its block ('..._Deferred tax liabilities_...' is
+        # the DTL component) — when the note prints DTL/DTA block totals, keep only that block
+        want_blk = "dtl" if "_deferred tax liabilities_" in c.key.lower() else \
+                   "dta" if "_deferred tax assets_" in c.key.lower() else ""
+        if want_blk and any(blk for *_, blk in current):
+            current = [m for m in current if m[3] in (want_blk, "")] or current
+        closings = {round(nums[-1], 2) for _, _, nums, _ in current}
+        if len(closings) != 1:                          # ambiguous (multi-orientation) -> silent
+            continue
+        p, lab, nums, _blk = current[0]
+        val = nums[-1]
+        whole = abs(val - round(val)) < 0.005
+        sval = (f"({int(round(abs(val))):,})" if whole else f"({abs(val):,.2f})") if val < 0 \
+            else (f"{int(round(val)):,}" if whole else f"{val:,.2f}")
+        out[c.key] = Datapoint(key=c.key, present=True, value=sval,
+                               evidence=f"(movement-identity validated DT row) {lab[:140]}",
+                               grounded=True, section="deferred_tax", pages=[p],
+                               confidence="grounded")
+    return out
+
+
+# ---------------------------------------------------------------------------
 # RESCUE pass for ABSENT targets — the single largest residual failure shape is "the value IS
 # printed in the in-scope text but the section read returned absent": synonym labels the model
 # refused ('Freight and Forwarding' for carriage outwards), two-up garble, or the value living
@@ -1865,6 +2020,13 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
         # alias-matching lines, fills absents only
         if sec not in MATRIX_SECTIONS | VISION_TARGET_SECTIONS | VISION_CATEGORY_SECTIONS:
             res = _rescue_absents(index, scope, sec, cs, res, allowed)
+        # deferred-tax deterministic reader: arithmetic-proven values override everything
+        # (movement identity / column-sum validated; silent when ambiguous — corpus-validated
+        # 16 correct / 0 wrong; see _dt_rows)
+        if sec == "deferred_tax":
+            det = _dt_rows(index, scope, cs, allowed)
+            if det:
+                res = [det.get(d.key, d) for d in res]
         # (Removed the name-based 'residual guard': it keyed off the KEY name '...Other Long Term'
         # and demoted correct answers, fighting the DEFINITION. e.g. 'Other Long Term Liabilities'
         # is defined as the BS TOTAL line — the engine's total is correct, so a name heuristic that

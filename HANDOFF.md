@@ -460,6 +460,54 @@ confirmation ($1.54): hindalco 16→10 errors (91.4%), adani 13→5 (95.7%; ALL 
 579 GT rows) from 82.0% baseline. Known residuals: hindalco std paid-up count (subtotal row),
 a few run-variance flips (CSR, DT matrix cells), and the policy GT rows.
 
+### 5j. 2026-07-04 — regression suite + GT policy pass ($0, corpus at 93.6%)
+
+1. **`tests/regression_suite.py`** — self-contained (no pytest dep), NO API calls. Fast tier
+   (~seconds): hygiene, _wants_total sweep, composite arithmetic, prompt-scoping invariants
+   (every registry keyed by note-type sections only), ppe row-reader units, taxonomy
+   integrity, truncation-retry mock. `FULL=1` adds the corpus sweeps (share_capital locate
+   10/10 + GT-value windows, ppe 24/0, reflow guard, rescue candidate coverage, scoped
+   statement separation, mocked end-to-end). **13/13 passing.** Run the fast tier after every
+   edit; FULL before any paid run — this exists because a 'safer' heuristic once silently
+   broke a validated reader and only the corpus sweep caught it.
+2. **GT policy pass (10 rows, backup `.bak-policy`)** — principle: the taxonomy definition is
+   the contract; GT must be consistent with it ACROSS companies. Every change carries
+   printed-line evidence, verified manually: finance-costs 'interest on borrowings' now
+   accepts the same wording family everywhere (itc 12.91/16.10, adani 1,625.51/6,392.91 —
+   hindalco's identical wording was already accepted); itc deposits follow the contract's
+   named line ('Security Deposits' in Other FINANCIAL Assets: 21.89/25.24, not the 'Other
+   Assets…Others' 6.26); JV excludes associates per definition (hindalco std 165→38 printed
+   JV-only line; adani cons 6,705.74→Not disclosed, only the combined equity-method total is
+   printed; adani std ND→0.01 'Adani LCC JV'); hindalco cons Other-LTL 40→1,685 (the item's
+   own definition forbids the 'Others' sub-row).
+3. Free rescore (latest extractions, corrected GT): reliance 94.8, adani 95.7, itc 93.1,
+   infosys 92.2, hindalco 92.2 → **TOTAL 93.6% (37 errors / 579)**. From 82.0% baseline.
+
+### 5k. 2026-07-04 — deterministic deferred-tax reader SHIPPED ($0, 16 correct / 0 wrong)
+
+`_dt_rows` in `datapoints.py` (+ `_DT_TARGET_KW` data registry), wired into `run()` as an
+override (arithmetic-proven values beat the model's). Two acceptance modes, both
+company-agnostic arithmetic:
+- **Mode A — movement matrix**: a row is accepted only if opening ± movements = closing
+  (0.1% tolerance — a loose 1% let a balance-sheet line pass at large magnitudes). Wrapped
+  labels get up-to-2 preceding numberless lines as context (itc). Year chaining drops the
+  prior-year matrix (its closing = current's opening). DTL/DTA block tagging from
+  'Total deferred tax liabilities/assets' rows resolves itc's same-name row in both blocks
+  (the target KEY names its orientation).
+- **Mode B — 2-column component table** (adani cons 'Major Components…Gross Deferred Tax
+  …'): a block is accepted only when components sum to the Gross/Total row in BOTH printed
+  columns; restricted to exactly-2-column totals so it can never misfire on a movement
+  matrix (whose first column is the opening balance).
+- **Silent when ambiguous**: same-labelled rows in multiple orientation matrices with
+  different closings (reliance cons p148, hindalco cons) → the model path decides.
+Validation ($0): **16 correct / 4 silent / 0 wrong** on all 20 corpus GT cells (the 4 silents
+are correct behaviour: 2 genuinely Not disclosed, 2 multi-orientation ambiguity). Locked into
+the regression suite (now 14 tests, all passing).
+
+**Queued next:** (a) sector SECTIONS vocabularies for banks/insurance/NBFC (the 14 held-out
+format gaps). (b) selective consensus or determinization for `_statement_lines`. (c) a small
+held-out GT (10-15 nifty100 companies) so accuracy is measured on unseen reports.
+
 ## 6. Suggested next steps (in order)
 
 > Done already: `src/engine/` committed (commit `68dc470`); one full paid run executed
