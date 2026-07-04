@@ -433,6 +433,33 @@ the after-forfeiture subtotal 2,247,226,523 despite the hint) — 2 errors.
 Projected clean state after these fixes: ~50 errors, of which the §5c policy-ambiguous GT
 rows and the known cross-note sourcing gaps are the bulk. Next full run should confirm.
 
+### 5i. 2026-07-04 — the RESCUE pass (alias-anchored absent recovery); hindalco 91.4%, adani 95.7%
+
+The dominant residual failure shape across hindalco/adani (~15 rows) was "the value IS printed
+in the in-scope text but the section read returned absent" (refused synonyms, two-up garble,
+or the value living in a NEIGHBOURING note: P&L face, Other Income, related-party). Generic
+fix, data-driven, no company logic: `_rescue_absents` in `datapoints.py` —
+1. `_alias_candidates`: deterministic scan of the scope's pages (REFLOWED text where
+   `_reflow_safe`) for table-row lines carrying ALL stemmed content words of one of the
+   target's taxonomy aliases; candidates RANKED (alias specificity > already-read pages >
+   label position), heading matches extended into a snippet down to the first total/value row;
+   top-3 per target.
+2. ONE strict re-ask per section quoting only those lines; a returned value must be
+   byte-grounded in the quoted lines; fills ABSENTS ONLY (never touches a present value);
+   confidence 'grounded' if from the section's own pages else 'unverified'. Runs for
+   text-read sections only (matrix/vision have their own backstops).
+Also framework-wording aliases added to the taxonomy (Ind AS 109 'Allowance for credit loss',
+'Electric power expenses', net-'Profit on sale/disposal' with the sign rule, 'Allowance for
+doubtful advances') — data enrichment, not company hacks.
+
+**Validation:** candidate coverage proven free 14/15 on the target rows BEFORE spending (the
+1 miss: adani's 'Bad debts, Exploration costs, Loans and Advances' omits 'written off' — a
+2-token alias would blur write-offs with provisions, deliberately not added). Paid
+confirmation ($1.54): hindalco 16→10 errors (91.4%), adani 13→5 (95.7%; ALL 5 remaining are
+§5c policy-ambiguous GT rows + 1 broad-total FP). Corpus accuracy now **93.1%** (40 errors /
+579 GT rows) from 82.0% baseline. Known residuals: hindalco std paid-up count (subtotal row),
+a few run-variance flips (CSR, DT matrix cells), and the policy GT rows.
+
 ## 6. Suggested next steps (in order)
 
 > Done already: `src/engine/` committed (commit `68dc470`); one full paid run executed

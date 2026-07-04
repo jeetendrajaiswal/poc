@@ -125,9 +125,12 @@ items:
 - key: Loss On Disposal Of Fixed Asset
   scope: both
   value_type: monetary
-  concept: Loss on sale/disposal of property, plant and equipment.
+  concept: Loss on sale/disposal of property, plant and equipment. Often disclosed NET as a
+    single 'Profit/(Loss) on sale/disposal' line — sometimes under OTHER INCOME. When the net
+    figure is a PROFIT (income), this loss item equals that amount NEGATIVE (in parentheses).
   aliases:
   - Loss on sale of property, plant and equipment
+  - Profit on sale/disposal of property, plant and equipment (net)
   - Loss on disposal of fixed assets
   - Loss on sale of assets
   - (Profit)/loss on sale of PPE
@@ -277,6 +280,7 @@ items:
     Ind AS 109 ECL.
   aliases:
   - 'Less: Allowance for doubtful advances'
+  - Allowance for doubtful advances
   - Allowance for bad and doubtful loans
   - Provision for doubtful advances
   - Impairment allowance
@@ -511,6 +515,8 @@ items:
   aliases:
   - Power and fuel
   - Power & fuel
+  - Electric power expenses
+  - Power and electricity
   - Power, fuel and water
   - Consumption of power and fuel
   location_hint: Other Expenses note (P&L); Manufacturing / operating expenses schedule
@@ -614,6 +620,7 @@ items:
   aliases:
   - Impairment loss on financial assets
   - Expected credit loss
+  - Allowance for credit loss
   - Impairment of loans and advances
   - Allowance for expected credit loss (charge)
   location_hint: Other Expenses / Finance-related note (P&L)

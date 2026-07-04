@@ -1636,6 +1636,144 @@ def _category_vision(index: PageIndex, scope: str, section: str,
     return out
 
 
+# ---------------------------------------------------------------------------
+# RESCUE pass for ABSENT targets — the single largest residual failure shape is "the value IS
+# printed in the in-scope text but the section read returned absent": synonym labels the model
+# refused ('Freight and Forwarding' for carriage outwards), two-up garble, or the value living
+# in a NEIGHBOURING note (P&L face, Other Income, related-party note) that the section's window
+# never reads. The rescue is data-driven and company-agnostic: (1) deterministically scan the
+# scope's pages for printed lines whose label carries ALL content words of one of the target's
+# taxonomy aliases and which look like table rows, then (2) ONE strict re-ask per section
+# quoting ONLY those lines. It fills absents exclusively — a present value is never touched —
+# and a returned value must be byte-grounded in the quoted lines, so it cannot hallucinate.
+# ---------------------------------------------------------------------------
+
+_STOPW = {"of", "and", "on", "for", "the", "to", "in", "from", "with", "a", "an", "net"}
+
+
+def _stem(w: str) -> str:
+    return w[:-1] if len(w) > 3 and w.endswith("s") else w
+
+
+def _alias_tokens(alias: str) -> set[str]:
+    return {_stem(w) for w in re.findall(r"[a-z][a-z&/\-]+", alias.lower())
+            if w not in _STOPW and len(w) > 2}
+
+
+def _alias_candidates(index: PageIndex, concepts: list[Concept], allowed: set[int],
+                      read_pages: set[int]) -> dict[str, list[tuple[int, str]]]:
+    """For each concept, printed TABLE-ROW lines matching one of its aliases: every content
+    word (stemmed) of the alias on the line, at least one numeric token, and the label
+    starting within the first ~10 words (rejects prose that merely mentions the words).
+    Scans the REFLOWED text of genuinely two-up pages (where the clean rows live; -layout
+    would show welded fragments). ALL matches are collected then RANKED — alias specificity
+    (more matched tokens = a more specific label), then pages the section already read, then
+    earlier label position — and the top 3 per concept kept: first-found ordering let junk
+    from early prose pages fill the cap before the true note page was ever reached."""
+    tok_sets = {c.key: [t for t in (_alias_tokens(a) for a in c.examples) if t] for c in concepts}
+    big_num = re.compile(r"\d[\d,]*\.\d+|\d{1,3}(?:,\d{2,3})+|\d{4,}")   # value-like, not a note ref
+
+    def _snippet(lines: list[str], i: int) -> str:
+        """The matched line, extended downward when it looks like a NOTE HEADING or a wrapped
+        label (no value-like number on it): the actual figure sits on the following rows
+        ('21. Power and Fuel' -> components -> Total). Extend until a row with a value-like
+        number AND a 'total' row have been seen, cap 12 lines / ~700 chars."""
+        s = lines[i].strip()
+        if big_num.search(s):
+            return s
+        chunk, seen_val, seen_total = [s], False, False
+        for j in range(i + 1, min(i + 13, len(lines))):
+            nxt = lines[j].strip()
+            if not nxt:
+                continue
+            chunk.append(nxt)
+            seen_val = seen_val or bool(big_num.search(nxt))
+            seen_total = seen_total or "total" in nxt.lower()
+            if (seen_val and seen_total) or sum(len(x) for x in chunk) > 700:
+                break
+        return "\n      ".join(chunk)
+
+    found: dict[str, list[tuple[tuple, int, str]]] = {c.key: [] for c in concepts}
+    for p in sorted(allowed):
+        text = index.column_text[p - 1] if index._reflow_safe(p) else index.page_text[p - 1]
+        lines = text.splitlines()
+        for i, ln in enumerate(lines):
+            s = ln.strip()
+            if not (8 < len(s) < 220) or not re.search(r"\d", s):
+                continue
+            first_num = re.search(r"\d", s)
+            label_words = len(s[:first_num.start()].split())
+            if label_words > 10:
+                continue
+            line_toks = {_stem(w) for w in re.findall(r"[a-z][a-z&/\-]+", s.lower())}
+            for key, sets in tok_sets.items():
+                best = max((len(ts) for ts in sets if ts <= line_toks), default=0)
+                if best:
+                    rank = (-best, 0 if p in read_pages else 1, label_words)
+                    found[key].append((rank, p, _snippet(lines, i)))
+    out: dict[str, list[tuple[int, str]]] = {}
+    for key, hits in found.items():
+        if hits:
+            hits.sort(key=lambda h: h[0])
+            out[key] = [(p, s) for _, p, s in hits[:3]]
+    return out
+
+
+_RESCUE_INSTR = (
+    "You previously marked these items ABSENT in a note of an Ind AS annual report ({scope} "
+    "financials). The lines below were found elsewhere in the SAME {scope} financial statements and "
+    "carry each item's typical wording. For EACH item, decide whether one quoted line genuinely IS "
+    "that item BY MEANING (apply its definition and selector: current-year column, closing balance, "
+    "current-vs-non-current, contra sign). If yes, return the value exactly as printed on that line "
+    "and quote the line as evidence. If every quoted line is broader, narrower, a different scope "
+    "or period, or merely similar — keep present=false. Never use any number that is not in the "
+    "quoted lines. () or minus = negative; value = NUMBER ONLY (keep commas/decimals/sign)."
+)
+
+
+def _rescue_absents(index: PageIndex, scope: str, section: str, concepts: list[Concept],
+                    results: list[Datapoint], allowed: set[int]) -> list[Datapoint]:
+    absent = [c for c in concepts
+              if c.examples and not next((d for d in results if d.key == c.key), Datapoint(c.key, False)).present]
+    if not absent:
+        return results
+    read_pages = {p for d in results for p in d.pages}
+    cands = _alias_candidates(index, absent, allowed, read_pages)
+    if not cands:
+        return results
+    items = "\n".join(
+        f"- key: {c.key}\n  meaning: {c.meaning[:300]}"
+        + (f"\n  selector: {c.selector}" if c.selector else "")
+        + "\n  candidate lines:\n" + "\n".join(f"    [p{p}] {ln[:700]}" for p, ln in cands[c.key])
+        for c in absent if c.key in cands)
+    o = llm.extract_json(
+        instructions=_RESCUE_INSTR.format(scope=scope),
+        user_input=f"SECTION: {SECTION_LABEL[section]}\n\nITEMS with candidate lines:\n{items}",
+        schema_name="targets", schema=_TARGETS_SCHEMA, max_output_tokens=1500, reasoning="low")
+    if o.get("_empty"):
+        return results
+    tmap = {t["key"]: t for t in o.get("targets", [])}
+    by_key = {d.key: d for d in results}
+    for c in absent:
+        t, lines = tmap.get(c.key), cands.get(c.key)
+        if not (t and lines and t.get("present") and t.get("value") not in (None, "", "-")):
+            continue
+        val = _hygiene(t["value"], t.get("evidence", ""), sign=c.value_type != "count")
+        vd = _digits(val)
+        line_digits = _digits(" ".join(ln for _, ln in lines))
+        if not (len(vd) >= 2 and vd in line_digits):          # must come from the quoted lines
+            continue
+        src = next((p for p, ln in lines if vd in _digits(ln)), lines[0][0])
+        by_key[c.key] = Datapoint(
+            key=c.key, present=True, value=val,
+            evidence=f"(rescued from p{src}) {t.get('evidence', '')[:160]}",
+            grounded=True, section=section, pages=[src],
+            # a line from the pages the section already read is note-context ('grounded');
+            # one found elsewhere in the scope is weaker context -> flag for review
+            confidence="grounded" if src in read_pages else "unverified")
+    return [by_key[c.key] for c in concepts]
+
+
 def extract_datapoints(index: PageIndex, scope: str = "standalone",
                        concepts: list[Concept] | None = None) -> dict[str, Datapoint]:
     """Extract all target datapoints for one scope.
@@ -1722,6 +1860,11 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
 
     def run(sec: str, cs: list[Concept]) -> list[Datapoint]:
         res = _run_core(sec, cs)
+        # rescue pass for TEXT-read sections (matrix/vision sections have their own backstops
+        # and different absent semantics): one cheap re-ask over deterministically-found
+        # alias-matching lines, fills absents only
+        if sec not in MATRIX_SECTIONS | VISION_TARGET_SECTIONS | VISION_CATEGORY_SECTIONS:
+            res = _rescue_absents(index, scope, sec, cs, res, allowed)
         # (Removed the name-based 'residual guard': it keyed off the KEY name '...Other Long Term'
         # and demoted correct answers, fighting the DEFINITION. e.g. 'Other Long Term Liabilities'
         # is defined as the BS TOTAL line — the engine's total is correct, so a name heuristic that
