@@ -629,9 +629,31 @@ Validation: accepted 5/10 dev combos with ALL parents printed-line-verified (rel
 **Final held-out sweep after all §5p changes: share_capital note-in-window 190/190 (100%),
 strict-core 187/190, zero errors across 95 PDFs.**
 
-**Queued next:** (a) paid holdout eval against gt_holdout_nifty.csv. (b) bilingual-bank
-statement parsing (BoB/CANBK/ICICI/PNB). (c) TRENT (the one non-bank zero-deterministic
-company).
+### 5q. 2026-07-05 — full paid run #3: 49 errors / 91.5% ($3.20, logs/run_20260705_193123/)
+
+First run carrying the complete deterministic stack. Same-basis trend: 104 → 65 → **49**.
+The deterministic layer is now PROVABLY STABLE across runs: ppe 0→0, deferred_tax 5→1 (only
+the by-design-silent hindalco orientation cell), share_capital 17→3 with ZERO collapses,
+finance_costs 1, pl_changes/trade_payables/cons_equity 0, no truncations. adani hit 4 errors
+(best ever). Run-to-run movement is confined to the LLM-read remainder, as designed.
+
+One regression cluster (11 rows in other_equity/other_cur_assets/investment_property) was
+forensically traced to three mechanisms and TWO got deterministic guards (both wrong→absent
+direction, suite-locked at 16/16):
+1. **Prior-year evidence guard** (`_reconciled_section`): reconcile validates the WINDOW,
+   not each target's year column — itc's SOCIE reconciled while targets cited 'Balance as at
+   31st March, 2024'. A target whose evidence carries only prior-year dates is demoted.
+2. **Rescue scope guards**: rescue quotes printed LINES so it cannot enforce a
+   gross/accumulated COLUMN selector (itc Gross Investment Property rescued with the NET
+   figure) and COUNT items match look-alike big numbers in prose (infosys issued-count
+   rescued from a buyback-extinguishment sentence) — both classes now skipped.
+3. The remainder is the known LLM-hard class (infosys 14-column SOCIE grid; two-up
+   contra-column picks) — documented, not coded against.
+
+**Queued next:** (a) paid holdout eval against gt_holdout_nifty.csv (~$7 — the true
+generalization number). (b) bilingual-bank statement parsing (BoB/CANBK/ICICI/PNB).
+(c) TRENT. (d) wide-SOCIE (other_equity) deterministic reader — same matrix pattern as
+ppe/deferred_tax, would kill the largest remaining LLM-noise source.
 
 ## 6. Suggested next steps (in order)
 

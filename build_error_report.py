@@ -114,6 +114,7 @@ def classify(gt_val, dp_obj):
 
 # --- run --------------------------------------------------------------------
 errors = {c: [] for c in COMPANIES}
+all_rows = {c: [] for c in COMPANIES}
 per_company_cost = {}
 for comp in COMPANIES:
     calls0, in0, out0 = ACC["calls"], ACC["in"], ACC["out"]
@@ -133,7 +134,7 @@ for comp in COMPANIES:
                        for k, d in res.items()}, f, indent=1, ensure_ascii=False)
         print(f"  {comp}/{eng_scope}: {len(res)} datapoints in {time.time()-t0:.0f}s "
               f"(running cost ~${ACC['in']*PRICE_IN + ACC['out']*PRICE_OUT:.2f})", flush=True)
-    # diff every GT row for this company
+    # diff every GT row for this company — ALL rows recorded (correct ones included)
     for (cc, scope, key), info in GT.items():
         if cc != comp: continue
         lookups = [scope] if scope != "both" else ["standalone", "consolidated"]
@@ -147,15 +148,20 @@ for comp in COMPANIES:
             if chosen is None or order[etype] < order[chosen[0]]:
                 chosen = cand
         etype, mv, reason, d, sc = chosen
-        if etype == "ok": continue
-        pages = ",".join(str(p) for p in (d.pages or [])) if d is not None else ""
-        conf = d.confidence if d is not None else "absent"
-        errors[comp].append({
-            "section": sec_of.get(key, ""), "scope": sc, "item": key,
-            "model_value": mv, "gt_value": info["value"], "pages": pages,
-            "confidence": conf, "error_type": etype, "reason": reason,
-            "gt_evidence": info["evidence"],
-        })
+        row = {
+            "section": sec_of.get(key, ""), "scope": sc, "item": key, "status": etype,
+            "model_value": (d.value if d is not None and d.present else None),
+            "gt_value": info["value"],
+            "confidence": d.confidence if d is not None else "absent",
+            "grounded": d.grounded if d is not None else "",
+            "pages": ",".join(str(p) for p in (d.pages or [])) if d is not None else "",
+            "model_evidence": (d.evidence or "")[:300] if d is not None else "",
+            "gt_evidence": (info["evidence"] or "")[:300],
+            "reason": reason,
+        }
+        all_rows[comp].append(row)
+        if etype != "ok":
+            errors[comp].append(row)
     dc, din, dout = ACC["calls"] - calls0, ACC["in"] - in0, ACC["out"] - out0
     per_company_cost[comp] = {"calls": dc, "input_tokens": din, "output_tokens": dout,
                               "cost": round(din * PRICE_IN + dout * PRICE_OUT, 3)}
@@ -180,55 +186,68 @@ summary = {
 with open(os.path.join(RUN_DIR, "summary.json"), "w") as f:
     json.dump(summary, f, indent=1)
 
-# --- write Excel ------------------------------------------------------------
+# --- write Excel (FULL report: every GT datapoint, correct rows included) ----
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 wb = Workbook()
-HEAD = ["section", "scope", "item", "model_value", "gt_value", "pages", "confidence", "error_type", "reason", "gt_evidence"]
 hfill = PatternFill("solid", fgColor="1F4E78"); hfont = Font(color="FFFFFF", bold=True)
-type_fill = {"mismatch": "FCE4D6", "miss": "FFF2CC", "false_positive": "E2EFDA"}
+sfill = {"ok": "E2EFDA", "mismatch": "FCE4D6", "miss": "FFF2CC", "false_positive": "F8CBAD"}
+_ORDER = {"mismatch": 0, "miss": 1, "false_positive": 2, "ok": 3}
 
-# summary sheet
+# Summary: per-company accuracy + API cost
 ws = wb.active; ws.title = "Summary"
-ws.append(["Company", "Total errors", "Mismatch", "Miss", "False positive"])
-for c in range(1, 6):
+ws.append(["Company", "GT rows", "Correct", "Errors", "Mismatch", "Miss", "False positive",
+           "Accuracy %", "API calls", "Input tokens", "Output tokens", "Cost $"])
+for c in range(1, 13):
     ws.cell(1, c).fill = hfill; ws.cell(1, c).font = hfont
+tot = dict(n=0, ok=0, mm=0, mi=0, fp=0)
 for comp in COMPANIES:
-    es = errors[comp]
-    ws.append([comp,
-               len(es),
-               sum(e["error_type"] == "mismatch" for e in es),
-               sum(e["error_type"] == "miss" for e in es),
-               sum(e["error_type"] == "false_positive" for e in es)])
-for i, w in enumerate([16, 13, 11, 8, 14], 1):
+    rows = all_rows[comp]
+    n = len(rows); ok = sum(r["status"] == "ok" for r in rows)
+    mm = sum(r["status"] == "mismatch" for r in rows)
+    mi = sum(r["status"] == "miss" for r in rows)
+    fp = sum(r["status"] == "false_positive" for r in rows)
+    tot["n"] += n; tot["ok"] += ok; tot["mm"] += mm; tot["mi"] += mi; tot["fp"] += fp
+    api = per_company_cost[comp]
+    ws.append([comp, n, ok, n - ok, mm, mi, fp, round(ok / n * 100, 1),
+               api["calls"], api["input_tokens"], api["output_tokens"], api["cost"]])
+ws.append(["TOTAL", tot["n"], tot["ok"], tot["n"] - tot["ok"], tot["mm"], tot["mi"], tot["fp"],
+           round(tot["ok"] / tot["n"] * 100, 1), ACC["calls"], ACC["in"], ACC["out"],
+           summary["api"]["cost"]])
+for c in range(1, 13):
+    ws.cell(ws.max_row, c).font = Font(bold=True)
+for i, w in enumerate([12, 8, 8, 7, 9, 6, 13, 11, 9, 13, 14, 8], 1):
     ws.column_dimensions[get_column_letter(i)].width = w
+ws.append([]); ws.append(["Errors by section"]); ws.cell(ws.max_row, 1).font = Font(bold=True)
+for s, n in summary["per_section"].items():
+    ws.append([s, n])
 
-# per-company sheets
+# per-company sheets: EVERY datapoint, errors first, status colour-coded
+HEAD = ["section", "scope", "item", "status", "model_value", "gt_value", "confidence",
+        "grounded", "pages", "model_evidence", "gt_evidence"]
 for comp in COMPANIES:
-    ws = wb.create_sheet(comp.capitalize())
-    ws.append(HEAD)
+    w2 = wb.create_sheet(comp.capitalize())
+    w2.append(HEAD)
     for c in range(1, len(HEAD) + 1):
-        ws.cell(1, c).fill = hfill; ws.cell(1, c).font = hfont
-    rows = sorted(errors[comp], key=lambda e: (e["section"], e["scope"], e["item"]))
-    for e in rows:
-        ws.append([e[h] for h in HEAD])
-        r = ws.max_row
-        fill = type_fill.get(e["error_type"])
-        if fill:
-            ws.cell(r, HEAD.index("error_type") + 1).fill = PatternFill("solid", fgColor=fill)
-    widths = [16, 12, 30, 14, 14, 10, 12, 14, 50, 50]
-    for i, w in enumerate(widths, 1):
-        ws.column_dimensions[get_column_letter(i)].width = w
-    ws.freeze_panes = "A2"
-    for row in ws.iter_rows(min_row=2):
+        w2.cell(1, c).fill = hfill; w2.cell(1, c).font = hfont
+    rows = sorted(all_rows[comp], key=lambda r: (_ORDER[r["status"]], r["section"], r["item"]))
+    for r in rows:
+        w2.append([r[h] for h in HEAD])
+        w2.cell(w2.max_row, HEAD.index("status") + 1).fill = \
+            PatternFill("solid", fgColor=sfill[r["status"]])
+    for i, w in enumerate([16, 12, 34, 13, 14, 14, 11, 8, 14, 55, 45], 1):
+        w2.column_dimensions[get_column_letter(i)].width = w
+    w2.freeze_panes = "A2"
+    for row in w2.iter_rows(min_row=2):
         for cell in row:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
 
 out = "error_report.xlsx"
 wb.save(out)
-print(f"\nWrote {out}  ({summary['total_errors']} total errors)")
+print(f"\nWrote {out}  ({summary['total_errors']} errors / {tot['n']} rows, "
+      f"accuracy {tot['ok']/tot['n']*100:.1f}%)")
 print(f"Per-section: {summary['per_section']}")
 print(f"API: calls={ACC['calls']} in={ACC['in']:,} out={ACC['out']:,} "
       f"cost~${summary['api']['cost']:.2f}")

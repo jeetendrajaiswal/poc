@@ -1047,6 +1047,10 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
     # reaches this function — the carve-out was dead complexity and is gone.)
     _reconcile_reflow = section in COLUMN_SECTIONS
     best = None  # (n_targets_present, datapoints)
+    # the document's fiscal year = the most frequent year token over the candidate pages
+    # (rep-max, same rationale as the ppe reader) — used by the prior-year evidence guard
+    _yrs = [int(y) for pg in ranked[:4] for y in re.findall(r"\b(20\d{2})\b", index.page_text[pg - 1])]
+    doc_year = max(sorted(set(_yrs)), key=lambda y: (_yrs.count(y), y)) if _yrs else 0
     for pages in cand_windows[:6]:        # bound cost (reconcile early-exits when found)
         o = llm.extract_json(
             instructions=_NOTE_INSTR.format(scope=scope, hint=hint),
@@ -1074,6 +1078,16 @@ def _reconciled_section(index: PageIndex, scope: str, section: str, concepts: li
                                      confidence="absent"))
             else:
                 ev = t.get("evidence", "")
+                # PRIOR-YEAR guard: reconcile validates the WINDOW (components==total==parent),
+                # not each target's year column — itc's SOCIE window reconciled while a target
+                # cited 'Balance as at 31st March, 2024' (the prior year). A target whose
+                # evidence carries only a prior-year date is wrong by definition (selectors
+                # demand current/closing), so demote it to absent.
+                ev_years = [int(y) for y in re.findall(r"\b(20\d{2})\b", ev)]
+                if ev_years and doc_year and max(ev_years) < doc_year:
+                    out.append(Datapoint(key=c.key, present=False, section=section, pages=pages,
+                                         confidence="absent"))
+                    continue
                 val = _hygiene(t["value"], ev, sign=c.value_type != "count")
                 vnum = _num(val)
                 # REFUSAL GUARD: a specific sub-item cannot equal the note's grand TOTAL when
@@ -2194,7 +2208,13 @@ _RESCUE_INSTR = (
 def _rescue_absents(index: PageIndex, scope: str, section: str, concepts: list[Concept],
                     results: list[Datapoint], allowed: set[int]) -> list[Datapoint]:
     absent = [c for c in concepts
-              if c.examples and not next((d for d in results if d.key == c.key), Datapoint(c.key, False)).present]
+              if c.examples and not next((d for d in results if d.key == c.key), Datapoint(c.key, False)).present
+              # rescue quotes printed LINES, so it cannot enforce a gross/accumulated COLUMN
+              # selector (itc's Gross Investment Property got rescued with the NET figure) and
+              # COUNT items match too many look-alike big numbers in prose (infosys's issued
+              # count got rescued from a buyback-extinguishment sentence) — skip both classes
+              and not re.search(r"gross|accumulated", (c.selector or "").lower())
+              and c.value_type != "count"]
     if not absent:
         return results
     read_pages = {p for d in results for p in d.pages}
