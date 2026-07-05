@@ -94,12 +94,20 @@ def candidate_pages(path: str, kind: str,
     """
     doc = fitz.open(path)
     n = doc.page_count
-    hits: list[tuple[int, float]] = []
+    _TITLE = {"bs": r"balancesheet.{0,40}as(?:at|on)", "pl": r"statementofprofitandloss",
+              "cf": r"statementofcashflow"}
+    hits: list[tuple[int, float, bool]] = []
     for p in range(n):
-        c = _collapse(doc[p].get_text())
-        hit = False
+        raw = doc[p].get_text()
+        c = _collapse(raw)
+        # a statement TITLE in the page's TOP region is near-certain — line-item fingerprints
+        # produce false candidates (pension notes match the bs fingerprint) and the back-60%
+        # region sort buried ITC's true BS (its financials start at 27% of a 577-page report)
+        top = _collapse(" ".join([l for l in raw.splitlines() if l.strip()][:6]))
+        top_title = bool(re.search(_TITLE.get(kind, r"$^"), top))
+        hit = top_title
         if kind == "bs":
-            hit = (
+            hit = hit or (
                 ("totalassets" in c and _any(
                     c, "totalequityandliabilities", "totalliabilitiesandequity",
                     "totalequity", "totalliabilities", "capitalandliabilities"))
@@ -109,7 +117,7 @@ def candidate_pages(path: str, kind: str,
                 or ("totalassets" in c and _any(c, "financialassets", "noncurrentassets"))
                 or ("sourcesoffunds" in c and "applicationoffunds" in c)   # IRDAI / old Sch.VI
                 or ("capitalandliabilities" in c and "deposits" in c)      # bank Form A
-                or bool(re.search(r"balancesheetasat", c))                 # despaced title
+                or bool(re.search(r"balancesheetas(?:at|on)", c))          # despaced title
             )
         elif kind == "pl":
             revenue = _any(c, "revenuefromoperations", "interestearned", "premiumearned",
@@ -117,19 +125,20 @@ def candidate_pages(path: str, kind: str,
             # EPS footer is the most rephrase-/image-robust P&L marker
             profit = _any(c, "earningspershare", "taxexpense", "profitbeforetax",
                           "profitbeforetaxation", "beforetax", "fortheyear", "totalexpenses")
-            title = _any(c, "statementofprofitandloss", "profitandlossaccount", "revenueaccount")
-            hit = (revenue and profit) or title
+            section = _any(c, "statementofprofitandloss", "profitandlossaccount", "revenueaccount")
+            hit = hit or (revenue and profit) or section
         elif kind == "cf":
             # CF always opens with operating activities; investing/financing may
             # spill onto later pages, captured by the wide extract window.
-            hit = "operatingactivities" in c or "cashflowfromoperatingactivities" in c
+            hit = hit or "operatingactivities" in c or "cashflowfromoperatingactivities" in c
         if hit:
-            hits.append((p + 1, (p + 1) / n))
+            hits.append((p + 1, (p + 1) / n, top_title))
     doc.close()
     if pages_filter:
         hits = [h for h in hits if h[0] in pages_filter]
-    hits.sort(key=lambda x: (x[1] < 0.4, x[0]))   # financials region (back ~60%) first
-    return [p for p, _ in hits][:_CANDIDATE_CAP]
+    # TITLE-anchored pages first, then the financials region (back ~60%), then page order
+    hits.sort(key=lambda x: (not x[2], x[1] < 0.4, x[0]))
+    return [p for p, *_ in hits][:_CANDIDATE_CAP]
 
 
 # --------------------------------------------------------------------------- #

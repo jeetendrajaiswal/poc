@@ -302,16 +302,29 @@ def page_scopes(index: PageIndex) -> list[str]:
         # locate gaps on the nifty100 held-out sweep.
         top_lines = [l for l in index.page_text[i].splitlines() if l.strip()][:6]
         top = _collapse(" ".join(top_lines))
+
         # anchors are TIERED: a statement TITLE ('Standalone Balance Sheet as at …') outranks
         # a section-nav phrase ('… Consolidated Financial Statements' in a header ribbon).
-        # ONGC's standalone BS page carries BOTH — the title plus a nav mention of the other
-        # section — and untiered matching cancelled them out, leaving the stale tag.
-        con_title = any(t in top for t in (
-            "consolidatedbalancesheet", "consolidatedstatementofprofit",
-            "consolidatedstatementofcashflow"))
-        std_title = any(t in top for t in (
-            "standalonebalancesheet", "standalonestatementofprofit",
-            "standalonestatementofcashflow"))
+        # A title must START its column segment (split at 3+ spaces) or follow a non-lowercase
+        # boundary: infosys prints the PROSE cross-ref '…as per the Consolidated Statement of
+        # Cash Flows…' beside its STANDALONE capital note, and an unanchored substring match
+        # flipped the whole standalone block.
+        def _title_hit(*phrases) -> bool:
+            for ln in top_lines:
+                for seg in re.split(r"\s{3,}", ln):
+                    cs = re.sub(r"\s+", "", seg)
+                    low = cs.lower()
+                    for ph in phrases:
+                        pos = low.find(ph)
+                        if pos == 0 or (pos > 0 and not cs[pos - 1].islower()):
+                            if pos >= 0:
+                                return True
+            return False
+
+        con_title = _title_hit("consolidatedbalancesheet", "consolidatedstatementofprofit",
+                               "consolidatedstatementofcashflow")
+        std_title = _title_hit("standalonebalancesheet", "standalonestatementofprofit",
+                               "standalonestatementofcashflow")
 
         # tier-2 SECTION phrases must occupy (nearly) their own line: a genuine divider or
         # running header ('Notes to the Consolidated Financial Statements') is a line of its
@@ -326,8 +339,12 @@ def page_scopes(index: PageIndex) -> list[str]:
                         return True
             return False
 
-        con_sec = _own_line("consolidatedfinancialstatement", "consolidatedfinancialresults")
-        std_sec = _own_line("standalonefinancialstatement")
+        # a tier-2 anchor is only trustworthy when the OTHER scope's word is absent from the
+        # top region: sidebar-nav designs (infosys FY22) list BOTH section names on their own
+        # lines on EVERY page, which defeats the own-line test in both directions
+        con_sec = _own_line("consolidatedfinancialstatement", "consolidatedfinancialresults") \
+            and "standalone" not in top
+        std_sec = _own_line("standalonefinancialstatement") and "consolidated" not in top
         if con_title or std_title:
             is_con, is_std = con_title, std_title
         else:
@@ -566,12 +583,35 @@ _BS_TOKEN = re.compile(r"\(?-?[\d,]+\.?\d*\)?|(?<=\s)-(?=[\s]|$)")
 
 
 def _bs_parse_row(s: str):
-    """(label, note_ref, current_year_value) for one BS row; None when not a data row."""
-    m = re.match(r"\s*([^\d(].*?)\s{2,}(\S.*)$", s) or re.match(r"\s*(\(\w+\)\s+[^\d]+?)\s{2,}(\S.*)$", s)
+    """(label, note_ref, current_year_value) for one statement-face row; None otherwise."""
+    m = re.match(r"\s*([^\s\d(].*?)\s{2,}(\S.*)$", s) or re.match(r"\s*(\(\w+\)\s+[^\d]+?)\s{2,}(\S.*)$", s)
+    if not m:
+        # a long label can leave only a SINGLE space before the value columns (reliance:
+        # 'Profit Before Share of … Joint Ventures and Tax 1,23,162 1,06,017') — accept when
+        # the line ENDS in two-or-more numeric/dash tokens
+        m = re.match(r"\s*([^\s\d(].*?[A-Za-z)%])\s+"
+                     r"((?:\(?-?[\d,]+\.?\d*\)?|-)(?:\s+(?:\(?-?[\d,]+\.?\d*\)?|-))+)\s*$", s)
     if not m:
         return None
     label = m.group(1).strip(" .:")
-    toks = [t.strip() for t in _BS_TOKEN.findall(m.group(2))]
+    rest = m.group(2)
+    # ITC-style row indices: 'III   Total Income (I+II)   84142.47' splits into label='III'
+    # with the real label stranded in the token region — fold it back
+    if re.fullmatch(r"[IVXLC]+|[ivxlc]+|\d{1,2}", label):
+        mm = re.match(r"([^\d]*[A-Za-z)%])\s+(\(?-?[\d,].*)$", rest)
+        if mm and re.search(r"[A-Za-z]{3}", mm.group(1)):
+            label = (label + " " + mm.group(1)).strip(" .:")
+            rest = mm.group(2)
+    toks = [t.strip() for t in _BS_TOKEN.findall(rest)]
+    # mixed spacing ('label (2,824.59)␣␣1,844.54' with a SINGLE space before the CY value)
+    # strands the current-year token inside the label and leaves only the prior year in the
+    # token region — pop trailing numeric tokens off the label back onto the value list
+    while True:
+        tm = re.search(r"\s(\(?-?[\d,]+\.?\d*\)?)$", label)
+        if not tm or not re.search(r"\d", tm.group(1)):
+            break
+        toks.insert(0, tm.group(1))
+        label = label[:tm.start()].strip(" .:")
     if not label or not toks or not re.search(r"[A-Za-z]{3}", label):
         return None
     ref = None
@@ -605,30 +645,119 @@ def _bs_face_lines_det(index: PageIndex, allowed: set[int],
         for pages in ([pg], [pg, pg + 1]):
             if pages[-1] > index.n_pages:
                 continue
-            rows: list[dict] = []
-            for p in pages:
-                text = index.column_text[p - 1] if index._reflow_safe(p) else index.page_text[p - 1]
-                for ln in text.splitlines():
-                    r = _bs_parse_row(ln.rstrip())
-                    if r:
-                        rows.append({"label": r[0], "note_ref": r[1], "value": r[2]})
+            rows = _parse_face_rows(index, pages)
+            # bank Form A: 'CAPITAL AND LIABILITIES … Total X / ASSETS … Total X' — the two
+            # bare TOTAL rows must be EQUAL (fewer rows than a Schedule III BS, so its own
+            # row floor). Checked first: a Form A page never prints 'Total assets'.
+            page_low = " ".join(
+                (index.page_text[p - 1] or "").lower().replace("&", "and") for p in pages)
+            if "capital and liabilities" in page_low and len(rows) >= 8:
+                tots = [_num(r["value"]) for r in rows
+                        if re.sub(r"[^a-z]", "", r["label"].lower()) == "total" and r["value"]]
+                tots = [t for t in tots if t is not None]
+                if len(tots) >= 2 and tots[0] > 0 \
+                        and abs(tots[0] - tots[1]) < max(abs(tots[0]) * 0.005, 1):
+                    return rows
             if len(rows) < 12:
                 continue
-            def _tot(*names):
-                # EXACT collapsed-label match ('totalassets') — a substring test caught
-                # 'Total NON-CURRENT assets' first and rejected every two-page BS
-                for r in rows:
-                    cl = re.sub(r"[^a-z]", "", r["label"].lower())
-                    if cl in names and r["value"]:
-                        return _num(r["value"])
-                return None
-            ta = _tot("totalassets")
-            tel = _tot("totalequityandliabilities", "totalequityliabilities",
-                       "totalliabilitiesandequity")
+            # exact/near-exact label totals — a substring test caught 'Total NON-CURRENT
+            # assets' first and rejected every two-page BS
+            ta = _face_total(rows, ("totalassets",))
+            tel = _face_total(rows, ("totalequityandliabilities", "totalequityliabilities",
+                                     "totalliabilitiesandequity"))
             if ta is None or tel is None or ta <= 0:
                 continue
             if abs(ta - tel) < max(abs(ta) * 0.005, 1):
                 return rows
+    return None
+
+
+def _parse_face_rows(index: PageIndex, pages: list[int]) -> list[dict]:
+    rows: list[dict] = []
+    for p in pages:
+        text = index.column_text[p - 1] if index._reflow_safe(p) else index.page_text[p - 1]
+        for ln in text.splitlines():
+            r = _bs_parse_row(ln.rstrip())
+            if r:
+                rows.append({"label": r[0], "note_ref": r[1], "value": r[2]})
+    return rows
+
+
+def _norm_face_label(label: str) -> str:
+    """Collapse a statement-face label for total-matching: parenthetical cross-refs gone
+    ('Total Income (I+II)'), letters only; roman/number prefixes survive via endswith."""
+    return re.sub(r"[^a-z]", "", re.sub(r"\([^)]*\)", "", label.lower()))
+
+
+def _face_total(rows: list[dict], names: tuple, contains: tuple = ()) -> float | None:
+    for r in rows:
+        if not r["value"]:
+            continue
+        cl = _norm_face_label(r["label"])
+        # endswith with a tiny prefix budget tolerates roman-numeral markers ('III Total
+        # Income (I+II)' -> 'iiitotalincome'); exact-only rejected every ITC statement.
+        # 'sub' prefixes are refused so a 'Sub-total …' row can never pose as the total.
+        if any(cl == n or (cl.endswith(n) and len(cl) - len(n) <= 4
+                           and not cl[:len(cl) - len(n)].endswith("sub")) for n in names):
+            return _num(r["value"])
+        if contains and all(c in r["label"].lower() for c in contains):
+            return _num(r["value"])
+    return None
+
+
+def _pl_face_lines_det(index: PageIndex, allowed: set[int],
+                       tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
+    """Deterministic P&L face parse, accepted only when a printed arithmetic identity closes:
+      (1) Total Income − Total Expenses = a printed 'Profit before …' line, or
+      (2) the same with the Share-of-JV/Associates line added (consolidated P&Ls), or
+      (3) Profit before tax − tax expense = Profit for the year.
+    Same decoy discipline as the BS parser: scope-tagged candidates only when they exist;
+    silent otherwise (LLM fallback)."""
+    from src.engine import statements as st
+    cands = st.candidate_pages(index.path, "pl", frozenset(allowed)) or []
+    if tags and scope:
+        tagged = [p for p in cands if tags[p - 1] == scope]
+        cands = tagged or cands
+    # the fingerprint's candidate cap can miss the real statement page (infosys cons):
+    # append content-located pages — deterministic, in-scope, bounded
+    extra = [p for p in sorted(allowed)
+             if "revenue from operations" in index.page_text[p - 1].lower()
+             and "total income" in index.page_text[p - 1].lower()
+             and (not tags or tags[p - 1] in (scope, "unknown"))]
+    cands = cands[:5] + [p for p in extra if p not in cands[:5]][:3]
+    for pg in cands:
+        for pages in ([pg], [pg, pg + 1]):
+            if pages[-1] > index.n_pages:
+                continue
+            rows = _parse_face_rows(index, pages)
+            if len(rows) < 8:
+                continue
+            ti = _face_total(rows, ("totalincome",))
+            te = _face_total(rows, ("totalexpenses", "totalexpense"))
+            jv = _face_total(rows, (), contains=("share of profit", "joint")) or \
+                _face_total(rows, (), contains=("share of profit", "associate")) or 0
+            profs = [_num(r["value"]) for r in rows if r["value"]
+                     and re.search(r"(profit|loss).{0,15}before", r["label"].lower())]
+            ok = False
+            if ti is not None and te is not None:
+                ok = any(p is not None and (abs((ti - te) - p) < max(abs(p) * 0.005, 1)
+                                            or abs((ti - te + jv) - p) < max(abs(p) * 0.005, 1))
+                         for p in profs)
+            if not ok:
+                tax = _face_total(rows, ("totaltaxexpense", "totaltaxexpenses", "taxexpense"))
+                pats = [_num(r["value"]) for r in rows if r["value"]
+                        and re.search(r"profit for the (year|period)", r["label"].lower())]
+                ok = tax is not None and any(
+                    pbt is not None and pat is not None
+                    and abs((pbt - tax) - pat) < max(abs(pat) * 0.005, 1)
+                    for pbt in profs for pat in pats)
+            if ok:
+                # a det parse REPLACES the LLM read, so it must carry the rows the engine
+                # needs: both P&L parents must be present or we stay silent (itc's identity
+                # passed on a parse whose finance-costs row hadn't survived)
+                if (_parent("finance_costs", [], rows)[0] is not None
+                        and _parent("other_expenses", [], rows)[0] is not None):
+                    return rows
     return None
 
 
@@ -638,11 +767,13 @@ def _statement_lines(index: PageIndex, scope: str, kind: str,
     `allowed` = the scope's page block: the statement is located INSIDE it, so standalone
     and consolidated get their own statements (previously one shared page served both
     scopes and cross-contaminated note refs/parents for every BS-anchored section).
-    The BS goes through the deterministic identity-validated face parser first — when it
-    accepts, the parents/note refs are stable run-to-run and the LLM read is skipped."""
+    Both statements go through deterministic identity-validated face parsers first — when
+    they accept, parents/note refs are stable run-to-run and the LLM read is skipped."""
     from src.engine import statements as st
-    if kind == "bs" and allowed:
-        det = _bs_face_lines_det(index, allowed, page_scopes(index), scope)
+    if allowed:
+        det = (_bs_face_lines_det(index, allowed, page_scopes(index), scope) if kind == "bs"
+               else _pl_face_lines_det(index, allowed, page_scopes(index), scope) if kind == "pl"
+               else None)
         if det is not None:
             return det
     r = st.validate_statement(index.path, kind, frozenset(allowed) if allowed else None)
@@ -706,7 +837,11 @@ def _parent(section: str, bs_lines: list[dict], pl_lines: list[dict]) -> tuple[f
         return None, []
     stmt, kws = spec
     lines = bs_lines if stmt == "bs" else pl_lines
-    matched = [l for l in lines if any(k in (l["label"] or "").lower() for k in kws)]
+    # a parent line IS the item — subtotal rows that merely MENTION it must not match
+    # ('Profit before finance costs, exceptional items and tax' summed into finance_costs)
+    matched = [l for l in lines
+               if any(k in (l["label"] or "").lower() for k in kws)
+               and not any(x in (l["label"] or "").lower() for x in ("profit", "earning"))]
     vals = [_num(l["value"]) for l in matched if _num(l["value"]) is not None]
     refs = [str(l["note_ref"]).strip() for l in matched if l.get("note_ref")]
     return (sum(vals) if vals else None), refs
@@ -2174,6 +2309,17 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
             det = _dt_rows(index, scope, cs, allowed)
             if det:
                 res = [det.get(d.key, d) for d in res]
+        # pl_changes_inventory IS a P&L-face line: when the deterministic identity-validated
+        # P&L parse accepted, answer it straight from the printed statement row
+        if sec == "pl_changes_inventory":
+            det_pl = _pl_face_lines_det(index, allowed, tags, scope)
+            row = next((r for r in (det_pl or [])
+                        if "changes in inventor" in r["label"].lower() and r["value"]), None)
+            if row:
+                res = [Datapoint(key=d.key, present=True, value=row["value"],
+                                 evidence=f"(P&L face, identity-validated parse) {row['label']}",
+                                 grounded=True, section=sec, pages=d.pages or [],
+                                 confidence="grounded") for d in res]
         # (Removed the name-based 'residual guard': it keyed off the KEY name '...Other Long Term'
         # and demoted correct answers, fighting the DEFINITION. e.g. 'Other Long Term Liabilities'
         # is defined as the BS TOTAL line — the engine's total is correct, so a name heuristic that

@@ -286,7 +286,45 @@ def _():
             oncl = lambda rows: dp._parent("other_nc_liabilities", rows, [])[0]
             assert (v(per_scope["standalone"]), oncl(per_scope["standalone"])) != \
                    (v(per_scope["consolidated"]), oncl(per_scope["consolidated"])), comp
-    assert accepted >= 9, f"BS parser acceptance dropped: {accepted}/10"
+    assert accepted >= 10, f"BS parser acceptance dropped: {accepted}/10"
+
+
+@test("deterministic PL-face parser: identity-accepted with sane parents, or silent",
+      fast=False)
+def _():
+    from src.engine.index import PageIndex
+    from src.engine import datapoints as dp
+    EXPECT = {  # printed-line verified parents / values
+        ("reliance", "standalone"): {"fc": 6904, "oe": 61269},
+        ("infosys", "standalone"): {"fc": 207, "oe": 4044},
+        ("infosys", "consolidated"): {"fc": 416},
+        ("adani", "standalone"): {"fc": 1747.51, "chg": "(168.75)"},
+        ("adani", "consolidated"): {"chg": "(2,824.59)"},
+    }
+    accepted = 0
+    for comp, path in PDFS.items():
+        idx = PageIndex(path)
+        tags = dp.page_scopes(idx)
+        for scope in ("standalone", "consolidated"):
+            allowed = {i + 1 for i, t in enumerate(tags) if t in (scope, "unknown")}
+            rows = dp._pl_face_lines_det(idx, allowed, tags, scope)
+            if rows is None:
+                continue
+            accepted += 1
+            # acceptance contract: both P&L parents present and never 'profit before' rows
+            fc = dp._parent("finance_costs", [], rows)[0]
+            oe = dp._parent("other_expenses", [], rows)[0]
+            assert fc is not None and oe is not None, (comp, scope)
+            exp = EXPECT.get((comp, scope), {})
+            if "fc" in exp:
+                assert abs(fc - exp["fc"]) < max(exp["fc"] * 0.01, 0.5), (comp, scope, fc)
+            if "oe" in exp:
+                assert abs(oe - exp["oe"]) < max(exp["oe"] * 0.01, 0.5), (comp, scope, oe)
+            if "chg" in exp:
+                chg = next((r["value"] for r in rows
+                            if "changes in inventor" in r["label"].lower() and r["value"]), None)
+                assert chg == exp["chg"], (comp, scope, chg)
+    assert accepted >= 10, f"PL parser acceptance dropped: {accepted}/10"
 
 
 @test("reflow guard: dev pages still reflow; a known-lossy page falls back to -layout",

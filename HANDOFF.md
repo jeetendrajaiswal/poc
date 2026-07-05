@@ -575,9 +575,63 @@ Sweep artifacts: `scratchpad nifty_verify.py/.jsonl` (session tmp). Results:
   0 wrong across all GT checks — a GT-style accuracy number for nifty100 itself would
   require a GT sample + paid extraction runs.
 
-**Queued next:** (a) PL-face deterministic parser (same pattern; pl_changes_inventory is a
-P&L-face line). (b) a small held-out GT (10-15 nifty100 companies). (c) bank-format (Form A)
-readers. (d) INFY-style split capital disclosures (1/190). (e) itc-std BS parse acceptance.
+### 5o. 2026-07-05 — deterministic PL-face parser ($0); statement determinization complete
+
+`_pl_face_lines_det` (+ shared `_parse_face_rows`/`_face_total`), tried first by
+`_statement_lines` for the P&L. Acceptance identities: TI − TE = a printed 'Profit before …'
+line, OR the same plus the Share-of-JV/Associates line (consolidated P&Ls), OR PBT − tax =
+PAT. Same decoy discipline as the BS parser (scope-tagged candidates only; plus
+content-located extras because the fingerprint cap missed infosys cons's real page).
+`pl_changes_inventory` is now answered STRAIGHT from the identity-validated P&L row.
+
+Three parser bugs found and fixed during validation (each now suite-locked):
+1. `_parent` over-matched subtotal rows that merely MENTION the item — 'Profit before
+   finance costs, exceptional items…' summed finance_costs to 38,440 (infosys cons). Parent
+   matching now skips 'profit'/'earning' labels.
+2. Mixed spacing stranded the CY value inside the LABEL and returned the PRIOR year (adani
+   cons changes-in-inventories 1,844.54 instead of (2,824.59)) — trailing numeric tokens are
+   popped off labels back onto the value list.
+3. An identity can pass on a parse whose parent rows didn't survive (itc) — acceptance now
+   also requires both P&L parents present, else silent (the LLM read must not be replaced by
+   a poorer deterministic one).
+Validation: accepted 5/10 dev combos with ALL parents printed-line-verified (reliance
+6,904/61,269 + note refs 30/31; infosys 207/4,044, cons 416; adani 1,747.51; chg-inv
+(168.75)/(2,824.59)); 5 silents fall back to the LLM read unchanged. Suite: 16 tests.
+
+### 5p. 2026-07-05 — queue cleared: statements 10/10+10/10, banks, INFY, held-out GT ($0)
+
+1. **Statement parsers now accept ALL 10/10 dev combos (BS) and 10/10 (PL)** — suite floors
+   raised to 10/10 each. Fixes: label-whitespace regex hijack (≥4 leading spaces + single-
+   space body made the 'label' whitespace and killed the row — reliance's long profit line);
+   roman-numeral label fold ('III  Total Income' sheared to 'III'); profit-row matcher
+   accepts 'Profit/(Loss) before …'; TITLE-anchored candidates rank first in
+   `candidate_pages` (ITC's true BS was buried by the back-60% region sort; pension notes
+   false-match the bs fingerprint); `_face_total` endswith-matching with roman-prefix budget
+   and 'sub-total' immunity.
+2. **Bank (Form A) support**: `_bs_face_lines_det` bank mode — 'CAPITAL AND LIABILITIES …
+   Total X / ASSETS … Total X', the two bare TOTAL rows must be EQUAL. Accepts 5/9 nifty
+   banks (AXIS/HDFC/KOTAK/SBIN/UNION — Capital row + Schedule ref 1 captured); the 4
+   bilingual ones (BoB/CANBK/ICICI/PNB) stay silent -> LLM. Capital-schedule locate: 9/9
+   banks. Title regexes accept banks' 'as on'.
+3. **INFY-style sidebar/cross-ref poisoning fixed** (the last held-out locate miss): titles
+   must START their column segment or follow a non-lowercase boundary (infosys prints '…as
+   per the Consolidated Statement of Cash Flows…' PROSE beside its STANDALONE capital note);
+   tier-2 section anchors require the OTHER scope's word absent from the top region
+   (sidebar navs list both). INFY std/cons now both land their capital note at sig[0].
+4. **Held-out GT sample: `data/gt_holdout_nifty.csv`** — 96 rows, 10 companies (TCS, MARUTI,
+   HCLTECH, WIPRO, TATASTEEL, SUNPHARMA, NESTLEIND, ASIANPAINT, ULTRACEMCO, AXISBANK incl.
+   one bank), share-capital family + changes-in-inventories, every value transcribed from
+   the printed note/statement text with page evidence. Values are AS-PRINTED in each
+   company's own unit (crore/million/thousands) — same convention as the engine's output.
+   USE: the first paid holdout eval — run the engine on these 10 companies and diff;
+   measures true generalization of the LLM path on unseen reports.
+
+**Final held-out sweep after all §5p changes: share_capital note-in-window 190/190 (100%),
+strict-core 187/190, zero errors across 95 PDFs.**
+
+**Queued next:** (a) paid holdout eval against gt_holdout_nifty.csv. (b) bilingual-bank
+statement parsing (BoB/CANBK/ICICI/PNB). (c) TRENT (the one non-bank zero-deterministic
+company).
 
 ## 6. Suggested next steps (in order)
 

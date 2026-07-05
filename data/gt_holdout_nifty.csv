@@ -1,0 +1,97 @@
+company,scope,key,value,evidence
+TCS,standalone,Authorised Equity Share Capital,460,p280 Authorised equity
+TCS,standalone,No Of Authorised Equity Shares,"460,05,00,000",p280
+TCS,standalone,Face Value of Share (in Rs),1,p280
+TCS,standalone,Equity Issued,362,p280 issued/subscribed/paid-up
+TCS,standalone,Equity Subscribed fully paid,362,p280 issued/subscribed/paid-up
+TCS,standalone,Equity Paid Up,362,p280 issued/subscribed/paid-up
+TCS,standalone,No Of Issued Equity Shares,"361,80,87,518",p280
+TCS,standalone,No Of Subscribed Equity Shares Fully Paid,"361,80,87,518",p280
+TCS,standalone,No Of Paid up Equity Shares,"361,80,87,518",p280
+MARUTI,standalone,Authorised Equity Share Capital,"18,755",p127 Authorised equity
+MARUTI,standalone,No Of Authorised Equity Shares,"3,751,000,000",p127
+MARUTI,standalone,Face Value of Share (in Rs),5,p127
+MARUTI,standalone,Equity Issued,"1,510",p127 issued/subscribed/paid-up
+MARUTI,standalone,Equity Subscribed fully paid,"1,510",p127 issued/subscribed/paid-up
+MARUTI,standalone,Equity Paid Up,"1,510",p127 issued/subscribed/paid-up
+MARUTI,standalone,No Of Issued Equity Shares,"302,080,060",p127
+MARUTI,standalone,No Of Subscribed Equity Shares Fully Paid,"302,080,060",p127
+MARUTI,standalone,No Of Paid up Equity Shares,"302,080,060",p127
+MARUTI,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(919),P&L face 'Changes in inventories …' (₹ mn)
+HCLTECH,standalone,Authorised Equity Share Capital,603,p274 Authorised equity
+HCLTECH,standalone,No Of Authorised Equity Shares,"3,017,000,000",p274
+HCLTECH,standalone,Face Value of Share (in Rs),2,p274
+HCLTECH,standalone,Equity Issued,543,p274 issued/subscribed/paid-up
+HCLTECH,standalone,Equity Subscribed fully paid,543,p274 issued/subscribed/paid-up
+HCLTECH,standalone,Equity Paid Up,543,p274 issued/subscribed/paid-up
+HCLTECH,standalone,No Of Issued Equity Shares,"2,713,665,096",p274
+HCLTECH,standalone,No Of Subscribed Equity Shares Fully Paid,"2,713,665,096",p274
+HCLTECH,standalone,No Of Paid up Equity Shares,"2,713,665,096",p274
+HCLTECH,standalone,Number of shares outstanding at beginning of period,"2,713,665,096",p274 reconciliation opening
+HCLTECH,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(5),P&L face 'Changes in inventories of stock-in-trade'
+WIPRO,standalone,Authorised Equity Share Capital,"25,009",p188 Authorised equity
+WIPRO,standalone,No Of Authorised Equity Shares,"12,504,500,000",p188
+WIPRO,standalone,Face Value of Share (in Rs),2,p188
+WIPRO,standalone,Equity Issued,"10,958",p188 issued/subscribed/paid-up
+WIPRO,standalone,Equity Subscribed fully paid,"10,958",p188 issued/subscribed/paid-up
+WIPRO,standalone,Equity Paid Up,"10,958",p188 issued/subscribed/paid-up
+WIPRO,standalone,No Of Issued Equity Shares,"5,479,138,555",p188
+WIPRO,standalone,No Of Subscribed Equity Shares Fully Paid,"5,479,138,555",p188
+WIPRO,standalone,No Of Paid up Equity Shares,"5,479,138,555",p188
+WIPRO,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",345,P&L face (₹ mn)
+TATASTEEL,standalone,Authorised Equity Share Capital,"26,019.50",p350 Authorised equity
+TATASTEEL,standalone,No Of Authorised Equity Shares,"2,60,19,50,00,000",p350
+TATASTEEL,standalone,Face Value of Share (in Rs),1,p350
+TATASTEEL,standalone,Equity Issued,"1,249.64",p350 issued/subscribed/paid-up
+TATASTEEL,standalone,No Of Issued Equity Shares,"12,49,64,11,091",p350
+SUNPHARMA,standalone,Authorised Equity Share Capital,"5,990.0",p142 Authorised equity
+SUNPHARMA,standalone,No Of Authorised Equity Shares,"5,990,000,000",p142
+SUNPHARMA,standalone,Face Value of Share (in Rs),1,p142
+SUNPHARMA,standalone,Equity Issued,"2,399.3",p142 issued/subscribed/paid-up
+SUNPHARMA,standalone,Equity Subscribed fully paid,"2,399.3",p142 issued/subscribed/paid-up
+SUNPHARMA,standalone,Equity Paid Up,"2,399.3",p142 issued/subscribed/paid-up
+SUNPHARMA,standalone,No Of Issued Equity Shares,"2,399,334,970",p142
+SUNPHARMA,standalone,No Of Subscribed Equity Shares Fully Paid,"2,399,334,970",p142
+SUNPHARMA,standalone,No Of Paid up Equity Shares,"2,399,334,970",p142
+SUNPHARMA,standalone,Number of shares outstanding at beginning of period,"2,399,334,970",p142 reconciliation opening
+SUNPHARMA,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade","(2,148.4)",P&L face (₹ mn)
+NESTLEIND,standalone,Authorised Equity Share Capital,"1,000.0",p88 Authorised equity
+NESTLEIND,standalone,No Of Authorised Equity Shares,"100,000,000",p88
+NESTLEIND,standalone,Face Value of Share (in Rs),10,p88
+NESTLEIND,standalone,Equity Issued,964.2,p88 issued/subscribed/paid-up
+NESTLEIND,standalone,Equity Subscribed fully paid,964.2,p88 issued/subscribed/paid-up
+NESTLEIND,standalone,Equity Paid Up,964.2,p88 issued/subscribed/paid-up
+NESTLEIND,standalone,No Of Issued Equity Shares,"96,415,716",p88
+NESTLEIND,standalone,No Of Subscribed Equity Shares Fully Paid,"96,415,716",p88
+NESTLEIND,standalone,No Of Paid up Equity Shares,"96,415,716",p88
+NESTLEIND,standalone,Number of shares outstanding at beginning of period,"96,415,716",p88 reconciliation opening
+ASIANPAINT,standalone,Authorised Equity Share Capital,99.50,p125 Authorised equity
+ASIANPAINT,standalone,No Of Authorised Equity Shares,"99,50,00,000",p125
+ASIANPAINT,standalone,Face Value of Share (in Rs),1,p125
+ASIANPAINT,standalone,Equity Issued,95.92,p125 issued/subscribed/paid-up
+ASIANPAINT,standalone,Equity Subscribed fully paid,95.92,p125 issued/subscribed/paid-up
+ASIANPAINT,standalone,Equity Paid Up,95.92,p125 issued/subscribed/paid-up
+ASIANPAINT,standalone,No Of Issued Equity Shares,"95,91,97,790",p125
+ASIANPAINT,standalone,No Of Subscribed Equity Shares Fully Paid,"95,91,97,790",p125
+ASIANPAINT,standalone,No Of Paid up Equity Shares,"95,91,97,790",p125
+ASIANPAINT,standalone,Number of shares outstanding at beginning of period,"95,91,97,790",p125 reconciliation opening
+ULTRACEMCO,standalone,Authorised Equity Share Capital,"4,790.15",p204 Authorised equity
+ULTRACEMCO,standalone,No Of Authorised Equity Shares,"4,79,01,50,000",p204
+ULTRACEMCO,standalone,Face Value of Share (in Rs),10,p204
+ULTRACEMCO,standalone,Equity Issued,294.68,p204 issued/subscribed/paid-up
+ULTRACEMCO,standalone,Equity Subscribed fully paid,294.68,p204 issued/subscribed/paid-up
+ULTRACEMCO,standalone,Equity Paid Up,294.68,p204 issued/subscribed/paid-up
+ULTRACEMCO,standalone,No Of Issued Equity Shares,"29,46,77,410",p204
+ULTRACEMCO,standalone,No Of Subscribed Equity Shares Fully Paid,"29,46,77,410",p204
+ULTRACEMCO,standalone,No Of Paid up Equity Shares,"29,46,77,410",p204
+ULTRACEMCO,standalone,Number of shares outstanding at beginning of period,"28,86,92,005",p204 reconciliation opening
+ULTRACEMCO,standalone,"Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",(21.87),P&L face
+AXISBANK,standalone,Authorised Equity Share Capital,"8,500,000",p179 Authorised equity
+AXISBANK,standalone,No Of Authorised Equity Shares,"4,250,000,000",p179
+AXISBANK,standalone,Face Value of Share (in Rs),2,p179
+AXISBANK,standalone,Equity Issued,"6,139,496",p179 issued/subscribed/paid-up
+AXISBANK,standalone,Equity Subscribed fully paid,"6,139,496",p179 issued/subscribed/paid-up
+AXISBANK,standalone,Equity Paid Up,"6,139,496",p179 issued/subscribed/paid-up
+AXISBANK,standalone,No Of Issued Equity Shares,"3,069,747,836",p179
+AXISBANK,standalone,No Of Subscribed Equity Shares Fully Paid,"3,069,747,836",p179
+AXISBANK,standalone,No Of Paid up Equity Shares,"3,069,747,836",p179
