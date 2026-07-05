@@ -246,6 +246,49 @@ def _():
     assert correct >= 16, f"coverage dropped: {correct} < 16"
 
 
+@test("deterministic BS-face parser: identity-accepted, correct parents, decoy-proof",
+      fast=False)
+def _():
+    from src.engine.index import PageIndex
+    from src.engine import datapoints as dp
+    # verified printed BS-face values (this suite run's own evidence trail)
+    EXPECT = {
+        ("reliance", "standalone"): ("share_capital", 13532),      # FY26 bonus-doubled
+        ("reliance", "consolidated"): ("other_nc_liabilities", 6932),
+        ("hindalco", "standalone"): ("other_nc_liabilities", 967),
+        ("hindalco", "consolidated"): ("other_nc_liabilities", 1685),
+        ("infosys", "standalone"): ("share_capital", 2027),
+        ("infosys", "consolidated"): ("share_capital", 2024),
+        ("adani", "standalone"): ("share_capital", 129.24),
+    }
+    accepted = 0
+    for comp, path in PDFS.items():
+        idx = PageIndex(path)
+        tags = dp.page_scopes(idx)
+        per_scope = {}
+        for scope in ("standalone", "consolidated"):
+            allowed = {i + 1 for i, t in enumerate(tags) if t in (scope, "unknown")}
+            rows = dp._bs_face_lines_det(idx, allowed, tags, scope)
+            per_scope[scope] = rows
+            if rows is None:
+                continue
+            accepted += 1
+            exp = EXPECT.get((comp, scope))
+            if exp:
+                sec, want = exp
+                got = dp._parent(sec, rows, [])[0]
+                assert got is not None and abs(got - want) < max(abs(want) * 0.01, 0.5), \
+                    (comp, scope, sec, want, got)
+        # decoy guard: std and cons must never return identical parses (infosys's abridged
+        # front-matter BS once served both scopes)
+        if per_scope["standalone"] and per_scope["consolidated"]:
+            v = lambda rows: dp._parent("share_capital", rows, [])[0]
+            oncl = lambda rows: dp._parent("other_nc_liabilities", rows, [])[0]
+            assert (v(per_scope["standalone"]), oncl(per_scope["standalone"])) != \
+                   (v(per_scope["consolidated"]), oncl(per_scope["consolidated"])), comp
+    assert accepted >= 9, f"BS parser acceptance dropped: {accepted}/10"
+
+
 @test("reflow guard: dev pages still reflow; a known-lossy page falls back to -layout",
       fast=False)
 def _():

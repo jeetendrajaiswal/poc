@@ -538,9 +538,46 @@ standalone (older-vintage AR splitting the capital disclosure with weak per-page
 NOTE: better scope tags benefit EVERY section (allowed-sets feed all locates), so the next
 paid run may shift other sections too — judge per-section.
 
-**Queued next:** (a) selective consensus or determinization for `_statement_lines`. (b) a
-small held-out GT (10-15 nifty100 companies) so accuracy is measured on unseen reports.
-(c) INFY-style split capital disclosures (1/190).
+### 5m. 2026-07-04 — deterministic BS-face parser ($0): the last big stochastic dependency
+
+`_bs_face_lines_det` + `_bs_parse_row` in `datapoints.py`, tried FIRST by `_statement_lines`
+for the balance sheet: parses label | note-ref | CY | PY rows mechanically (reflow-safe text)
+and is accepted ONLY when the parsed grand totals satisfy **Total Assets == Total Equity and
+Liabilities** (exact-label match — a substring test caught 'Total NON-CURRENT assets' and
+rejected every two-page BS). When accepted, parents + note refs are deterministic and the
+LLM statement read (~2 paid calls/scope) is skipped; otherwise silent → LLM path unchanged.
+
+Two guards learned during validation (both now suite-tested):
+- **Scope-tagged candidates only, no decoy fall-through**: infosys prints an ABRIDGED
+  consolidated summary BS in its front matter that PASSES the identity — accepting it served
+  consolidated figures to the standalone scope. When scope-tagged candidates exist, unknown-
+  tagged ones are never used.
+- Reliance's 'Equity Share capital 13,532' is REAL (FY26 1:1 bonus doubled it), captured
+  with note ref 13 — always verify surprising values against the page before 'fixing' them.
+
+Validation: **accepted 9/10 dev combos** (itc-std silent → LLM fallback), every verifiable
+spot value correct (hindalco 222/967/1,685; infosys 2,027/495 std vs 2,024/561 cons —
+scope separation proven; adani 129.24; reliance cons 6,932), 0 wrong. Suite now **15 tests**.
+
+### 5n. 2026-07-04 — nifty100 deterministic verification (95 companies, 190 scopes, $0)
+
+Sweep artifacts: `scratchpad nifty_verify.py/.jsonl` (session tmp). Results:
+- **371 deterministic values emitted, 100% arithmetic-validated AND 100% grounded** after
+  fixing a formatter artifact (readers emitted '651.40' where Nestle prints '651.4' —
+  `_fmt_num` now uses minimal decimals; both readers unified on it): PPE 275 values
+  (movement identity), deferred-tax 96 (identity/column-sums).
+- BS-face parser: identity-accepted on 129/190 scopes (68%); 418 section parents extracted
+  deterministically. Silent elsewhere -> LLM fallback (no wrong-risk).
+- share_capital locate: 189/190 (§5l).
+- Companies with ZERO deterministic acceptance: the 10 BANKS (+TRENT) — Form A statements
+  have different labels/notes; the known format boundary, next major format work.
+- On the dev corpus (where GT exists) this correct-by-construction value class measured
+  0 wrong across all GT checks — a GT-style accuracy number for nifty100 itself would
+  require a GT sample + paid extraction runs.
+
+**Queued next:** (a) PL-face deterministic parser (same pattern; pl_changes_inventory is a
+P&L-face line). (b) a small held-out GT (10-15 nifty100 companies). (c) bank-format (Form A)
+readers. (d) INFY-style split capital disclosures (1/190). (e) itc-std BS parse acceptance.
 
 ## 6. Suggested next steps (in order)
 

@@ -267,9 +267,16 @@ def _examples(c: "Concept", section: str) -> list[str]:
 
 
 def _fmt_num(x: float) -> str:
-    """Indian-report style: thousands commas, 2dp only when fractional, parens for negative."""
-    whole = abs(x - round(x)) < 0.005
-    body = f"{int(round(abs(x))):,}" if whole else f"{abs(x):,.2f}"
+    """Indian-report style: thousands commas, MINIMAL decimals (whole -> none, tenths -> 1dp,
+    else 2dp), parens for negative. Matching the printed precision matters: Nestle prints
+    '651.4' — emitting '651.40' made the grounding re-check miss a correct value."""
+    ax = abs(x)
+    if abs(ax - round(ax)) < 0.005:
+        body = f"{int(round(ax)):,}"
+    elif abs(ax * 10 - round(ax * 10)) < 0.05:
+        body = f"{ax:,.1f}"
+    else:
+        body = f"{ax:,.2f}"
     return f"({body})" if x < 0 else body
 
 
@@ -545,13 +552,99 @@ _NOTE_SCHEMA = {"type": "object", "properties": {
     "required": ["components", "total", "targets"], "additionalProperties": False}
 
 
+# ---------------------------------------------------------------------------
+# Deterministic BALANCE-SHEET FACE parser — the parents and note refs that anchor every
+# BS-based section came from an LLM read of the statement page (`_statement_lines`), the
+# engine's last big stochastic dependency (a bad draw dropped/corrupted parents and note
+# refs). The BS face is a plain label|note|CY|PY table that parses mechanically, and it
+# carries its own arithmetic acceptance test: Total Assets == Total Equity and Liabilities.
+# When the parse passes that identity the LLM read (and its ~2 paid calls per scope) is
+# skipped entirely; when it doesn't, we silently fall back to the LLM path — miss beats wrong.
+# ---------------------------------------------------------------------------
+
+_BS_TOKEN = re.compile(r"\(?-?[\d,]+\.?\d*\)?|(?<=\s)-(?=[\s]|$)")
+
+
+def _bs_parse_row(s: str):
+    """(label, note_ref, current_year_value) for one BS row; None when not a data row."""
+    m = re.match(r"\s*([^\d(].*?)\s{2,}(\S.*)$", s) or re.match(r"\s*(\(\w+\)\s+[^\d]+?)\s{2,}(\S.*)$", s)
+    if not m:
+        return None
+    label = m.group(1).strip(" .:")
+    toks = [t.strip() for t in _BS_TOKEN.findall(m.group(2))]
+    if not label or not toks or not re.search(r"[A-Za-z]{3}", label):
+        return None
+    ref = None
+    # a leading short comma-free unbracketed token before the value pair is the Note column
+    if len(toks) >= 3 and re.fullmatch(r"\d{1,3}[A-Za-z]?|\d{1,2}\.\d{1,2}", toks[0]):
+        ref, toks = toks[0], toks[1:]
+    if len(toks) == 1 and re.fullmatch(r"\d{1,3}[A-Za-z]?|\d{1,2}\.\d{1,2}", toks[0]):
+        return (label, toks[0], None)          # header row carrying only its note ref
+    val = toks[-2] if len(toks) >= 2 else toks[0]
+    return (label, ref, None if val == "-" else val)
+
+
+def _bs_face_lines_det(index: PageIndex, allowed: set[int],
+                       tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
+    """Parse the scope's balance-sheet face deterministically. Accepted ONLY when the parsed
+    grand totals satisfy Total Assets == Total Equity and Liabilities (0.5%) and the page
+    yields a real line count; otherwise None (caller uses the LLM read).
+
+    Candidates tagged EXACTLY the requested scope are tried FIRST: 'unknown' front-matter can
+    host an abridged highlights BS that PASSES the identity with the OTHER scope's figures
+    (infosys prints a consolidated summary BS before the standalone section — accepting it
+    silently corrupted every standalone parent). Scope-tagged pages can't be that decoy."""
+    from src.engine import statements as st
+    cands = st.candidate_pages(index.path, "bs", frozenset(allowed)) or []
+    if tags and scope:
+        tagged = [p for p in cands if tags[p - 1] == scope]
+        # when scope-tagged candidates exist, NEVER fall through to unknown-tagged ones — if
+        # the true page's parse fails we must go silent (LLM path), not accept the decoy
+        cands = tagged or cands
+    for pg in cands[:5]:
+        for pages in ([pg], [pg, pg + 1]):
+            if pages[-1] > index.n_pages:
+                continue
+            rows: list[dict] = []
+            for p in pages:
+                text = index.column_text[p - 1] if index._reflow_safe(p) else index.page_text[p - 1]
+                for ln in text.splitlines():
+                    r = _bs_parse_row(ln.rstrip())
+                    if r:
+                        rows.append({"label": r[0], "note_ref": r[1], "value": r[2]})
+            if len(rows) < 12:
+                continue
+            def _tot(*names):
+                # EXACT collapsed-label match ('totalassets') — a substring test caught
+                # 'Total NON-CURRENT assets' first and rejected every two-page BS
+                for r in rows:
+                    cl = re.sub(r"[^a-z]", "", r["label"].lower())
+                    if cl in names and r["value"]:
+                        return _num(r["value"])
+                return None
+            ta = _tot("totalassets")
+            tel = _tot("totalequityandliabilities", "totalequityliabilities",
+                       "totalliabilitiesandequity")
+            if ta is None or tel is None or ta <= 0:
+                continue
+            if abs(ta - tel) < max(abs(ta) * 0.005, 1):
+                return rows
+    return None
+
+
 def _statement_lines(index: PageIndex, scope: str, kind: str,
                      allowed: set[int] | None = None) -> list[dict]:
     """Extract a statement's line items (label,value) for `scope` — the parent anchors.
     `allowed` = the scope's page block: the statement is located INSIDE it, so standalone
     and consolidated get their own statements (previously one shared page served both
-    scopes and cross-contaminated note refs/parents for every BS-anchored section)."""
+    scopes and cross-contaminated note refs/parents for every BS-anchored section).
+    The BS goes through the deterministic identity-validated face parser first — when it
+    accepts, the parents/note refs are stable run-to-run and the LLM read is skipped."""
     from src.engine import statements as st
+    if kind == "bs" and allowed:
+        det = _bs_face_lines_det(index, allowed, page_scopes(index), scope)
+        if det is not None:
+            return det
     r = st.validate_statement(index.path, kind, frozenset(allowed) if allowed else None)
     if not r.page:
         return []
@@ -1130,8 +1223,7 @@ def _matrix_rows(index: PageIndex, scope: str, section: str, concepts: list[Conc
     for key, (val, ln, pg, py) in found.items():
         if py < latest:                       # prior-year comparative page — its closing is stale
             continue
-        whole = abs(val - round(val)) < 0.005
-        sval = f"{int(round(val)):,}" if whole else f"{val:,.2f}"
+        sval = _fmt_num(val)
         out[key] = Datapoint(key=key, present=True, value=sval,
                              evidence=f"(movement-identity validated row) {ln[:140]}",
                              grounded=True, section=section, pages=[pg], confidence="grounded")
@@ -1831,9 +1923,7 @@ def _dt_rows(index: PageIndex, scope: str, concepts: list[Concept],
             continue
         p, lab, nums, _blk = current[0]
         val = nums[-1]
-        whole = abs(val - round(val)) < 0.005
-        sval = (f"({int(round(abs(val))):,})" if whole else f"({abs(val):,.2f})") if val < 0 \
-            else (f"{int(round(val)):,}" if whole else f"{val:,.2f}")
+        sval = _fmt_num(val)
         out[c.key] = Datapoint(key=c.key, present=True, value=sval,
                                evidence=f"(movement-identity validated DT row) {lab[:140]}",
                                grounded=True, section="deferred_tax", pages=[p],
