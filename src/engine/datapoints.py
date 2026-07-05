@@ -289,6 +289,9 @@ def page_scopes(index: PageIndex) -> list[str]:
     from block anchors (statement titles & section headers). Indian reports contain
     a full standalone block AND a full consolidated block, each with its own notes;
     restricting extraction to the right block removes cross-scope contamination."""
+    cached = getattr(index, "_scope_tags", None)
+    if cached is not None:
+        return cached
     n = index.n_pages
     tags: list[str] = ["unknown"] * n
     cur = "unknown"
@@ -317,8 +320,7 @@ def page_scopes(index: PageIndex) -> list[str]:
                     for ph in phrases:
                         pos = low.find(ph)
                         if pos == 0 or (pos > 0 and not cs[pos - 1].islower()):
-                            if pos >= 0:
-                                return True
+                            return True
             return False
 
         con_title = _title_hit("consolidatedbalancesheet", "consolidatedstatementofprofit",
@@ -363,6 +365,7 @@ def page_scopes(index: PageIndex) -> list[str]:
         elif is_std and not is_con:
             cur = "standalone"
         tags[i] = cur
+    index._scope_tags = tags
     return tags
 
 
@@ -624,7 +627,7 @@ def _bs_parse_row(s: str):
     return (label, ref, None if val == "-" else val)
 
 
-def _bs_face_lines_det(index: PageIndex, allowed: set[int],
+def _bs_face_lines_det_impl(index: PageIndex, allowed: set[int],
                        tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
     """Parse the scope's balance-sheet face deterministically. Accepted ONLY when the parsed
     grand totals satisfy Total Assets == Total Equity and Liabilities (0.5%) and the page
@@ -679,7 +682,7 @@ def _parse_face_rows(index: PageIndex, pages: list[int]) -> list[dict]:
         for ln in text.splitlines():
             r = _bs_parse_row(ln.rstrip())
             if r:
-                rows.append({"label": r[0], "note_ref": r[1], "value": r[2]})
+                rows.append({"label": r[0], "note_ref": r[1], "value": r[2], "page": p})
     return rows
 
 
@@ -705,7 +708,7 @@ def _face_total(rows: list[dict], names: tuple, contains: tuple = ()) -> float |
     return None
 
 
-def _pl_face_lines_det(index: PageIndex, allowed: set[int],
+def _pl_face_lines_det_impl(index: PageIndex, allowed: set[int],
                        tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
     """Deterministic P&L face parse, accepted only when a printed arithmetic identity closes:
       (1) Total Income − Total Expenses = a printed 'Profit before …' line, or
@@ -759,6 +762,33 @@ def _pl_face_lines_det(index: PageIndex, allowed: set[int],
                         and _parent("other_expenses", [], rows)[0] is not None):
                     return rows
     return None
+
+
+def _face_cache_get(index: PageIndex, kind: str, scope: str, allowed: set[int], impl):
+    """Memoize the deterministic face parses per (kind, scope) on the index object — the PL
+    parse scans every in-scope page and was recomputed up to 3x per scope (statement read +
+    the pl_changes_inventory override)."""
+    if not scope:
+        return impl()                     # no stable key without a scope — don't risk collisions
+    cache = getattr(index, "_face_cache", None)
+    if cache is None:
+        cache = index._face_cache = {}
+    key = (kind, scope)
+    if key not in cache:
+        cache[key] = impl()
+    return cache[key]
+
+
+def _bs_face_lines_det(index: PageIndex, allowed: set[int],
+                       tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
+    return _face_cache_get(index, "bs", scope, allowed,
+                           lambda: _bs_face_lines_det_impl(index, allowed, tags, scope))
+
+
+def _pl_face_lines_det(index: PageIndex, allowed: set[int],
+                       tags: list[str] | None = None, scope: str = "") -> list[dict] | None:
+    return _face_cache_get(index, "pl", scope, allowed,
+                           lambda: _pl_face_lines_det_impl(index, allowed, tags, scope))
 
 
 def _statement_lines(index: PageIndex, scope: str, kind: str,
@@ -2318,7 +2348,7 @@ def extract_datapoints(index: PageIndex, scope: str = "standalone",
             if row:
                 res = [Datapoint(key=d.key, present=True, value=row["value"],
                                  evidence=f"(P&L face, identity-validated parse) {row['label']}",
-                                 grounded=True, section=sec, pages=d.pages or [],
+                                 grounded=True, section=sec, pages=[row["page"]],
                                  confidence="grounded") for d in res]
         # (Removed the name-based 'residual guard': it keyed off the KEY name '...Other Long Term'
         # and demoted correct answers, fighting the DEFINITION. e.g. 'Other Long Term Liabilities'
