@@ -39,3 +39,4 @@ output/*_wd.json
 output/*_wholedoc.json
 data/*.bak
 logs/*
+output/*

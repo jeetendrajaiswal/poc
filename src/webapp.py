@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import os
+import re
 import threading
 import uuid
 
@@ -109,7 +110,8 @@ PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Annual-Report Ex
  th.corner{z-index:5}
  .nd{color:#b0b4ba;font-style:italic} a.dl{display:inline-block;margin:0 26px}
 </style></head><body>
-<div class=hd><h1>📄 Annual-Report Datapoint Extractor</h1></div>
+<div class=hd><h1>📄 Annual-Report Datapoint Extractor</h1>
+<a href="/tables" style="color:#cfe3f5;font-size:13px">→ Raw table extraction</a></div>
 <div class=card>
  <form id=f>
   <label>Company (Nifty 50)</label>
@@ -212,6 +214,147 @@ def download():
     if not os.path.exists(path):
         return "no results yet", 404
     return send_file(path, as_attachment=True, download_name="results_wide.xlsx")
+
+
+# --------------------------------------------------------------------------- raw tables page
+
+TABLES_DIR = os.path.join(OUT_DIR, "tables")
+os.makedirs(TABLES_DIR, exist_ok=True)
+
+TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table Extraction</title>
+<style>
+ body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#1a1a1a}
+ .hd{background:#1F4E78;color:#fff;padding:18px 26px}.hd h1{margin:0;font-size:19px}
+ .card{background:#fff;border:1px solid #e2e5e9;border-radius:10px;padding:20px;margin:18px 26px;max-width:760px}
+ label{font-weight:600;font-size:13px;display:block;margin:12px 0 5px}
+ input[type=text],input[type=file]{width:100%;padding:9px;border:1px solid #cfd4da;border-radius:7px;font-size:14px;box-sizing:border-box}
+ button{margin-top:16px;background:#1F4E78;color:#fff;border:0;border-radius:7px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer}
+ button:disabled{opacity:.5;cursor:not-allowed}
+ #status{margin-top:14px;font-size:14px;padding:10px 12px;border-radius:7px;display:none}
+ .run{background:#fff7e6;border:1px solid #ffd591}.ok{background:#f6ffed;border:1px solid #b7eb8f}.err{background:#fff1f0;border:1px solid #ffa39e}
+ .spin{display:inline-block;width:14px;height:14px;border:2px solid #ffd591;border-top-color:#fa8c16;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:7px}
+ @keyframes s{to{transform:rotate(360deg)}}
+ .note{font-size:13px;color:#5a6470;margin-top:10px;line-height:1.5}
+ table{border-collapse:collapse;font-size:13px;background:#fff;margin:0 26px 26px}
+ th,td{border:1px solid #e6e8eb;padding:6px 12px;text-align:left}
+ thead th{background:#1F4E78;color:#fff}
+ a.dl{color:#1F4E78;font-weight:600}
+</style></head><body>
+<div class=hd><h1>📑 Raw Table Extraction</h1>
+<a href="/" style="color:#cfe3f5;font-size:13px">← Datapoint extractor</a></div>
+<div class=card>
+ <form id=f>
+  <label>Company / report name (used for the output file)</label>
+  <input type=text name=name id=name placeholder="e.g. WIPRO_FY2026" required pattern="[A-Za-z0-9_\\- ]+">
+  <label>Annual report (PDF)</label>
+  <input type=file name=pdf id=pdf accept="application/pdf" required>
+  <label style="font-weight:400"><input type=checkbox name=fin_only checked style="width:auto">
+   Financial statements section only — statements, notes &amp; schedules, standalone + consolidated (recommended)</label>
+  <button id=go type=submit>Extract all tables</button>
+ </form>
+ <div id=status></div>
+</div>
+<table id=done><thead><tr><th>Workbook</th><th>Tables</th><th></th></tr></thead><tbody id=list></tbody></table>
+<script>
+const f=document.getElementById('f'),st=document.getElementById('status'),go=document.getElementById('go');
+f.onsubmit=async e=>{e.preventDefault();
+ const fd=new FormData(f); go.disabled=true;
+ st.style.display='block'; st.className='run'; st.innerHTML='<span class=spin></span>Uploading…';
+ let r=await fetch('/tables/process',{method:'POST',body:fd}); let j=await r.json();
+ if(j.error){st.className='err';st.textContent=j.error;go.disabled=false;return;}
+ poll(j.job);
+};
+async function poll(job){
+ let r=await fetch('/tables/status/'+job); let j=await r.json();
+ if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),2000);}
+ else if(j.state==='done'){st.className='ok';st.textContent='✓ '+j.message;go.disabled=false;loadList();}
+ else{st.className='err';st.textContent='✗ '+j.message;go.disabled=false;}
+}
+async function loadList(){
+ let r=await fetch('/tables/list'); let js=await r.json();
+ document.getElementById('list').innerHTML=js.map(x=>
+  `<tr><td>${x.name}</td><td>${x.tables??''}</td><td><a class=dl href="/tables/download/${encodeURIComponent(x.name)}">⬇ download</a></td></tr>`).join('');
+}
+loadList();
+</script></body></html>"""
+
+
+def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool):
+    jobs[job_id] = {"state": "running", "company": name,
+                    "message": "Extracting all tables (deterministic, no model calls)…"}
+    try:
+        from src.engine.tables import extract_to_excel
+        out = os.path.join(TABLES_DIR, f"{name}_tables.xlsx")
+
+        def progress(p, t):
+            jobs[job_id]["message"] = f"Extracting tables… page {p}/{t}"
+
+        n = extract_to_excel(pdf_path, out, progress=progress, financial_only=fin_only)
+        jobs[job_id] = {"state": "done", "company": name,
+                        "message": f"Done — {n} tables extracted to {os.path.basename(out)}"}
+    except Exception as e:
+        jobs[job_id] = {"state": "error", "company": name, "message": f"{type(e).__name__}: {e}"}
+    finally:
+        # Privacy: the uploaded report is deleted as soon as processing ends.
+        try:
+            os.remove(pdf_path)
+        except OSError:
+            pass
+
+
+@app.route("/tables")
+def tables_page():
+    return TABLES_PAGE
+
+
+@app.route("/tables/process", methods=["POST"])
+def tables_process():
+    name = re.sub(r"[^A-Za-z0-9_\- ]", "", (request.form.get("name") or "")).strip().replace(" ", "_")
+    pdf = request.files.get("pdf")
+    if not name:
+        return jsonify(error="Please provide a company / report name."), 400
+    if not pdf or not pdf.filename.lower().endswith(".pdf"):
+        return jsonify(error="Please upload a PDF file."), 400
+    pdf_path = os.path.join(UPLOAD_DIR, f"tables_{name}.pdf")
+    pdf.save(pdf_path)
+    fin_only = bool(request.form.get("fin_only"))
+    job_id = uuid.uuid4().hex[:8]
+    jobs[job_id] = {"state": "running", "company": name, "message": "Queued…"}
+    threading.Thread(target=_run_tables_job, args=(job_id, name, pdf_path, fin_only),
+                     daemon=True).start()
+    return jsonify(job=job_id)
+
+
+@app.route("/tables/status/<job_id>")
+def tables_status(job_id):
+    return jsonify(jobs.get(job_id, {"state": "error", "message": "unknown job"}))
+
+
+@app.route("/tables/list")
+def tables_list():
+    out = []
+    for fn in sorted(os.listdir(TABLES_DIR)):
+        if not fn.endswith(".xlsx"):
+            continue
+        ntab = None
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(os.path.join(TABLES_DIR, fn), read_only=True)
+            ntab = len(wb.sheetnames) - 1          # minus the Index sheet
+            wb.close()
+        except Exception:
+            pass
+        out.append({"name": fn, "tables": ntab})
+    return jsonify(out)
+
+
+@app.route("/tables/download/<path:name>")
+def tables_download(name):
+    name = os.path.basename(name)                  # no path traversal
+    path = os.path.join(TABLES_DIR, name)
+    if not name.endswith(".xlsx") or not os.path.exists(path):
+        return "not found", 404
+    return send_file(path, as_attachment=True, download_name=name)
 
 
 if __name__ == "__main__":
