@@ -39,6 +39,7 @@ def extract_json(
     reasoning: str = "low",
     images_b64: Optional[list[str]] = None,
     file_ids: Optional[list[str]] = None,
+    temperature: Optional[float] = None,
 ) -> dict[str, Any]:
     """One structured call. Returns the parsed JSON object. store=False always.
 
@@ -65,7 +66,7 @@ def extract_json(
     budgets = [max_output_tokens, min(max_output_tokens * 2, 8000)]
     resp = None
     for budget in budgets:
-        resp = client().responses.create(
+        kwargs = dict(
             model=mdl,
             instructions=instructions,
             input=api_input,
@@ -81,6 +82,17 @@ def extract_json(
             max_output_tokens=budget,
             store=False,  # privacy: never logged on OpenAI dashboard
         )
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        try:
+            resp = client().responses.create(**kwargs)
+        except Exception as e:
+            # some reasoning models reject sampling params — drop and retry
+            if temperature is not None and "temperature" in str(e):
+                kwargs.pop("temperature", None)
+                resp = client().responses.create(**kwargs)
+            else:
+                raise
         txt = getattr(resp, "output_text", "") or ""
         if txt.strip():
             try:
@@ -90,6 +102,46 @@ def extract_json(
         if getattr(resp, "status", "") != "incomplete":
             break                                        # empty for another reason: no point retrying
     return {"_empty": True, "_status": getattr(resp, "status", "unknown")}
+
+
+def ask_text(
+    *,
+    instructions: str,
+    question: str,
+    file_ids: Optional[list[str]] = None,
+    model: Optional[str] = None,
+    max_output_tokens: int = 1500,
+    reasoning: str = "low",
+    temperature: Optional[float] = 0.1,
+) -> str:
+    """Free-text (markdown) answer about attached file(s) — the frp chat shape:
+    system prompt + file attachment message(s) + the question. store=False."""
+    mdl = model or config.model_default
+    api_input: list[dict[str, Any]] = []
+    for i, fid in enumerate(file_ids or []):
+        api_input.append({"role": "user", "content": f"This is Document {i + 1}"})
+        api_input.append({"role": "user",
+                          "content": [{"type": "input_file", "file_id": fid}]})
+    api_input.append({"role": "user", "content": question})
+    kwargs: dict[str, Any] = dict(
+        model=mdl,
+        instructions=instructions,
+        input=api_input,
+        reasoning={"effort": reasoning},
+        max_output_tokens=max_output_tokens,
+        store=False,  # privacy: never logged on OpenAI dashboard
+    )
+    if temperature is not None:
+        kwargs["temperature"] = temperature
+    try:
+        resp = client().responses.create(**kwargs)
+    except Exception as e:
+        if temperature is not None and "temperature" in str(e):
+            kwargs.pop("temperature", None)
+            resp = client().responses.create(**kwargs)
+        else:
+            raise
+    return getattr(resp, "output_text", "") or ""
 
 
 def upload_file(content: bytes, name: str) -> str:

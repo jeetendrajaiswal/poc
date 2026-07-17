@@ -778,6 +778,10 @@ def write_workbook(tables: list[RawTable], out_path: str) -> None:
             if len(group) > 1:
                 ws.append([f"· p{t.page}: {t.title}" if t.title else f"· p{t.page}"])
                 ws.cell(row=ws.max_row, column=1).font = part_font
+            elif "⚠" in t.title:
+                # a verification flag must never be invisible
+                ws.append([t.title])
+                ws.cell(row=ws.max_row, column=1).font = Font(color="B00000", bold=True)
             for row in t.grid:
                 ws.append(row)
             total_rows += len(t.grid)
@@ -788,7 +792,10 @@ def write_workbook(tables: list[RawTable], out_path: str) -> None:
             ws.column_dimensions[get_column_letter(j)].width = wdt + 2
         ws.freeze_panes = "A3"
         r = index.max_row + 1
-        index.append([name, pages, t0.scope, t0.section or t0.title,
+        section_label = t0.section or t0.title
+        if any("⚠" in t.title for t in group):
+            section_label = f"⚠ {section_label}"
+        index.append([name, pages, t0.scope, section_label,
                       len(group), total_rows, max(len(t.grid[0]) for t in group)])
         index.cell(row=r, column=1).hyperlink = f"#'{name}'!A3"
         index.cell(row=r, column=1).style = "Hyperlink"

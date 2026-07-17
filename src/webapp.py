@@ -235,6 +235,9 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
  .spin{display:inline-block;width:14px;height:14px;border:2px solid #ffd591;border-top-color:#fa8c16;border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:7px}
  @keyframes s{to{transform:rotate(360deg)}}
  .note{font-size:13px;color:#5a6470;margin-top:10px;line-height:1.5}
+ .tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:2px solid #e2e5e9}
+ .tab{background:none;border:0;border-bottom:3px solid transparent;margin:0;padding:8px 14px;font-size:14px;font-weight:600;color:#5a6470;cursor:pointer;border-radius:0}
+ .tab.active{color:#1F4E78;border-bottom-color:#1F4E78}
  table{border-collapse:collapse;font-size:13px;background:#fff;margin:0 26px 26px}
  th,td{border:1px solid #e6e8eb;padding:6px 12px;text-align:left}
  thead th{background:#1F4E78;color:#fff}
@@ -243,13 +246,17 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
 <div class=hd><h1>📑 Raw Table Extraction</h1>
 <a href="/" style="color:#cfe3f5;font-size:13px">← Datapoint extractor</a></div>
 <div class=card>
+ <div class=tabs>
+  <button type=button class="tab active" id=tab_annual onclick="setMode('annual')">Annual report</button>
+  <button type=button class="tab" id=tab_qtr onclick="setMode('quarterly')">Quarterly filing</button>
+ </div>
  <form id=f>
+  <input type=hidden name=mode id=mode value="annual">
   <label>Company / report name (used for the output file)</label>
   <input type=text name=name id=name placeholder="e.g. WIPRO_FY2026" required pattern="[A-Za-z0-9_\\- ]+">
-  <label>Annual report (PDF)</label>
+  <label id=pdf_label>Annual report (PDF)</label>
   <input type=file name=pdf id=pdf accept="application/pdf" required>
-  <label style="font-weight:400"><input type=checkbox name=fin_only checked style="width:auto">
-   Financial statements section only — statements, notes &amp; schedules, standalone + consolidated (recommended)</label>
+
   <button id=go type=submit>Extract all tables</button>
  </form>
  <div id=status></div>
@@ -257,6 +264,13 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
 <table id=done><thead><tr><th>Workbook</th><th>Tables</th><th></th></tr></thead><tbody id=list></tbody></table>
 <script>
 const f=document.getElementById('f'),st=document.getElementById('status'),go=document.getElementById('go');
+function setMode(m){
+ document.getElementById('mode').value=m;
+ document.getElementById('tab_annual').className='tab'+(m==='annual'?' active':'');
+ document.getElementById('tab_qtr').className='tab'+(m==='quarterly'?' active':'');
+ document.getElementById('pdf_label').textContent=(m==='annual')?'Annual report (PDF)':'Quarterly results filing (PDF)';
+ document.getElementById('name').placeholder=(m==='annual')?'e.g. WIPRO_FY2026':'e.g. WIPRO_Q1FY27';
+}
 f.onsubmit=async e=>{e.preventDefault();
  const fd=new FormData(f); go.disabled=true;
  st.style.display='block'; st.className='run'; st.innerHTML='<span class=spin></span>Uploading…';
@@ -279,17 +293,19 @@ loadList();
 </script></body></html>"""
 
 
-def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool):
-    jobs[job_id] = {"state": "running", "company": name,
-                    "message": "Extracting all tables (deterministic, no model calls)…"}
+def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, vision: bool,
+                    mode: str = "auto"):
+    jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
     try:
-        from src.engine.tables import extract_to_excel
+        from src.engine.tables import write_workbook
+        from src.engine.tables_llm import extract_tables_smart
         out = os.path.join(TABLES_DIR, f"{name}_tables.xlsx")
 
-        def progress(p, t):
-            jobs[job_id]["message"] = f"Extracting tables… page {p}/{t}"
-
-        n = extract_to_excel(pdf_path, out, progress=progress, financial_only=fin_only)
+        tables = extract_tables_smart(pdf_path, financial_only=fin_only,
+                                      vision=vision, progress=None,
+                                      log=lambda m: None, mode=mode)
+        write_workbook(tables, out)
+        n = len(tables)
         jobs[job_id] = {"state": "done", "company": name,
                         "message": f"Done — {n} tables extracted to {os.path.basename(out)}"}
     except Exception as e:
@@ -317,10 +333,15 @@ def tables_process():
         return jsonify(error="Please upload a PDF file."), 400
     pdf_path = os.path.join(UPLOAD_DIR, f"tables_{name}.pdf")
     pdf.save(pdf_path)
-    fin_only = bool(request.form.get("fin_only"))
+    fin_only = True   # financial-statements section only, always
+    mode = request.form.get("mode") or "auto"
+    if mode not in ("annual", "quarterly", "auto"):
+        mode = "auto"
+    vision = True   # scanned pages are handled automatically in both modes
     job_id = uuid.uuid4().hex[:8]
     jobs[job_id] = {"state": "running", "company": name, "message": "Queued…"}
-    threading.Thread(target=_run_tables_job, args=(job_id, name, pdf_path, fin_only),
+    threading.Thread(target=_run_tables_job,
+                     args=(job_id, name, pdf_path, fin_only, vision, mode),
                      daemon=True).start()
     return jsonify(job=job_id)
 
