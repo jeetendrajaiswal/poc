@@ -2,6 +2,17 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run: webapp (http://127.0.0.1:8005)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "src.webapp",
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" },
+      "justMyCode": false
+    },
+    {
       "name": "Debug: datapoints (one section)",
       "type": "debugpy",
       "request": "launch",

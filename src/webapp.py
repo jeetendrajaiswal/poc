@@ -220,8 +220,10 @@ def download():
 
 TABLES_DIR = os.path.join(OUT_DIR, "tables")
 os.makedirs(TABLES_DIR, exist_ok=True)
+MDNA_DIR = os.path.join(OUT_DIR, "mdna")
+os.makedirs(MDNA_DIR, exist_ok=True)
 
-TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table Extraction</title>
+TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Raw Table Extraction</title>
 <style>
  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f6f7f9;color:#1a1a1a}
  .hd{background:#1F4E78;color:#fff;padding:18px 26px}.hd h1{margin:0;font-size:19px}
@@ -238,10 +240,30 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
  .tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:2px solid #e2e5e9}
  .tab{background:none;border:0;border-bottom:3px solid transparent;margin:0;padding:8px 14px;font-size:14px;font-weight:600;color:#5a6470;cursor:pointer;border-radius:0}
  .tab.active{color:#1F4E78;border-bottom-color:#1F4E78}
- table{border-collapse:collapse;font-size:13px;background:#fff;margin:0 26px 26px}
- th,td{border:1px solid #e6e8eb;padding:6px 12px;text-align:left}
- thead th{background:#1F4E78;color:#fff}
+ .mdlist{margin:0 26px 10px;font-size:14px}
+ .mdlist a{color:#1F4E78;font-weight:600;margin-right:16px;cursor:pointer}
+ #mdoverlay{display:none;position:fixed;inset:0;background:rgba(20,30,45,.55);z-index:50}
+ #mdmodal{position:fixed;top:5vh;left:50%;transform:translateX(-50%);width:min(920px,92vw);height:88vh;background:#fff;border-radius:12px;z-index:51;display:none;flex-direction:column;box-shadow:0 18px 60px rgba(0,0,0,.35)}
+ #mdhead{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #e2e5e9}
+ #mdhead h1{margin:0;font-size:17px;color:#1F4E78}
+ #mdclose{background:none;border:0;font-size:26px;color:#5a6470;cursor:pointer;margin:0;padding:0 4px;line-height:1}
+ #mdview{overflow-y:auto;padding:10px 30px 30px;font-size:14px;line-height:1.55;flex:1}
+ #mdview h2{color:#1F4E78;border-bottom:2px solid #e8edf3;padding-bottom:5px;margin-top:26px}
+ #mdview h3{color:#28587f;margin-top:20px}
+ #mdview h4{color:#3a6890;margin-top:16px}
+ #mdview table{border-collapse:collapse;margin:10px 0}
+ #mdview th,#mdview td{border:1px solid #dfe4e9;padding:5px 11px;text-align:right;font-size:13px}
+ #mdview th{background:#f0f4f8;color:#1F4E78}
+ #mdview td:first-child,#mdview th:first-child{text-align:left}
+ #mdview li{margin:3px 0}
  a.dl{color:#1F4E78;font-weight:600}
+ .wbwrap{margin:0 26px 18px;max-width:1100px}
+ .wbtitle{font-weight:700;font-size:14px;color:#1F4E78;margin:0 0 8px}
+ .wbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;max-height:44vh;overflow-y:auto;padding:4px 6px 4px 0}
+ .wbcard{background:#fff;border:1px solid #e2e5e9;border-radius:9px;padding:11px 14px;display:flex;flex-direction:column;gap:5px}
+ .wbname{font-weight:600;font-size:13px;word-break:break-all}
+ .wbmeta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#5a6470}
+ .wbbadge{background:#eef3f8;color:#1F4E78;border-radius:10px;padding:1px 9px;font-weight:600}
 </style></head><body>
 <div class=hd><h1>📑 Raw Table Extraction</h1>
 <a href="/" style="color:#cfe3f5;font-size:13px">← Datapoint extractor</a></div>
@@ -249,6 +271,7 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
  <div class=tabs>
   <button type=button class="tab active" id=tab_annual onclick="setMode('annual')">Annual report</button>
   <button type=button class="tab" id=tab_qtr onclick="setMode('quarterly')">Quarterly filing</button>
+  <button type=button class="tab" id=tab_mdna onclick="setMode('mdna')">MD&amp;A summary</button>
  </div>
  <form id=f>
   <input type=hidden name=mode id=mode value="annual">
@@ -261,15 +284,30 @@ TABLES_PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Raw Table
  </form>
  <div id=status></div>
 </div>
-<table id=done><thead><tr><th>Workbook</th><th>Tables</th><th></th></tr></thead><tbody id=list></tbody></table>
+<div class=wbwrap id=wbwrap style="display:none"><div class=wbtitle>Workbooks</div><div class=wbgrid id=list></div></div>
+<div class=mdlist id=mdlist_wrap style="display:none"><b>MD&amp;A summaries:</b> <span id=mdlist></span></div>
+<div id=mdoverlay onclick="closeMdna()"></div>
+<div id=mdmodal>
+ <div id=mdhead><h1 id=mdtitle></h1><button id=mdclose onclick="closeMdna()">&times;</button></div>
+ <div id=mdview></div>
+</div>
 <script>
 const f=document.getElementById('f'),st=document.getElementById('status'),go=document.getElementById('go');
 function setMode(m){
  document.getElementById('mode').value=m;
  document.getElementById('tab_annual').className='tab'+(m==='annual'?' active':'');
  document.getElementById('tab_qtr').className='tab'+(m==='quarterly'?' active':'');
- document.getElementById('pdf_label').textContent=(m==='annual')?'Annual report (PDF)':'Quarterly results filing (PDF)';
- document.getElementById('name').placeholder=(m==='annual')?'e.g. WIPRO_FY2026':'e.g. WIPRO_Q1FY27';
+ document.getElementById('tab_mdna').className='tab'+(m==='mdna'?' active':'');
+ document.getElementById('pdf_label').textContent=(m==='annual')?'Annual report (PDF)':(m==='quarterly')?'Quarterly results filing (PDF)':'Annual report (PDF)';
+ document.getElementById('name').placeholder=(m==='mdna')?'e.g. WIPRO_FY2026':(m==='annual')?'e.g. WIPRO_FY2026':'e.g. WIPRO_Q1FY27';
+ document.getElementById('go').textContent=(m==='mdna')?'Generate MD&A summary':'Extract all tables';
+ applyVis();
+}
+let wbHas=false, mdHas=false;
+function applyVis(){
+ const m=document.getElementById('mode').value;
+ document.getElementById('wbwrap').style.display=(m!=='mdna'&&wbHas)?'block':'none';
+ document.getElementById('mdlist_wrap').style.display=(m==='mdna'&&mdHas)?'block':'none';
 }
 f.onsubmit=async e=>{e.preventDefault();
  const fd=new FormData(f); go.disabled=true;
@@ -281,15 +319,71 @@ f.onsubmit=async e=>{e.preventDefault();
 async function poll(job){
  let r=await fetch('/tables/status/'+job); let j=await r.json();
  if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),2000);}
- else if(j.state==='done'){st.className='ok';st.textContent='✓ '+j.message;go.disabled=false;loadList();}
+ else if(j.state==='done'){st.className='ok';st.textContent='✓ '+j.message;go.disabled=false;loadList();loadMdna();if(j.kind==='mdna'&&j.doc){viewMdna(j.doc);}}
  else{st.className='err';st.textContent='✗ '+j.message;go.disabled=false;}
 }
 async function loadList(){
  let r=await fetch('/tables/list'); let js=await r.json();
+ wbHas=js.length>0; applyVis();
  document.getElementById('list').innerHTML=js.map(x=>
-  `<tr><td>${x.name}</td><td>${x.tables??''}</td><td><a class=dl href="/tables/download/${encodeURIComponent(x.name)}">⬇ download</a></td></tr>`).join('');
+  `<div class=wbcard><div class=wbname>${x.name.replace('_tables.xlsx','')}</div>`+
+  `<div class=wbmeta><span class=wbbadge>${x.tables??'?'} tables</span>`+
+  `<a class=dl href="/tables/download/${encodeURIComponent(x.name)}">⬇ download</a></div></div>`).join('');
 }
-loadList();
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*]+)\*/g,'$1<i>$2</i>');}
+function mdToHtml(md){
+ const lines=md.split('\n'); let out=[],i=0,inList=0;
+ const closeList=()=>{while(inList){out.push('</ul>');inList--;}};
+ while(i<lines.length){
+  let l=lines[i];
+  if(l.startsWith('|')){ closeList();
+   let rows=[]; while(i<lines.length&&lines[i].trim().startsWith('|')){rows.push(lines[i].trim());i++;}
+   let html='<table>';
+   rows.forEach((rw,ri)=>{
+    const cells=rw.replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+    if(cells.every(c=>/^[-: ]*$/.test(c)))return;
+    const tag=(ri===0)?'th':'td';
+    html+='<tr>'+cells.map(c=>`<${tag}>${inline(esc(c))}</${tag}>`).join('')+'</tr>';
+   });
+   out.push(html+'</table>'); continue;
+  }
+  let m;
+  if(m=l.match(/^(#{1,6})\s+(.*)/)){ closeList(); out.push(`<h${m[1].length}>${inline(esc(m[2]))}</h${m[1].length}>`); }
+  else if(/^\s*[-•]\s+/.test(l)){
+   const depth=Math.floor((l.match(/^\s*/)[0].length)/2)+1;
+   while(inList<depth){out.push('<ul>');inList++;}
+   while(inList>depth){out.push('</ul>');inList--;}
+   out.push('<li>'+inline(esc(l.replace(/^\s*[-•]\s+/,'')))+'</li>');
+  }
+  else if(/^---+$/.test(l.trim())){ closeList(); out.push('<hr>'); }
+  else if(l.trim()===''){ closeList(); }
+  else { closeList(); out.push('<p>'+inline(esc(l))+'</p>'); }
+  i++;
+ }
+ closeList(); return out.join('\n');
+}
+async function loadMdna(){
+ let r=await fetch('/mdna/list'); let js=await r.json();
+ mdHas=js.length>0; applyVis();
+ document.getElementById('mdlist').innerHTML=js.map(n=>`<a onclick="viewMdna('${n}')">${n.replace('_MDNA.md','')}</a>`).join('');
+}
+async function viewMdna(n){
+ let r=await fetch('/mdna/view/'+encodeURIComponent(n)); let md=await r.text();
+ document.getElementById('mdtitle').textContent=n.replace('_MDNA.md','')+' — MD&A Summary';
+ document.getElementById('mdview').innerHTML=mdToHtml(md);
+ document.getElementById('mdoverlay').style.display='block';
+ document.getElementById('mdmodal').style.display='flex';
+ document.getElementById('mdview').scrollTop=0;
+ document.body.style.overflow='hidden';
+}
+function closeMdna(){
+ document.getElementById('mdoverlay').style.display='none';
+ document.getElementById('mdmodal').style.display='none';
+ document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMdna();});
+loadList(); loadMdna();
 </script></body></html>"""
 
 
@@ -297,6 +391,15 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                     mode: str = "auto"):
     jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
     try:
+        if mode == "mdna":
+            from src.engine.mdna import summarize_mdna
+            md = summarize_mdna(pdf_path, log=lambda m: None)
+            with open(os.path.join(MDNA_DIR, f"{name}_MDNA.md"), "w") as fh:
+                fh.write(md)
+            jobs[job_id] = {"state": "done", "company": name, "kind": "mdna",
+                            "doc": f"{name}_MDNA.md",
+                            "message": "Done — MD&A summary generated"}
+            return
         from src.engine.tables import write_workbook
         from src.engine.tables_llm import extract_tables_smart
         out = os.path.join(TABLES_DIR, f"{name}_tables.xlsx")
@@ -335,7 +438,7 @@ def tables_process():
     pdf.save(pdf_path)
     fin_only = True   # financial-statements section only, always
     mode = request.form.get("mode") or "auto"
-    if mode not in ("annual", "quarterly", "auto"):
+    if mode not in ("annual", "quarterly", "mdna", "auto"):
         mode = "auto"
     vision = True   # scanned pages are handled automatically in both modes
     job_id = uuid.uuid4().hex[:8]
@@ -376,6 +479,22 @@ def tables_download(name):
     if not name.endswith(".xlsx") or not os.path.exists(path):
         return "not found", 404
     return send_file(path, as_attachment=True, download_name=name)
+
+
+@app.route("/mdna/list")
+def mdna_list():
+    out = [fn for fn in sorted(os.listdir(MDNA_DIR)) if fn.endswith(".md")]
+    return jsonify(out)
+
+
+@app.route("/mdna/view/<path:name>")
+def mdna_view(name):
+    name = os.path.basename(name)                  # no path traversal
+    path = os.path.join(MDNA_DIR, name)
+    if not name.endswith(".md") or not os.path.exists(path):
+        return "not found", 404
+    with open(path) as fh:
+        return fh.read(), 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 
 if __name__ == "__main__":
