@@ -376,6 +376,38 @@ def _merge_sparse_columns(grid: list[list[str]]) -> list[list[str]]:
     return grid
 
 
+def _mojibake_share(s: str) -> float:
+    """Share of characters typical of legacy Indic fonts extracted as Latin
+    mojibake ('A{O©V ewÕ àr{‘¶‘')."""
+    if not s:
+        return 0.0
+    odd = sum(1 for c in s if c in "{}$©§¶‘’ñÕ«‹>|~ˆ†›" or ord(c) > 0xC0)
+    return odd / len(s)
+
+
+def _merge_bilingual_rows(grid: list[list[str]]) -> list[list[str]]:
+    """Bilingual (legacy-font Hindi + English) statements print the Hindi label
+    line carrying the values with the English label on the next line. Merge
+    such pairs so the row reads with the ENGLISH label and keeps the values."""
+    out = []
+    i = 0
+    while i < len(grid):
+        row = grid[i]
+        nxt = grid[i + 1] if i + 1 < len(grid) else None
+        label = row[0]
+        if (nxt is not None and _mojibake_share(label) > 0.15
+                and any(_is_numericish(c) for c in row[1:])
+                and nxt[0] and _mojibake_share(nxt[0]) < 0.1
+                and not any(c.strip() for c in nxt[1:])):
+            merged = [nxt[0]] + row[1:]
+            out.append(merged)
+            i += 2
+            continue
+        out.append(row)
+        i += 1
+    return out
+
+
 def _looks_tabular(grid: list[list[str]]) -> bool:
     """Keep only grids that look like data tables, not multi-column prose."""
     if len(grid) < 2 or len(grid[0]) < 2:
@@ -427,6 +459,7 @@ def _build_grid(rows: list[dict]) -> list[list[str]] | None:
     if len(edges) < 3:
         return None
     grid = _merge_sparse_columns([_assign_row(r, edges) for r in rows])
+    grid = _merge_bilingual_rows(grid)
     return grid if _looks_tabular(grid) else None
 
 
