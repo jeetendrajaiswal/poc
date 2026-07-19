@@ -188,7 +188,10 @@ def map_quarter(tables, template, taxonomy, model: str | None = None):
     for key, gl in grids.items():
         width = max(len(r) for g in gl for r in g)
         merged = [r + [""] * (width - len(r)) for g in gl for r in g]
-        out[key] = map_statement(merged, key[0], taxonomy, template[key], model=model)
+        ms = map_statement(merged, key[0], taxonomy, template[key], model=model)
+        if key[0] == "cashflow":
+            reconcile_cashflow_opening(ms, template[key])
+        out[key] = ms
     return out
 
 
@@ -375,6 +378,10 @@ Rules:
   definition fits (do NOT force a fit).
 - Respect total-vs-component guards in definitions: a printed subtotal/total line maps only to a
   field defined as that aggregate — NEVER to a component field.
+- Lines under a 'Components of cash and cash equivalents' block (balances with banks,
+  'on current account', EEFC accounts, deposits with original maturity < 3 months, cash in
+  hand, cheques on hand, remittances in transit) are the BREAKDOWN of closing cash, which is
+  already mapped — return "" for every one of them.
 - A printed TOTAL maps ONLY to the field for exactly that aggregate; if no such field exists,
   return "" (leave it unmapped). Never map a broader total into a narrower field (e.g. 'TOTAL
   LIABILITIES' must NOT go into 'Total Current Liabilities') and never map a per-segment or
@@ -466,6 +473,12 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
 
     rows = []
     section = ""
+    for hrow in header:
+        hl = re.sub(r"^\s*\d+[.)]\s*", "", str(hrow[0] or "").lower())
+        for pat, name in _SECTION_PAT:
+            if re.search(pat, hl):
+                section = name
+                break
     for row in data:
         label, vals = _label_and_vals(row)
         if label and any(c.isalpha() for c in label):
@@ -587,18 +600,46 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
             for i in idxs:
                 if i not in totals:
                     assign.pop(i, None)
+        elif len(idxs) >= 3:
+            # arithmetic total-detection: if ONE line equals the sum of all the
+            # others (every column), it IS their printed total — keep only it
+            # (e.g. 'Cash at the end' followed by its components breakdown)
+            def _vec(i, cols):
+                return [rows[i][2].get(c) for c in cols]
+            cols = sorted({c for i in idxs for c in rows[i][2]})
+            hits = []
+            for i in idxs:
+                rest = [j for j in idxs if j != i]
+                ok = True
+                for c in cols:
+                    tot = rows[i][2].get(c)
+                    ssum = sum(rows[j][2].get(c, 0.0) for j in rest)
+                    if tot is None or abs(ssum - tot) > max(0.02, 0.005 * abs(tot)):
+                        ok = False
+                        break
+                if ok:
+                    hits.append(i)
+            if len(hits) == 1:
+                for j in idxs:
+                    if j != hits[0]:
+                        assign.pop(j, None)
     facts: dict[str, dict[int, float]] = {}
     sources: dict[str, list[str]] = {}
+    sources_vals: dict[str, dict[int, list]] = {}
     unmapped = []
+    unmapped_vals: list = []
     for i, (label, sec, vals) in enumerate(rows):
         fid = assign.get(i, "")
         if fid and fid in valid_fids:
             tgt = facts.setdefault(fid, {})
+            sv = sources_vals.setdefault(fid, {})
             for j, v in vals.items():
                 tgt[j] = tgt.get(j, 0.0) + v
+                sv.setdefault(j, []).append((label, v))
             sources.setdefault(fid, []).append(label)
         else:
             unmapped.append(label)
+            unmapped_vals.append((label, dict(vals)))
 
     # verification via the client template's own formulas
     verification = []
@@ -626,10 +667,13 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
             if not ok:
                 verification.append(f"⚠ {f.name} [{f.fid}] col{j}: printed {printed:,.2f} "
                                     f"vs sum-of-mapped {total:,.2f}")
-    return MappedStatement(periods=periods, facts=facts, sources=sources,
-                           unmapped=unmapped, verification=verification,
-                           n_checks=n_checks, n_ok=n_ok,
-                           unit=unit, multiplier=mult, currency=cur)
+    ms = MappedStatement(periods=periods, facts=facts, sources=sources,
+                         unmapped=unmapped, verification=verification,
+                         n_checks=n_checks, n_ok=n_ok,
+                         unit=unit, multiplier=mult, currency=cur)
+    ms.sources_vals = sources_vals            # exact per-line provenance
+    ms.unmapped_vals = unmapped_vals
+    return ms
 
 
 # --------------------------------------------------------------------------- client workbook output
@@ -642,6 +686,203 @@ def _period_label(p: Period) -> str:
 
 
 _SPAN_MONTHS = {"3M": 3, "6M": 6, "9M": 9, "FY": 12}
+
+
+def attach_provenance(ms: "MappedStatement", grid) -> None:
+    """Rebuild per-period (report line, value) provenance for every mapped fid
+    and every unmapped line from the raw grid — deterministic."""
+    from collections import defaultdict
+    rows_by_label = defaultdict(list)
+    for row in grid:
+        label, vals = _label_and_vals(row)
+        if label and any(c.isalpha() for c in label):
+            rows_by_label[norm_label(label)].append((label, vals))
+    if not getattr(ms, "unmapped_vals", None):
+        uv = []
+        for lab in ms.unmapped:
+            for orig, vals in rows_by_label.get(norm_label(lab), []):
+                uv.append((orig, dict(vals)))
+                break
+        ms.unmapped_vals = uv
+    if getattr(ms, "sources_vals", None):
+        return                                  # exact provenance already recorded
+    out: dict = {}
+    for fid, labels in ms.sources.items():
+        per: dict = defaultdict(list)
+        seen = set()
+        for lab in labels:
+            nl = norm_label(lab)
+            if nl in seen:
+                continue
+            seen.add(nl)
+            for orig, vals in rows_by_label.get(nl, []):
+                for col, v in vals.items():
+                    per[col].append((orig, v))
+        # duplicate-label rows can over-list: keep only a combination whose sum
+        # matches the mapped value (try: all, keep-one, drop-one, keep-a-pair);
+        # if nothing reconciles, say so rather than mislead
+        from itertools import combinations
+        for col, items in list(per.items()):
+            fact = ms.facts.get(fid, {}).get(col)
+            if fact is None or abs(sum(v for _l, v in items) - fact) <= 0.01:
+                continue
+            candidates = ([[it] for it in items]
+                          + [items[:k] + items[k + 1:] for k in range(len(items))]
+                          + ([list(c) for c in combinations(items, 2)] if len(items) <= 6 else []))
+            for cand in candidates:
+                if cand and abs(sum(v for _l, v in cand) - fact) <= 0.01:
+                    per[col] = cand
+                    break
+            else:
+                per[col] = [("(same-named report lines; exact split ambiguous)", fact)]
+        out[fid] = dict(per)
+    ms.sources_vals = out
+
+
+def reconcile_cashflow_opening(ms: "MappedStatement",
+                               template_fields: list[ClientField]) -> int:
+    """Closing-identity completion for cash flows: if closing != beginning +
+    net(+fx) and a subset of unmapped lines sums EXACTLY to the residual in
+    every period, fold those lines into the beginning-cash field (they are
+    printed opening-balance adjustments like 'Cash acquired on acquisition' or
+    'Less: Bank overdraft'). Deterministic and arithmetic-gated. Returns the
+    number of lines folded; folded rows are flagged 'adjusted' in the output."""
+    from itertools import combinations
+
+    def find(*pats):
+        for f in template_fields:
+            n = f.name.lower()
+            if all(re.search(p, n) for p in pats):
+                return f.fid
+        return None
+
+    BEG = find(r"cash and cash equivalents at the beginning")
+    END = find(r"cash and cash equivalents at the end")
+    FX = find(r"effect of exchange fluctuation")
+    NET = find(r"net increase.*cash and cash equivalents")
+    ADJ = find(r"^other adjustments$")
+    f = ms.facts
+    if not BEG or BEG not in f or not END or END not in f or not ADJ:
+        return 0
+    cols = sorted(set(f[BEG]) & set(f[END]))
+    net = f.get(NET) or {}
+    fx = f.get(FX) or {}
+    resid = {}
+    for c in cols:
+        n = net.get(c)
+        if n is None:
+            continue
+        resid[c] = round(f[END][c] - (f[BEG][c] + n + fx.get(c, 0.0)
+                                      + f.get(ADJ, {}).get(c, 0.0)), 2)
+    if not resid or all(abs(v) <= 0.02 for v in resid.values()):
+        return 0
+    uv = getattr(ms, "unmapped_vals", None) or []
+    cand = [(i, lab, vals) for i, (lab, vals) in enumerate(uv)
+            if any(c in vals for c in resid)]
+    for size in range(1, min(4, len(cand)) + 1):
+        for combo in combinations(cand, size):
+            ok = all(abs(sum(vals.get(c, 0.0) for _i, _l, vals in combo) - r) <= max(0.02, 0.002 * abs(f[END][c]))
+                     for c, r in resid.items())
+            if not ok:
+                continue
+            sv = getattr(ms, "sources_vals", None) or {}
+            svb = sv.setdefault(ADJ, {})
+            for i, lab, vals in combo:
+                for c, v in vals.items():
+                    f.setdefault(ADJ, {})[c] = round(f.get(ADJ, {}).get(c, 0.0) + v, 2)
+                    svb.setdefault(c, []).append((lab + " [adjusted]", v))
+                ms.sources.setdefault(ADJ, []).append(lab)
+                ms.verification.append(
+                    f"~ reconciliation [{ADJ} Other Adjustments]: '{lab}' folded so that "
+                    "beginning + net (+fx) + adjustments = closing ✓")
+            drop = {i for i, _l, _v in combo}
+            ms.unmapped_vals = [x for i, x in enumerate(uv) if i not in drop]
+            ms.unmapped = [l for l in ms.unmapped
+                           if l not in {lab for _i, lab, _v in combo}]
+            return size
+    return 0
+
+
+def classify_unmapped(ms: "MappedStatement",
+                      template_fields: list[ClientField]) -> list[tuple[str, str]]:
+    """Deterministically classify every unmapped line by its ARITHMETIC
+    relationship to the mapped fields — nothing is guessed:
+
+      aggregate : the line equals a +/- combination of mapped fields (verified)
+      component : the line belongs to a consecutive group that sums exactly to
+                  a mapped field's value (verified — already included there)
+      info      : neither — genuinely informational, no client field
+
+    Returns [(class, comment)] aligned with ms.unmapped_vals."""
+    from itertools import combinations
+    names = {f.fid: f.name for f in template_fields}
+    uv = getattr(ms, "unmapped_vals", None) or []
+    facts = ms.facts
+
+    def vec(d, cols):
+        return tuple(round(d.get(c, 0.0), 2) for c in cols)
+
+    def close(a, b):
+        return all(abs(x - y) <= max(0.02, 0.005 * abs(y)) for x, y in zip(a, b))
+
+    results: list = [None] * len(uv)
+
+    # --- component groups: consecutive unmapped lines summing to a mapped fid
+    for size in range(len(uv), 1, -1):
+        for start in range(0, len(uv) - size + 1):
+            idxs = list(range(start, start + size))
+            if any(results[i] for i in idxs):
+                continue
+            cols = sorted({c for i in idxs for c in uv[i][1]})
+            if not cols:
+                continue
+            total = {c: sum(uv[i][1].get(c, 0.0) for i in idxs) for c in cols}
+            for fid, fv in facts.items():
+                if all(c in fv for c in cols) and close(vec(total, cols), vec(fv, cols)):
+                    for i in idxs:
+                        results[i] = ("component",
+                                      f"Already included in '{names.get(fid, fid)}' [{fid}] — "
+                                      f"the group of {size} lines sums exactly to its value ✓")
+                    break
+
+    # --- aggregates: line = +/- combination of mapped fields
+    fids = [f for f in facts if facts[f]]
+    for i, (lab, vals) in enumerate(uv):
+        if results[i] or not vals:
+            continue
+        cols = sorted(vals)
+        cand = [f for f in fids if all(c in facts[f] for c in cols)]
+        tv = vec(vals, cols)
+        hit = None
+        for f in cand:
+            if close(vec(facts[f], cols), tv):
+                hit = f"equals '{names.get(f, f)}' [{f}] ✓"
+                break
+        if hit is None:                        # sums first (clearer than differences)
+            for f1, f2 in combinations(cand, 2):
+                s = tuple(round(facts[f1][c] + facts[f2][c], 2) for c in cols)
+                if close(s, tv):
+                    hit = (f"= '{names.get(f1, f1)}' [{f1}] + '{names.get(f2, f2)}' [{f2}] ✓")
+                    break
+        if hit is None:
+            for f1, f2 in combinations(cand, 2):
+                d1 = tuple(round(facts[f1][c] - facts[f2][c], 2) for c in cols)
+                d2 = tuple(round(facts[f2][c] - facts[f1][c], 2) for c in cols)
+                if close(d1, tv):
+                    hit = (f"= '{names.get(f1, f1)}' [{f1}] − '{names.get(f2, f2)}' [{f2}] ✓")
+                elif close(d2, tv):
+                    hit = (f"= '{names.get(f2, f2)}' [{f2}] − '{names.get(f1, f1)}' [{f1}] ✓")
+                if hit:
+                    break
+        if hit:
+            results[i] = ("aggregate",
+                          f"No dedicated client field, but fully represented: {hit} "
+                          "(shown for verification)")
+    for i in range(len(uv)):
+        if not results[i]:
+            results[i] = ("info", "No matching client field — informational disclosure line; "
+                                  "value not contained in any mapped field")
+    return results
 
 
 def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "MappedStatement"],
@@ -658,7 +899,7 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                  "cashflow": "Cash Flow", "segment": "Segment Finance"}
     STMT_ORDER = {"income": 0, "balance": 1, "cashflow": 2, "segment": 3}
     HDR = ["Field id", "Display Name", "Period End", "Months", "Audited",
-           "Value", "Denomination", "Currency", "Method"]
+           "Value", "Denomination", "Currency", "Method", "Sub-items (report lines / calculation)"]
     wb = Workbook()
     audit = wb.active
     audit.title = "Audit"
@@ -679,24 +920,37 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
             c.font = Font(bold=True)
         denom = ms.unit or "units"
         row2fid = {f.row: f.fid for f in fields}
+        byfid = {f.fid: f for f in fields}
+        prov = getattr(ms, "sources_vals", None) or {}
         for f in sorted(fields, key=lambda x: x.order):
             per_vals = {}
+            per_sub = {}
             method = ""
             if f.fid in ms.facts:
                 method = "reported" if len(ms.sources.get(f.fid, [])) == 1 else "summed"
+                if any("[adjusted]" in lab for items in prov.get(f.fid, {}).values()
+                       for lab, _v in items):
+                    method = "adjusted"
                 for p in ms.periods:
                     if p.col in ms.facts[f.fid]:
                         per_vals[p.col] = ms.facts[f.fid][p.col]
+                        items = prov.get(f.fid, {}).get(p.col, [])
+                        per_sub[p.col] = "  +  ".join(f"{lab} = {v:,.2f}".rstrip("0").rstrip(".")
+                                                      for lab, v in items)
             elif f.formula:
                 for p in ms.periods:
                     total, have = 0.0, 0
+                    parts = []
                     for sign, r in f.formula:
                         cf = row2fid.get(r)
                         if cf and cf in ms.facts and p.col in ms.facts[cf]:
                             total += sign * ms.facts[cf][p.col]
                             have += 1
+                            parts.append(f"{'+' if sign > 0 else '-'} {byfid[cf].name} "
+                                         f"[{cf}] = {ms.facts[cf][p.col]:,.2f}".rstrip("0").rstrip("."))
                     if have >= 2:
                         per_vals[p.col] = round(total, 2)
+                        per_sub[p.col] = "  ".join(parts)
                         method = "computed"
             if not per_vals:
                 continue
@@ -707,7 +961,8 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                 months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
                 ws.append([f.fid, f.name, p.end or p.raw,
                            months, p.audited,
-                           per_vals[p.col], denom, ms.currency, method])
+                           per_vals[p.col], denom, ms.currency, method,
+                           per_sub.get(p.col, "")])
             audit.append([stmt, scope, f.fid, f.name, method,
                           "; ".join(ms.sources.get(f.fid, [])),
                           denom, ms.currency,
@@ -715,10 +970,37 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
         if ms.unmapped:
             audit.append([stmt, scope, "", "UNMAPPED LINES", "",
                           "; ".join(ms.unmapped)[:300], "", "", ""])
-        for j, w in zip(range(1, 10), (10, 48, 12, 8, 11, 16, 13, 9, 10)):
+        for j, w in zip(range(1, 11), (10, 48, 12, 8, 11, 16, 13, 9, 10, 80)):
             ws.column_dimensions[get_column_letter(j)].width = w
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = ws.dimensions
+    # dedicated sheet for report lines with NO client field — visible, with values
+    un = wb.create_sheet("Unmapped")
+    un.append(["Statement", "Scope", "Report line (as printed)", "Period End", "Months",
+               "Value", "Denomination", "Reason"])
+    for c in un[1]:
+        c.font = Font(bold=True)
+    for (stmt, scope) in keys:
+        ms = mapped[(stmt, scope)]
+        denom = ms.unit or "units"
+        col2p = {p.col: p for p in ms.periods}
+        klass = classify_unmapped(ms, template.get((stmt, scope), []))
+        for k_i, (lab, vals) in enumerate(getattr(ms, "unmapped_vals", None) or []):
+            cls, reason = klass[k_i]
+            if stmt == "segment" and cls == "component":
+                reason += " (per-segment member; template has no per-segment fields)"
+            for col, v in vals.items():
+                p = col2p.get(col)
+                if p is None:
+                    continue
+                months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
+                un.append([STMT_NAME.get(stmt, stmt), scope.title(), lab,
+                           p.end or p.raw, months, v, denom, reason])
+    for j, w in zip(range(1, 9), (16, 12, 52, 12, 8, 16, 13, 72)):
+        un.column_dimensions[get_column_letter(j)].width = w
+    un.freeze_panes = "A2"
+    un.auto_filter.ref = un.dimensions
+
     for j, w in zip(range(1, 10), (12, 12, 10, 44, 10, 70, 12, 8, 60)):
         audit.column_dimensions[get_column_letter(j)].width = w
     audit.freeze_panes = "A2"
@@ -760,6 +1042,9 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
             method = ""
             if f.fid in ms.facts:
                 method = "reported" if len(ms.sources.get(f.fid, [])) == 1 else "summed"
+                if any("[adjusted]" in lab for items in prov.get(f.fid, {}).values()
+                       for lab, _v in items):
+                    method = "adjusted"
                 for p in ms.periods:
                     vals.append(ms.facts[f.fid].get(p.col))
             elif f.formula:

@@ -3229,12 +3229,8 @@ items:
   name: Gain/Loss On Cancellation Of Foreign Exchange
   statement: cashflow
   order: 73
-  concept: Cash-flow adjustment for gains or losses arising from cancellation or settlement of foreign
-    exchange exposures, including cancellation of hedges or foreign-currency contracts. Include realized/unrealized
-    cancellation losses or gains when they affect the profit-to-cash reconciliation; exclude routine exchange
-    differences on cash balances, ordinary translation gains/losses, and forward-contract fair-value changes
-    unless the line specifically concerns cancellation. Write-backs should be treated as negative if the
-    filing uses that convention.
+  concept: Gain/loss on CANCELLATION of foreign-exchange contracts only. NEVER bank-balance components
+    ('on current account', EEFC, deposits) — closing-cash breakdown maps nowhere.
   aliases:
   - '- on current account'
   evidence: inferred
@@ -3242,11 +3238,8 @@ items:
   name: Forward Exchange Contract
   statement: cashflow
   order: 74
-  concept: Cash-flow adjustment for forward exchange contracts, including mark-to-market changes, settlements,
-    and hedge accounting effects related to forward FX instruments. Include gains, losses, premiums, and
-    fair-value movements if shown as a single reconciliation item; exclude spot exchange differences on
-    cash balances, ordinary foreign-currency translation, and other derivative classes. This is a derivative-specific
-    non-cash adjustment.
+  concept: Cash flows from FORWARD EXCHANGE / derivative CONTRACTS only. NEVER bank-balance components
+    ('in EEFC accounts', 'on current account') — those are the closing-cash breakdown and map nowhere.
   aliases:
   - '- in EEFC accounts'
   evidence: inferred
@@ -3520,11 +3513,9 @@ items:
   name: Fixed Deposits
   statement: cashflow
   order: 100
-  concept: Cash placed into or withdrawn from fixed deposits, bank deposits, body-corporate deposits,
-    earmarked deposits, and similar short-term deposit instruments when reported as a deposit movement.
-    Includes net maturities or placements of bank deposits and cash equivalents with original maturity
-    thresholds when separately disclosed. Excludes ordinary cash and cash equivalents balances, trade
-    receivables, loans, and investments in securities or mutual funds.
+  concept: Investing flows for FIXED/BANK DEPOSITS placed or matured ('investments in bank deposits',
+    'proceeds from bank deposits', net maturities). NEVER the closing-cash component 'deposits with original
+    maturity of less than three months' (breakdown line, maps nowhere).
   aliases:
   - Bank deposits placed
   - Deposits placed with body corporates
@@ -4095,13 +4086,8 @@ items:
   name: Others-Financing Activities
   statement: cashflow
   order: 155
-  concept: 'Miscellaneous financing cash flows that do not fit standard dividend, borrowings, repayment,
-    lease, share capital, or interest categories. Include contingent consideration payments, deferred
-    consideration on business combinations, proceeds from exercise of share options, sale of shares to
-    non-controlling interests, and other clearly financing-related items of similar nature when separately
-    identified. Exclude ordinary borrowings/repayments, dividend distributions, and acquisition cash flows
-    that belong in investing activities. If multiple qualifying miscellaneous financing lines appear,
-    sum them here. Sign convention follows the source line: payments negative, proceeds positive.'
+  concept: Residual/other FINANCING-activities flows with no dedicated field. NEVER closing-cash breakdown
+    lines ('on current account', EEFC accounts) and never a printed subtotal.
   aliases:
   - Payment for contingent consideration
   - Payment of contingent consideration
@@ -4210,12 +4196,10 @@ items:
   name: Other Adjustments
   statement: cashflow
   order: 164
-  concept: Residual adjustment used to reconcile opening or closing cash and cash equivalents when the
-    filing presents a separate non-operating reconciliation item. Include items such as cash acquired
-    on acquisition of subsidiaries, bank overdrafts reclassified from cash, and similar balance-sheet
-    reconciliation adjustments that are neither operating, investing, nor financing cash flows. Exclude
-    the acquisition consideration itself, ordinary borrowings, and the main cash-flow subtotals. This
-    field may legitimately capture positive or negative adjustments depending on the source line.
+  concept: 'Opening/closing cash RECONCILIATION adjustments printed between net-change and closing cash:
+    ''Less: Bank overdraft at the beginning'', ''Cash acquired on acquisition of subsidiary/scheme''.
+    SUM all such lines here (closing = beginning + net + fx + this field). NEVER closing-cash breakdown
+    lines (deposits < 3 months, current accounts, EEFC).'
   aliases:
   - Cash acquired on acquisition of subsidiaries (net)
   - 'Less : Bank overdraft at the beginning of the year'
