@@ -161,8 +161,6 @@ items:
     other income. This is the printed top-line total income figure. Excludes expenses and profit measures.
   aliases:
   - TOTAL INCOME
-  - Total Income
-  - Total income
   - Total revenue
   evidence: mapped
 - fid: '230'
@@ -386,10 +384,6 @@ items:
     discounting gains/credits. Never map a printed total/subtotal line here.
   aliases:
   - Finance costs
-  - Finance costs
-  - Finance costs
-  - Finance costs
-  - Finance costs
   evidence: mapped
 - fid: '247'
   name: Foreign Exchange (Gain)/Loss (Finance Cost)
@@ -412,10 +406,6 @@ items:
     company. Excludes employee benefits, finance costs, depreciation/amortisation, tax, exceptional items,
     and any clearly identified specific expense category. Never map a printed total/subtotal line here.
   aliases:
-  - Other expenses
-  - Other expenses
-  - Other expenses
-  - Other expenses
   - Other expenses
   evidence: mapped
 - fid: '243'
@@ -441,10 +431,6 @@ items:
     maps here.
   aliases:
   - TOTAL EXPENSES
-  - Total Expenses
-  - Total expenses
-  - Total expenses
-  - Total expenses
   evidence: mapped
 - fid: '293'
   name: Profit/(Loss) from Operations before Other Income, Finance Costs and Exceptional Items
@@ -564,39 +550,26 @@ items:
     tax. The printed profit-before-tax line maps here.
   aliases:
   - PROFIT BEFORE TAX
-  - Profit before tax
-  - Profit before tax
-  - Profit before tax
-  - Profit before tax
   evidence: mapped
 - fid: '318'
   name: Tax Expense
   statement: income
   order: 58
-  concept: 'TOTAL income-tax expense for the period: map the printed ''Total tax expense'' line. If (and
-    ONLY if) no total line is printed, sum the current-tax and deferred-tax lines instead. NEVER map the
-    ''current tax'' or ''deferred tax'' component lines when a printed total exists, and NEVER sum components
-    together with the printed total.'
+  concept: 'CURRENT income-tax expense: the printed ''Current tax'' line ONLY. The client computes net
+    profit as PBT minus 318 minus 231, so this must hold only current tax. NEVER map the printed ''Total
+    tax expense'' line to any field (it has no field; the formula verifies it), and NEVER include deferred
+    tax (that is 231).'
   aliases:
-  - Current tax
-  - Current tax
-  - Current tax
-  - Current tax
   - Current tax
   evidence: mapped
 - fid: '231'
   name: Deferred Tax
   statement: income
   order: 59
-  concept: Deferred tax expense or benefit recognized in profit or loss for the period. Includes deferred
-    tax charge, deferred tax credit, movements in deferred tax assets or liabilities, and deferred tax
-    expense/(credit) when shown as a separate line. Excludes current tax and any income-tax effects reported
-    in other comprehensive income or discontinued operations. Positive values usually represent expense;
-    credits are negative. Never map a printed total/subtotal line here.
+  concept: 'DEFERRED tax charge/(credit) in profit or loss: the printed ''Deferred tax'' line ONLY. The
+    printed ''Total tax expense'' line maps NOWHERE (no field exists; formula-verified). Current tax maps
+    to 318.'
   aliases:
-  - Deferred tax
-  - Deferred tax
-  - Deferred tax
   - Deferred tax
   - Deferred tax charge
   evidence: mapped
@@ -669,9 +642,6 @@ items:
   aliases:
   - PROFIT FOR THE PERIOD
   - Profit for the period / year
-  - Profit for the period / year
-  - Profit for the period
-  - Profit for the period
   evidence: mapped
 - fid: '16484'
   name: Other Comprehensive Income
@@ -778,9 +748,6 @@ items:
   aliases:
   - TOTAL COMPREHENSIVE INCOME FOR THE PERIOD
   - Total comprehensive income for the period / year
-  - Total comprehensive income for the period / year
-  - Total comprehensive income for the period
-  - Total comprehensive income for the period
   evidence: mapped
 - fid: '282'
   name: Paid-Up Equity Share Capital
@@ -818,7 +785,6 @@ items:
     reserve, and non-controlling interests. This is an equity stock amount, not a flow for the period.
   aliases:
   - Other equity
-  - Other equity
   - Other equity attributable to owners of the Company
   - Reserve excluding revaluation reserve
   - Reserve excluding revaluation reserves as per balance sheet
@@ -829,13 +795,11 @@ items:
   statement: income
   order: 77
   concept: Basic earnings per share AS REPORTED — the filing's standard printed 'Basic (in ₹)' / 'Basic
-    EPS' line. This is the DEFAULT target for the basic EPS line of every filing.
+    EPS' line. This is the DEFAULT target for the basic EPS line of every filing. A COMBINED 'Basic and
+    diluted' single EPS row also maps HERE.
   aliases:
   - Basic (in ₹)
-  - Basic (in ₹)
-  - Basic (in ₹)
   - Basic EPS (Rs.)
-  - Earnings per equity share:- Basic and diluted (₹)
   - Earnings per equity share:- Basic and diluted (₹)
   evidence: mapped
 - fid: '234'
@@ -1086,7 +1050,6 @@ items:
     belong to their own expense/revenue fields.
   aliases:
   - Gross Profit
-  - Gross profit
   - Gross margin profit
   evidence: inferred
 - fid: '17774'
@@ -1370,9 +1333,8 @@ items:
     This is the printed attributable-profit total line and is composed of the owners' share plus the non-controlling
     interests' share. Never map an individual attribution component line here.
   aliases:
-  - Profit (loss) for the period / year attributable to [hcl]
-  - 'Profit for the period attributable to: [tcs]'
-  - 'Profit for the period attributable to: [wipro]'
+  - Profit (loss) for the period / year attributable to
+  - 'Profit for the period attributable to:'
   - profit for the period attributable to
   - profit loss for the period year attributable to
   evidence: mapped
@@ -1385,9 +1347,9 @@ items:
     holders of the company. Exclude the non-controlling interests share and exclude the total attributable-profit
     line.
   aliases:
-  - Equity holders of the Company [wipro]
-  - Owners of the Company [hcl]
-  - Shareholders of the Company [tcs]
+  - Equity holders of the Company
+  - Owners of the Company
+  - Shareholders of the Company
   evidence: mapped
 - fid: '22298'
   name: Non-Controlling Interests
@@ -1397,9 +1359,8 @@ items:
     non-controlling interest or non-controlling interests. Exclude the owners' share and exclude the total
     attributable-profit line.
   aliases:
-  - Non-controlling interest [hcl]
-  - Non-controlling interests [tcs]
-  - Non-controlling interests [wipro]
+  - Non-controlling interest
+  - Non-controlling interests
   evidence: mapped
 - fid: '22292'
   name: Comprehensive Income Attributable To [Total]
@@ -1410,8 +1371,8 @@ items:
     income and is composed of the owners' comprehensive income share plus the non-controlling interests'
     share. Never map an individual attribution component line here.
   aliases:
-  - Other comprehensive income (loss) for the period/ year attributable to [hcl]
-  - 'Other comprehensive income for the period attributable to: [tcs]'
+  - Other comprehensive income (loss) for the period/ year attributable to
+  - 'Other comprehensive income for the period attributable to:'
   - other comprehensive income for the period attributable to
   - other comprehensive income loss for the period year attributable to
   evidence: mapped
@@ -1424,8 +1385,8 @@ items:
     Exclude the non-controlling interests share and exclude the total comprehensive income attributable
     line.
   aliases:
-  - Owners of the Company [hcl]
-  - Shareholders of the Company [tcs]
+  - Owners of the Company
+  - Shareholders of the Company
   evidence: mapped
 - fid: '22290'
   name: Non-Controlling Interests
@@ -1435,8 +1396,8 @@ items:
     non-controlling interest share of comprehensive income or OCI. Exclude the owners' share and exclude
     the total comprehensive income attributable line.
   aliases:
-  - Non-controlling interest [hcl]
-  - Non-controlling interests [tcs]
+  - Non-controlling interest
+  - Non-controlling interests
   evidence: mapped
 - fid: '22301'
   name: Total Comprehensive Income Attributable To
@@ -1447,9 +1408,8 @@ items:
     the owners' comprehensive income share plus the non-controlling interests' share. Never map an individual
     attribution component line here.
   aliases:
-  - Total comprehensive income (loss) for the period/ year attributable to [hcl]
-  - 'Total comprehensive income for the period attributable to: [tcs]'
-  - 'Total comprehensive income for the period attributable to: [wipro]'
+  - Total comprehensive income (loss) for the period/ year attributable to
+  - 'Total comprehensive income for the period attributable to:'
   - total comprehensive income for the period attributable to
   - total comprehensive income loss for the period year attributable to
   evidence: mapped
@@ -1461,9 +1421,9 @@ items:
     or equity holders. Include the owners' share of total comprehensive income. Exclude the non-controlling
     interests share and exclude the total comprehensive income attributable line.
   aliases:
-  - Equity holders of the Company [wipro]
-  - Owners of the Company [hcl]
-  - Shareholders of the Company [tcs]
+  - Equity holders of the Company
+  - Owners of the Company
+  - Shareholders of the Company
   evidence: mapped
 - fid: '22302'
   name: Non-Controlling Interests
@@ -1473,9 +1433,8 @@ items:
     the non-controlling interest share of total comprehensive income. Exclude the owners' share and exclude
     the total comprehensive income attributable line.
   aliases:
-  - Non-controlling interest [hcl]
-  - Non-controlling interests [tcs]
-  - Non-controlling interests [wipro]
+  - Non-controlling interest
+  - Non-controlling interests
   evidence: mapped
 - fid: '24703'
   name: Provision Coverage Ratio
@@ -1516,7 +1475,6 @@ items:
     printed subtotal maps here.
   aliases:
   - Tangible Assets
-  - Tangible assets
   - Tangible fixed assets
   evidence: inferred
 - fid: '25736'
@@ -1554,7 +1512,6 @@ items:
     and investment property. Never map a printed total/subtotal line here.
   aliases:
   - Right-of-Use assets
-  - Right-of-use assets
   - ROU assets
   evidence: mapped
 - fid: '20219'
@@ -1576,7 +1533,6 @@ items:
     line here; use 20221.
   aliases:
   - Intangible Assets
-  - Intangible assets
   evidence: inferred
 - fid: '20220'
   name: Goodwill
@@ -1598,7 +1554,6 @@ items:
   aliases:
   - Intangible assets
   - Other Intangible assets
-  - Other intangible assets
   evidence: mapped
 - fid: '13757'
   name: Producing Properties
@@ -1610,7 +1565,6 @@ items:
     line here.
   aliases:
   - Producing Properties
-  - Producing properties
   evidence: inferred
 - fid: '13756'
   name: PreProducing Properties
@@ -1721,7 +1675,6 @@ items:
     The printed subtotal line for long-term loans and advances maps here.
   aliases:
   - Long-Term Loans And Advances
-  - Long-term loans and advances
   evidence: inferred
 - fid: '20218'
   name: Trade Receivables
@@ -1797,7 +1750,6 @@ items:
     in those components. The printed total/non-current assets line maps here.
   aliases:
   - Total non-current assets
-  - Total Non-Current Assets
   - Non-current assets
   evidence: mapped
 - fid: '13737'
@@ -1905,7 +1857,6 @@ items:
     map HERE. Non-current income-tax assets map to 20215.'
   aliases:
   - Current Tax Assets (Net)
-  - Current tax assets (net)
   - Income tax assets (net)
   evidence: mapped
 - fid: '20230'
@@ -1962,7 +1913,6 @@ items:
   aliases:
   - Total current assets
   - Current assets
-  - Total current assets
   evidence: mapped
 - fid: '20208'
   name: Assets classified as held for sale
@@ -2000,7 +1950,6 @@ items:
     assets maps here.'
   aliases:
   - TOTAL ASSETS
-  - Total assets
   - Assets
   - ASSETS / EQUITY AND LIABILITIES
   evidence: mapped
@@ -2059,7 +2008,6 @@ items:
   - Equity attributable to shareholders of the Company
   - Equity attributable to the equity holders of the Company
   - TOTAL EQUITY
-  - Total Equity
   evidence: mapped
 - fid: '13768'
   name: Share application money pending allotment
@@ -2417,12 +2365,7 @@ items:
     This is a total/aggregate field, so the printed total current liabilities line maps here; do not map
     individual component lines here unless they are separately summed into this total.
   aliases:
-  - Total current liabilities [atishay]
-  - Total current liabilities [hcl]
-  - Total current liabilities [hm]
-  - Total current liabilities [tcs]
-  - Total current liabilities [wipro]
-  - total current liabilities
+  - Total current liabilities
   evidence: mapped
 - fid: '25685'
   name: Liabilities directly associated with assets in disposal group classified as held for sale
@@ -2454,12 +2397,7 @@ items:
     total. This is a total/aggregate field, so the printed total equity and liabilities line maps here;
     do not map component lines here unless they are being summed into this total.
   aliases:
-  - TOTAL EQUITY AND LIABILITIES [hcl]
-  - TOTAL EQUITY AND LIABILITIES [tcs]
-  - TOTAL EQUITY AND LIABILITIES [wipro]
-  - Total equity and liabilities [atishay]
-  - Total equity and liabilities [hm]
-  - total equity and liabilities
+  - TOTAL EQUITY AND LIABILITIES
   evidence: mapped
 - fid: '13734'
   name: Goodwill On Consolidation
@@ -2470,10 +2408,7 @@ items:
     intangible assets, investment goodwill, self-generated goodwill, and any printed total/subtotal line.
     Never map a printed total/subtotal line here.
   aliases:
-  - Goodwill [hcl]
-  - Goodwill [hm]
-  - Goodwill [tcs]
-  - Goodwill [wipro]
+  - Goodwill
   evidence: mapped
 - fid: '13744'
   name: Minority Interest
@@ -2484,9 +2419,8 @@ items:
     excludes parent equity, share capital, reserves, and any liability items. Never map a printed total/subtotal
     line here.
   aliases:
-  - Non-controlling interest [hcl]
-  - Non-controlling interests [tcs]
-  - Non-controlling interests [wipro]
+  - Non-controlling interest
+  - Non-controlling interests
   - non controlling interest
   - non controlling interests
   evidence: mapped
@@ -2515,7 +2449,6 @@ items:
   - Depreciation amortisation and impairment expense
   - Depreciation and amortisation expense
   - Depreciation and amortisation expenses
-  - Depreciation and amortization expense
   - Depreciation and amortization expense
   evidence: mapped
 - fid: '30420'
@@ -2587,9 +2520,6 @@ items:
   aliases:
   - Finance and other income net of finance costs
   - Interest income
-  - Interest income
-  - Interest income
-  - Interest income
   evidence: mapped
 - fid: '30479'
   name: Interest Expense
@@ -2601,8 +2531,6 @@ items:
     and lease rental/service costs that are not financing costs.
   aliases:
   - Finance costs
-  - Finance costs
-  - Interest expense
   - Interest expense
   evidence: mapped
 - fid: '30404'
@@ -2613,8 +2541,6 @@ items:
     map HERE.
   aliases:
   - Dividend income (Including exchange impact)
-  - Dividend income
-  - Dividend income
   - Dividend income
   - Dividend income from subsidiaries
   evidence: mapped
@@ -2845,8 +2771,6 @@ items:
     or investing cash flows.
   aliases:
   - Operating profit before working capital changes
-  - Operating profit before working capital changes
-  - Operating profit before working capital changes
   evidence: mapped
 - fid: '30487'
   name: Inventories
@@ -2859,9 +2783,7 @@ items:
     filing’s sign convention.
   aliases:
   - (Increase)/Decrease in Inventories
-  - (Increase)/Decrease in inventories
   - Adjustments for decrease (increase) in inventories
-  - Inventories
   - Inventories
   evidence: mapped
 - fid: '30672'
@@ -3522,10 +3444,7 @@ items:
     dividend-income ADJUSTMENT lines map to 30404. Never 30403.
   aliases:
   - Dividend income
-  - Dividend income
   - Dividend received
-  - Dividend received
-  - Dividend received from subsidiaries
   - Dividend received from subsidiaries
   evidence: mapped
 - fid: '30485'
@@ -3536,9 +3455,6 @@ items:
     adjustments map to 30481. Never 30486.
   aliases:
   - Interest income
-  - Interest received
-  - Interest received
-  - Interest received
   - Interest received
   evidence: mapped
 - fid: '17527'
@@ -3598,7 +3514,6 @@ items:
     not part of a broader business-combination line. Excludes loans to subsidiaries, joint venture investments,
     and acquisition of fixed assets.
   aliases:
-  - Investment in subsidiaries
   - Investment in subsidiaries
   evidence: mapped
 - fid: '30412'
@@ -3712,10 +3627,9 @@ items:
   name: Cash Receipts from Repayment of Advances and Loans Made to Other Parties
   statement: cashflow
   order: 110
-  concept: Cash received from repayment or recovery of advances and loans made to other parties. Includes
-    loan repayments, recovery of employee loans, and refund of advances previously given. Excludes interest
-    received, repayment of inter-corporate deposits if separately classified, and proceeds from sale of
-    investments.
+  concept: Cash RECEIPTS from repayment of advances/loans the company had GIVEN to other parties (money
+    coming back in). NEVER map payments/outflows here — deposits paid, security deposits for property,
+    or advances given go to 17545 (others-investing) or their specific fields.
   aliases:
   - Loan recovered
   evidence: mapped
@@ -3834,7 +3748,6 @@ items:
   concept: Payments for business/subsidiary acquisitions, net of cash acquired ('acquisition of subsidiaries',
     'payments for business acquisitions') map HERE by convention, NOT 30476.
   aliases:
-  - Acquisition of subsidiaries
   - Acquisition of subsidiaries
   - Payments for business acquisitions, net of cash acquired
   evidence: mapped
@@ -4383,15 +4296,16 @@ items:
   name: Segment Revenue
   statement: segment
   order: 1
-  concept: 'GROSS total of reportable segments'' revenue: the printed ''Total'' row of the Segment Revenue
-    section BEFORE ''Less: Inter segment revenue''. If only ONE total row exists in the section, it maps
-    to 8931 instead and this stays empty. Individual segment rows are NEVER mapped.'
+  concept: 'Gross/leaf segment-revenue total — ONLY when the statement has a SINGLE revenue section: its
+    bare ''Total'' row (or the gross total printed before ''Less: Inter segment revenue'') maps here.
+    If the filing prints multiple revenue sub-sections ([EXTERNAL-REVENUE], [INTER-SEGMENT], [SEGMENT-REVENUE]),
+    leave their totals unmapped except the final segment-revenues total (8931). Individual segment rows
+    are NEVER mapped.'
   aliases:
-  - Total
   - Total segment revenue
   - Segment Revenue
-  - Segment revenue
   - Segment revenues
+  - Total
   evidence: mapped
 - fid: '8925'
   name: Unallocated Income (Expenses)
@@ -4409,11 +4323,9 @@ items:
   name: 'Less: Inter Segment Revenue'
   statement: segment
   order: 3
-  concept: Elimination of sales or revenue between operating segments, i.e., revenue generated by one
-    segment from another segment within the same group and removed to avoid double counting. Includes
-    inter-segment revenue elimination and related less-line adjustments. Excludes external customer revenue
-    and all expense items. Never map a printed total/subtotal revenue line here; only the elimination
-    component belongs here.
+  concept: 'An explicit ''Less: Inter segment revenue'' deduction line printed INSIDE the main revenue
+    section (between gross and net totals). Do NOT map a separate ''[INTER-SEGMENT]'' sub-section or its
+    total, and do NOT map ''[EXTERNAL-REVENUE]'' totals.'
   aliases:
   - Inter-segment elimination
   - 'Less : Inter segment revenue'
@@ -4424,9 +4336,10 @@ items:
   name: Total Segment Revenue
   statement: segment
   order: 4
-  concept: 'NET total segment revenue: the printed ''Total''/''Total segment revenue'' row AFTER inter-segment
-    elimination (the last total of the Segment Revenue section). If the section prints one single total
-    row, map it HERE.'
+  concept: 'FINAL net total segment revenue: a row explicitly labelled ''Total segment revenue'', the
+    total printed AFTER a ''Less: Inter segment revenue'' or elimination line, or the ''Total'' of the
+    [SEGMENT-REVENUE] section when the filing also prints separate external-customer/inter-segment sub-sections.
+    NEVER sum multiple totals here.'
   aliases:
   - Total
   - Total segment revenue
@@ -4443,15 +4356,16 @@ items:
   - Total segment result
   - Segment Result
   - Segment Results
-  - SEGMENT RESULT
   evidence: mapped
 - fid: '8929'
   name: Unallocated Income (Expenses)
   statement: segment
   order: 6
-  concept: Unallocated corporate income/(expenses) and reconciling items WITHIN THE SEGMENT RESULTS section
-    — sum lines worded 'Unallocated', 'Other un-allocable expenditure (net)', 'Reconciling items'. NOT
-    the unallocated rows of the assets/liabilities sections (18580/18581).
+  concept: 'ALL unallocated/unallocable/reconciling expense rows WITHIN THE SEGMENT RESULTS section —
+    ''Unallocated'', ''Other un-allocable expenditure'', ''Other unallocable expenses'', ''Unallocable
+    depreciation and amortisation'', ''Reconciling items'' — SUMMED. Exceptions with their own fields:
+    unallocable other income → 14859, unallocable finance cost/interest → 8927, interest income → 8928.
+    NOT the unallocated rows of assets/liabilities sections (18580/18581).'
   aliases:
   - Other un-allocable expenditure (net off)
   - Other unallocable expenses
@@ -4518,7 +4432,6 @@ items:
     extraordinary items, and post-tax profit measures.
   aliases:
   - PROFIT BEFORE TAX
-  - Profit before tax
   - Total profit before tax
   evidence: mapped
 - fid: '8901'
@@ -4545,10 +4458,9 @@ items:
   name: Net Profit/(Loss) from ordinary activities after tax
   statement: segment
   order: 14
-  concept: Profit or loss after deducting current tax and deferred tax from pre-tax profit, but before
-    extraordinary items if such items are reported separately. This is the after-tax profit subtotal in
-    the ordinary-results reconciliation. Excludes extraordinary items and any share of associates if that
-    is shown on a separate line.
+  concept: Intermediate 'net profit from ordinary activities after tax' BEFORE extraordinary items — map
+    ONLY when the table also prints a separate extraordinary-items line followed by a final net-profit
+    row. Otherwise the printed profit-after-tax row maps to 8908.
   aliases: []
   evidence: inferred
 - fid: '8903'
@@ -4565,11 +4477,9 @@ items:
   name: Net Profit/(Loss) for the period
   statement: segment
   order: 16
-  concept: Net profit or loss attributable to the period as the final profit line after ordinary activities,
-    tax, and any extraordinary items. Includes the printed profit after tax / profit for the period line
-    and equivalent net profit line. Excludes share of associates only if the filing shows that separately
-    above this line; otherwise this field captures the final consolidated profit subtotal. This is the
-    terminal profit figure in the segment reconciliation.
+  concept: The FINAL printed profit row of a segment table — 'Profit after tax', 'Net profit for the period',
+    'Profit for the period/year' — ALWAYS maps here (the final total field). 8907 is only for a separate
+    before-extraordinary-items subtotal.
   aliases:
   - Profit after tax
   - Profit before tax
@@ -4586,7 +4496,6 @@ items:
     map a total asset line here.
   aliases:
   - Segment Assets
-  - Segment assets
   evidence: mapped
 - fid: '18580'
   name: Unallocable Corporate Assets
@@ -4617,7 +4526,6 @@ items:
     liabilities line here.
   aliases:
   - Segment Liabilities
-  - Segment liabilities
   evidence: mapped
 - fid: '18581'
   name: Unallocable Corporate Liabilities
@@ -4679,9 +4587,9 @@ items:
   name: Unallocated Income (Expenses)
   statement: segment
   order: 27
-  concept: Depreciation and amortisation that is not allocated to a specific segment and is reported at
-    the corporate/unallocated level. Includes unallocated depreciation and amortisation expenses or similar
-    residual D&A charges. Excludes segment D&A and total D&A.
+  concept: '''Unallocated'' row ONLY inside a dedicated ''Depreciation and amortisation'' segment-disclosure
+    block (a separate table listing depreciation per segment). A results-section ''unallocable depreciation''
+    line maps to 8929 instead.'
   aliases: []
   evidence: inferred
 - fid: '18576'

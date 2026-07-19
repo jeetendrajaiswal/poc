@@ -147,12 +147,60 @@ def derived_section_pairs(fields: list[ClientField],
     return pairs
 
 
+def statement_of(section: str, title: str) -> str | None:
+    """Which client statement a raw table belongs to.
+
+    Most-specific match FIRST: many filings title every statement
+    '... Financial Results — Balance Sheet / Cash Flows', so 'results' alone
+    must never claim a table that names a more specific statement.
+    """
+    s = f"{section} {title}".lower()
+    if "cash flow" in s:
+        return "cashflow"
+    if "assets and liabilities" in s or "balance sheet" in s:
+        return "balance"
+    if "segment" in s:
+        return "segment"
+    if "results" in s or "profit and loss" in s:
+        return "income"
+    return None
+
+
+def map_quarter(tables, template, taxonomy, model: str | None = None):
+    """Map one filing's raw tables to the client taxonomy.
+
+    tables: iterable of (page, n, title, scope, section, grid).
+    Merges ALL tables of the same (statement, scope) — filings routinely print
+    one statement as several blocks (P&L + OCI/EPS, segment revenue + results).
+    IFRS versions and unknown scopes are excluded. Returns {key: MappedStatement}.
+    """
+    grids: dict[tuple[str, str], list] = {}
+    for _page, _n, title, scope, section, grid in tables:
+        s = f"{section} {title}".lower()
+        stmt = statement_of(section, title)
+        if (stmt is None or "ifrs" in s or len(grid) < 3
+                or scope not in ("standalone", "consolidated")):
+            continue
+        key = (stmt, scope)
+        if key in template:
+            grids.setdefault(key, []).append(grid)
+    out = {}
+    for key, gl in grids.items():
+        width = max(len(r) for g in gl for r in g)
+        merged = [r + [""] * (width - len(r)) for g in gl for r in g]
+        out[key] = map_statement(merged, key[0], taxonomy, template[key], model=model)
+    return out
+
+
 # --------------------------------------------------------------------------- taxonomy (definitions)
 
 def norm_label(s: str) -> str:
     s = str(s or "").lower()
-    s = re.sub(r"^\(?[a-z]\)|\(refer[^)]*\)", " ", s)
-    s = re.sub(r"^\(?[ivxlc]{1,4}[\s.,):]+", " ", s)   # roman enumerators: 'VI Total tax...'
+    s = re.sub(r"\(refer[^)]*\)", " ", s)
+    s = re.sub(r"^\(?[a-z][.)]\s*", " ", s)             # 'a)' 'b.' '(c)' enumerators
+    # roman enumerators ('VI Total tax expense') — VALID numerals only, so real
+    # words like 'LIC', 'CC', 'IT' are never stripped
+    s = re.sub(r"^\(?(x{0,3}(ix|iv|v?i{1,3}|v|x))[\s.,):]+", " ", s)
     return " ".join(re.sub(r"[^a-z0-9]+", " ", s).split())
 
 
@@ -291,6 +339,8 @@ _SECTION_PAT = [
     (r"non\s*-?\s*current\s+liabilit", "NON-CURRENT LIABILITIES"),
     (r"current\s+liabilit", "CURRENT LIABILITIES"),
     (r"^\s*equity\b|shareholders.?\s*funds", "EQUITY"),
+    (r"inter.?segment\s+revenue", "INTER-SEGMENT"),
+    (r"external\s+customers", "EXTERNAL-REVENUE"),
     (r"^segment\s+revenue", "SEGMENT-REVENUE"),
     (r"^segment\s+result", "SEGMENT-RESULTS"),
     (r"^segment\s+assets", "SEGMENT-ASSETS"),
@@ -391,7 +441,7 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     for row in data:
         label, vals = _label_and_vals(row)
         if label and any(c.isalpha() for c in label):
-            ll = label.lower()
+            ll = re.sub(r"^\s*\d+[.)]\s*", "", label.lower())   # '2. Segment results'
             if re.search(r"comprehensive income.*attributable", ll):
                 section = "TCI-ATTRIBUTION"
             elif re.search(r"profit for the (period|quarter|year).*attributable", ll):
@@ -419,10 +469,16 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     kind = {f.fid: _bs_kind(f.group) for f in template_fields}
     from collections import Counter
     label_sec_count = Counter((norm_label(lab), sec) for lab, sec, _v in rows)
+    secs_present = {sec for _l, sec, _v in rows if sec}
+    # a statement with separate external-customer / inter-segment revenue
+    # sub-sections prints several bare totals — revenue-side pins are unsafe there
+    multi_revenue = bool(secs_present & {"EXTERNAL-REVENUE", "INTER-SEGMENT"})
     pre: dict[int, str] = {}
     for i, (lab, sec, vals) in enumerate(rows):
         nl = norm_label(lab)
         pair = pairs.get(nl)
+        if pair and sec == "SEGMENT-REVENUE" and multi_revenue:
+            pair = None
         if pair and sec and label_sec_count[(nl, sec)] == 1:
             if "NON-CURRENT" in sec:
                 side = "NON-CURRENT"

@@ -123,30 +123,75 @@ def check_balance(grid):
 
 
 def check_cashflow(grid):
+    ncol = max(len(r) for r in grid)
+
+    def aligned(must, must_not=()):
+        """Values aligned to cell positions (None where blank) — sparse rows
+        like '- | 2,768' keep their column."""
+        for row in grid:
+            label = " ".join(c for c in row if c and _num(c) is None).lower()
+            if all(m in label for m in must) and not any(m in label for m in must_not):
+                vals = [_num(row[j]) if j < len(row) else None for j in range(1, ncol)]
+                if any(v is not None for v in vals):
+                    return vals
+        return None
+
+    def aligned_any(alts, must_not=()):
+        for alt in alts:
+            r = aligned([alt] if isinstance(alt, str) else list(alt), must_not)
+            if r is not None:
+                return r
+        return None
+
     def section_total(word):
-        return _find_row_any(grid, [("net cash", word), ("net " + word,),
-                                    (word + " activities",)], must_not=["before"])
+        return aligned_any([("net cash", word), ("net " + word,),
+                            (word + " activities",)], must_not=["before"])
+
     op, inv, fin = section_total("operating"), section_total("investing"), section_total("financing")
-    fx = _find_row_any(grid, [("effect of exchange",), ("exchange rate", "cash"),
-                              ("effect of foreign",)])
-    net = _find_row_any(grid, ["net increase", "net decrease", "net cash flow",
-                               "net cash inflow", "net change in cash"],
-                        must_not=["operating", "investing", "financing"])
-    beg = _find_row(grid, ["at the beginning"])
-    end = _find_row(grid, ["at the end"])
+    fx = aligned_any([("effect of exchange",), ("exchange rate", "cash"),
+                      ("effect of foreign",), ("exchange difference",),
+                      ("net foreign exchange",)],
+                     must_not=["unrealised", "unrealized"])
+    net = aligned_any(["net increase", "net decrease", "net cash flow",
+                       "net cash inflow", "net change in cash"],
+                      must_not=["operating", "investing", "financing"])
+    beg = aligned(["at the beginning"], must_not=["overdraft"])
+    end = aligned(["at the end"])
+    # opening-balance adjustment rows some filings print between net and closing
+    adj = [r for r in (aligned(["bank overdraft", "beginning"]),
+                       aligned(["cash", "acquired", "acquisition"], must_not=["payment", "business"]))
+           if r]
+
+    def cols(*rows):
+        return [j for j in range(ncol - 1)
+                if all(r[j] is not None for r in rows if r is not None)]
+
     checks = []
+    if op and inv and fin and not net:
+        # some filings (e.g. TCS) print no explicit net-change row: derive it
+        net = [op[j] + inv[j] + fin[j] if j in cols(op, inv, fin) else None
+               for j in range(ncol - 1)]
     if op and inv and fin and net:
-        n = min(len(op), len(inv), len(fin), len(net))
-        ok = all(any(abs(op[i] + inv[i] + fin[i] + f - net[i]) <= max(0.05, 0.005 * abs(net[i]))
-                     for f in ([0.0] + ([fx[i]] if fx and i < len(fx) else [])))
-                 for i in range(n))
+        ok = True
+        for j in cols(op, inv, fin, net):
+            s = op[j] + inv[j] + fin[j]
+            tol = max(0.05, 0.005 * abs(net[j]))
+            f = fx[j] if fx and fx[j] is not None else 0.0
+            if not (abs(s - net[j]) <= tol or abs(s + f - net[j]) <= tol):
+                ok = False
+                break
         checks.append(("op+inv+fin(+fx) = net change", ok))
     if beg and end and net:
-        n = min(len(beg), len(end), len(net))
-        ok = all(any(abs(beg[i] + net[i] + f - end[i]) <= max(0.05, 0.005 * abs(end[i]))
-                     for f in ([0.0] + ([fx[i]] if fx and i < len(fx) else [])))
-                 for i in range(n))
-        checks.append(("opening + net(+fx) = closing", ok))
+        ok = True
+        for j in cols(beg, end, net):
+            tol = max(0.05, 0.005 * abs(end[j]))
+            a = sum(r[j] for r in adj if r[j] is not None)
+            f = fx[j] if fx and fx[j] is not None else 0.0
+            if not (abs(beg[j] + net[j] + a - end[j]) <= tol
+                    or abs(beg[j] + net[j] + a + f - end[j]) <= tol):
+                ok = False
+                break
+        checks.append(("opening + net(+fx+adj) = closing", ok))
     return checks
 
 
