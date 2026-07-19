@@ -259,6 +259,23 @@ def _parse_period(text: str, col: int) -> Period:
             end = f"{yr}-{_M2N[g[4].lower()]:02d}-{int(g[3]):02d}"
         else:
             end = f"{g[8]}-{int(g[7]):02d}-{int(g[6]):02d}"
+    if not end:
+        # Indian shorthand headers: 'Q1 FY25', 'FY 2024', 'FY25' (FY ends March 31)
+        _QEND = {1: "06-30", 2: "09-30", 3: "12-31", 4: "03-31"}
+        m = re.search(r"\bq([1-4])\s*fy\s*(\d{2,4})\b", t)
+        if m:
+            qn, yr = int(m.group(1)), int(m.group(2))
+            yr = yr + 2000 if yr < 100 else yr           # FY25 -> FY ending Mar 2025
+            cal = yr if qn == 4 else yr - 1              # Q1-Q3 fall in the prior calendar year
+            end = f"{cal}-{_QEND[qn]}"
+            span = "3M"
+        else:
+            m = re.search(r"\bfy\s*(\d{2,4})\b", t)
+            if m:
+                yr = int(m.group(1))
+                yr = yr + 2000 if yr < 100 else yr
+                end = f"{yr}-03-31"
+                span = "FY"
     audited = ("unaudited" if "unaudited" in t else "audited" if "audited" in t else "")
     return Period(span, end, audited, col, text.strip()[:70])
 
@@ -405,6 +422,27 @@ def _label_and_vals(row):
     return label, vals
 
 
+def parse_periods(grid, header=None) -> list[Period]:
+    """Period per value column. Banner rows (a single non-empty PERIOD-WORDED
+    cell, e.g. 'For the six months ended September 30,' with the years on the
+    next row) apply to every column; section headings are never banners."""
+    if header is None:
+        header, _ = _header_and_data(grid)
+    ncol = max(len(r) for r in grid)
+    banner_parts = []
+    for r in header:
+        cells = [str(c).strip() for c in r if str(c).strip()]
+        if len(cells) == 1 and re.search(r"month|quarter|year|ended|as at", cells[0], re.I):
+            banner_parts.append(cells[0])
+    banner = " ".join(banner_parts)
+    periods = []
+    for j in range(1, ncol):
+        text = " ".join(str(r[j]) for r in header if j < len(r) and r[j])
+        if text.strip():
+            periods.append(_parse_period((banner + " " + text).strip(), j))
+    return infer_spans(periods)
+
+
 def _header_and_data(grid):
     first = None
     for i, row in enumerate(grid):
@@ -423,17 +461,7 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     from src.llm import extract_json
 
     header, data = _header_and_data(grid)
-    ncol = max(len(r) for r in grid)
-    # banner rows (a single non-empty cell, e.g. 'For the six months ended
-    # September 30,' with the years on the next row) apply to every column
-    banner = " ".join(str(next(c for c in r if str(c).strip()))
-                      for r in header if sum(1 for c in r if str(c).strip()) == 1)
-    periods = []
-    for j in range(1, ncol):
-        text = " ".join(str(r[j]) for r in header if j < len(r) and r[j])
-        if text.strip():
-            periods.append(_parse_period((banner + " " + text).strip(), j))
-    periods = infer_spans(periods)
+    periods = parse_periods(grid, header)
     unit, mult, cur = detect_units(grid)
 
     rows = []
@@ -611,6 +639,90 @@ def _period_label(p: Period) -> str:
     if p.audited:
         lab += f" ({p.audited})"
     return lab
+
+
+_SPAN_MONTHS = {"3M": 3, "6M": 6, "9M": 9, "FY": 12}
+
+
+def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "MappedStatement"],
+                               template: dict[tuple[str, str], list[ClientField]],
+                               out_path: str) -> None:
+    """LONG-format workbook: one sheet per statement x scope (e.g. 'Income
+    Statement - Standalone'), one row per field x period, with Period End /
+    Months / Denomination columns, plus the full Audit sheet."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    from openpyxl.utils import get_column_letter
+
+    STMT_NAME = {"income": "Income Statement", "balance": "Balance Sheet",
+                 "cashflow": "Cash Flow", "segment": "Segment Finance"}
+    STMT_ORDER = {"income": 0, "balance": 1, "cashflow": 2, "segment": 3}
+    HDR = ["Field id", "Display Name", "Period End", "Months", "Audited",
+           "Value", "Denomination", "Currency", "Method"]
+    wb = Workbook()
+    audit = wb.active
+    audit.title = "Audit"
+    audit.append(["Statement", "Scope", "Field id", "Display Name", "Method",
+                  "Source report lines", "Denomination", "Currency", "Verification"])
+    for c in audit[1]:
+        c.font = Font(bold=True)
+
+    keys = sorted(mapped, key=lambda k: (STMT_ORDER.get(k[0], 9), k[1] != "standalone"))
+    for (stmt, scope) in keys:
+        ms = mapped[(stmt, scope)]
+        fields = template.get((stmt, scope))
+        if not fields:
+            continue
+        ws = wb.create_sheet(f"{STMT_NAME.get(stmt, stmt)} - {scope.title()}"[:31])
+        ws.append(HDR)
+        for c in ws[1]:
+            c.font = Font(bold=True)
+        denom = ms.unit or "units"
+        row2fid = {f.row: f.fid for f in fields}
+        for f in sorted(fields, key=lambda x: x.order):
+            per_vals = {}
+            method = ""
+            if f.fid in ms.facts:
+                method = "reported" if len(ms.sources.get(f.fid, [])) == 1 else "summed"
+                for p in ms.periods:
+                    if p.col in ms.facts[f.fid]:
+                        per_vals[p.col] = ms.facts[f.fid][p.col]
+            elif f.formula:
+                for p in ms.periods:
+                    total, have = 0.0, 0
+                    for sign, r in f.formula:
+                        cf = row2fid.get(r)
+                        if cf and cf in ms.facts and p.col in ms.facts[cf]:
+                            total += sign * ms.facts[cf][p.col]
+                            have += 1
+                    if have >= 2:
+                        per_vals[p.col] = round(total, 2)
+                        method = "computed"
+            if not per_vals:
+                continue
+            for p in ms.periods:
+                if p.col not in per_vals:
+                    continue
+                # balance sheets are point-in-time ('As at ...'): no Months
+                months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
+                ws.append([f.fid, f.name, p.end or p.raw,
+                           months, p.audited,
+                           per_vals[p.col], denom, ms.currency, method])
+            audit.append([stmt, scope, f.fid, f.name, method,
+                          "; ".join(ms.sources.get(f.fid, [])),
+                          denom, ms.currency,
+                          "; ".join(v for v in ms.verification if f"[{f.fid}]" in v)[:180]])
+        if ms.unmapped:
+            audit.append([stmt, scope, "", "UNMAPPED LINES", "",
+                          "; ".join(ms.unmapped)[:300], "", "", ""])
+        for j, w in zip(range(1, 10), (10, 48, 12, 8, 11, 16, 13, 9, 10)):
+            ws.column_dimensions[get_column_letter(j)].width = w
+        ws.freeze_panes = "A2"
+        ws.auto_filter.ref = ws.dimensions
+    for j, w in zip(range(1, 10), (12, 12, 10, 44, 10, 70, 12, 8, 60)):
+        audit.column_dimensions[get_column_letter(j)].width = w
+    audit.freeze_panes = "A2"
+    wb.save(out_path)
 
 
 def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedStatement"],
