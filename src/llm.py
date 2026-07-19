@@ -28,6 +28,35 @@ def client() -> OpenAI:
     return _client
 
 
+# cumulative token usage for the current process — lets callers report real cost
+USAGE = {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+
+# $/1M tokens (uncached input, output) by model prefix
+_PRICES = [("gpt-5-mini", (0.25, 2.00)), ("gpt-5", (1.25, 10.00))]
+
+
+def _record_usage(resp) -> None:
+    u = getattr(resp, "usage", None)
+    if u is None:
+        return
+    USAGE["calls"] += 1
+    USAGE["input_tokens"] += getattr(u, "input_tokens", 0) or 0
+    USAGE["output_tokens"] += getattr(u, "output_tokens", 0) or 0
+
+
+def usage_cost(model: Optional[str] = None) -> float:
+    """USD cost of USAGE at the given (or default) model's price."""
+    mdl = model or config.model_default
+    for prefix, (pin, pout) in _PRICES:
+        if mdl.startswith(prefix):
+            return (USAGE["input_tokens"] * pin + USAGE["output_tokens"] * pout) / 1e6
+    return 0.0
+
+
+def reset_usage() -> None:
+    USAGE.update(calls=0, input_tokens=0, output_tokens=0)
+
+
 def extract_json(
     *,
     instructions: str,
@@ -93,6 +122,7 @@ def extract_json(
                 resp = client().responses.create(**kwargs)
             else:
                 raise
+        _record_usage(resp)
         txt = getattr(resp, "output_text", "") or ""
         if txt.strip():
             try:
@@ -141,6 +171,7 @@ def ask_text(
             resp = client().responses.create(**kwargs)
         else:
             raise
+    _record_usage(resp)
     return getattr(resp, "output_text", "") or ""
 
 
