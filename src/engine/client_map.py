@@ -157,10 +157,10 @@ def statement_of(section: str, title: str) -> str | None:
     s = f"{section} {title}".lower()
     if "cash flow" in s:
         return "cashflow"
+    if "segment" in s:            # before balance: 'Segment Assets and Liabilities'
+        return "segment"          # names the more specific statement
     if "assets and liabilities" in s or "balance sheet" in s:
         return "balance"
-    if "segment" in s:
-        return "segment"
     if "results" in s or "profit and loss" in s:
         return "income"
     return None
@@ -623,6 +623,48 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
                 for j in idxs:
                     if j != hits[0]:
                         assign.pop(j, None)
+    # duplicate-total pruning: filings print the same figure twice (TCI in
+    # the body AND as the 'attributable to' block total) or as a running
+    # subtotal chain ('PBT before exceptional items' followed by 'PBT').
+    # If one fid holds two such rows it double-counts. Purely arithmetic:
+    #   identical value vectors            -> same printed fact repeated
+    #   B - A == sum(rows strictly between)-> B is a later running subtotal
+    # keep the row whose label best matches the client field name.
+    from itertools import combinations as _combos
+    _fname = {tf.fid: norm_label(tf.name) for tf in template_fields}
+    _byfid: dict[str, list[int]] = {}
+    for _i in range(len(rows)):
+        _fd = assign.get(_i)
+        if _fd and _fd in valid_fids and rows[_i][2]:
+            _byfid.setdefault(_fd, []).append(_i)
+    for _fd, _idxs in _byfid.items():
+        if len(_idxs) < 2:
+            continue
+        _drop: set = set()
+        for _a, _b in _combos(sorted(_idxs), 2):
+            if _a in _drop or _b in _drop:
+                continue
+            _va, _vb = rows[_a][2], rows[_b][2]
+            _cc = sorted(set(_va) & set(_vb))
+            if len(_cc) < 2:
+                continue
+            _same = all(abs(_va[c] - _vb[c]) <= 0.02 for c in _cc)
+            _chain = False
+            if not _same:
+                _mids = [rows[_m][2] for _m in range(_a + 1, _b)]
+                _chain = all(abs((_vb[c] - _va[c])
+                                 - sum(_mv.get(c, 0.0) for _mv in _mids)) <= 0.02
+                             for c in _cc)
+            if not (_same or _chain):
+                continue
+            def _sim(i):
+                _lt = set(norm_label(rows[i][0]).split())
+                _nt = set(_fname.get(_fd, "").split())
+                return (len(_lt & _nt) / max(1, len(_lt | _nt)), i)
+            _keep = max((_a, _b), key=_sim)
+            _drop.add(_a if _keep == _b else _b)
+        for _i in _drop:
+            assign.pop(_i, None)
     facts: dict[str, dict[int, float]] = {}
     sources: dict[str, list[str]] = {}
     sources_vals: dict[str, dict[int, list]] = {}
@@ -777,7 +819,16 @@ def reconcile_cashflow_opening(ms: "MappedStatement",
     if not resid or all(abs(v) <= 0.02 for v in resid.values()):
         return 0
     uv = getattr(ms, "unmapped_vals", None) or []
-    cand = [(i, lab, vals) for i, (lab, vals) in enumerate(uv)
+    # candidates must come from the reconciliation zone: opening-balance
+    # adjustments are printed BEFORE the closing-cash line. Lines from the
+    # 'Components of cash and cash equivalents' breakdown (below closing) are
+    # parts of the closing balance, never adjustments — without this cut the
+    # subset search can grab one to absorb the filing's own rounding noise.
+    end_zone = re.compile(r"cash and cash equivalents at the end|"
+                          r"components of cash", re.IGNORECASE)
+    zone_end = next((i for i, (lab, _v) in enumerate(uv) if end_zone.search(lab)),
+                    len(uv))
+    cand = [(i, lab, vals) for i, (lab, vals) in enumerate(uv[:zone_end])
             if any(c in vals for c in resid)]
     for size in range(1, min(4, len(cand)) + 1):
         for combo in combinations(cand, size):
@@ -980,6 +1031,12 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                "Value", "Denomination", "Reason"])
     for c in un[1]:
         c.font = Font(bold=True)
+    # filings routinely reprint the same line (IFRS mirror, revenue block +
+    # segment-revenues block): one identical (line, period, value) fact is
+    # listed ONCE, keeping the most informative reason (verified ✓ over info)
+    entries: dict = {}
+    order: list = []
+    RANK = {"component": 0, "aggregate": 0, "info": 1}
     for (stmt, scope) in keys:
         ms = mapped[(stmt, scope)]
         denom = ms.unit or "units"
@@ -994,8 +1051,16 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                 if p is None:
                     continue
                 months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
-                un.append([STMT_NAME.get(stmt, stmt), scope.title(), lab,
-                           p.end or p.raw, months, v, denom, reason])
+                key = (stmt, scope, lab, p.end or p.raw, months, v)
+                if key not in entries:
+                    order.append(key)
+                    entries[key] = (RANK.get(cls, 1), reason, denom)
+                elif RANK.get(cls, 1) < entries[key][0]:
+                    entries[key] = (RANK.get(cls, 1), reason, denom)
+    for (stmt, scope, lab, pend, months, v) in order:
+        _rk, reason, denom = entries[(stmt, scope, lab, pend, months, v)]
+        un.append([STMT_NAME.get(stmt, stmt), scope.title(), lab,
+                   pend, months, v, denom, reason])
     for j, w in zip(range(1, 9), (16, 12, 52, 12, 8, 16, 13, 72)):
         un.column_dimensions[get_column_letter(j)].width = w
     un.freeze_panes = "A2"
