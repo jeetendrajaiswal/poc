@@ -1,0 +1,1119 @@
+[
+  {
+    "key": "Share Premium",
+    "scope": "standalone",
+    "found": true,
+    "value": "15,834.70",
+    "value_prior": "",
+    "reported_label": "Securities Premium",
+    "evidence_quote": "Balance as at 31st March, 2025                           2.48     15834.70         422.76            0.30       363.05             \u2013         47735.79            48.71          2245.48         (4.54)              \u2013       66648.73",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Share Premium",
+    "scope": "consolidated",
+    "found": true,
+    "value": "15834.70",
+    "value_prior": "",
+    "reported_label": "Securities Premium",
+    "evidence_quote": "Balance as at 31st March, 2025                            5.37 15834.70             0.89      185.22       81.45        0.14      422.76",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Hedging Reserve",
+    "scope": "standalone",
+    "found": true,
+    "value": "(4.54)",
+    "value_prior": "",
+    "reported_label": "Cash Flow Hedges / cash flow hedge reserve",
+    "evidence_quote": "Balance as at 31st March, 2025 ... Effective portion of Cash Flow Hedges (4.54)",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Hedging Reserve",
+    "scope": "consolidated",
+    "found": true,
+    "value": "(13.89)",
+    "value_prior": "",
+    "reported_label": "Effective portion of Cash Flow Hedges / Cash flow hedge reserve",
+    "evidence_quote": "Balance as at 31st March, 2025 ... (13.89) ... The movement in the cash flow hedging reserve ... At the end of the year (13.89)",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Non Current Investments_Unquoted Debentures/Bonds",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Non Current Investments_Unquoted Debentures/Bonds",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Non Current Investments_Joint Venture/Partnerships",
+    "scope": "standalone",
+    "found": true,
+    "value": "\u2013",
+    "value_prior": "",
+    "reported_label": "In Joint Ventures (at cost)",
+    "evidence_quote": "In Joint Ventures (at cost)\n\n   Unquoted\n\n      Maharaja Heritage Resorts Limited^                                 100                    \u2013         \u2013        1,80,000       1.80\n\n      Logix Developers Private Limited [Refer Note 29(ix)]\n      [cost ` 41.95 Crores, fully impaired]                               10           77,66,913          \u2013      77,66,913           \u2013",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Non Current Investments_Joint Venture/Partnerships",
+    "scope": "consolidated",
+    "found": true,
+    "value": "146.42",
+    "value_prior": "126.94",
+    "unit": "` in Crores",
+    "reported_label": "ITC Filtrona Limited",
+    "evidence_quote": "ITC Filtrona Limited                                        10           22,50,000                         22,50,000\n         Cost of acquisition                                                                 38.85                            38.85\n         Add / (Less) : Group Share of Profits / (Losses)                                   107.57 146.42                     88.09 126.94",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Gross Carrying Value_Furnitures & Fixtures",
+    "scope": "standalone",
+    "found": true,
+    "value": "261.74",
+    "value_prior": "1038.71",
+    "unit": "` in Crores",
+    "reported_label": "Furniture and Fixtures",
+    "evidence_quote": "Furniture and Fixtures                                         980.68           65.05              7.02            1038.71            35.67           6.47            806.17          261.74",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Gross Carrying Value_Furnitures & Fixtures",
+    "scope": "consolidated",
+    "found": true,
+    "value": "282.36",
+    "value_prior": "1068.08",
+    "unit": "` in Crores",
+    "reported_label": "Furniture and Fixtures",
+    "evidence_quote": "Furniture and Fixtures                               999.77            78.15             9.88             0.04        1068.08           551.84                 \u2013            7.37       1342.80             12.61          282.36",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Gross Carrying Value_Office Equipments",
+    "scope": "standalone",
+    "found": true,
+    "value": "43.21",
+    "value_prior": "36.27",
+    "unit": "` in Crores",
+    "reported_label": "Office Equipment",
+    "evidence_quote": "Office Equipment                                                30.62            6.53              0.88              36.27             9.55           1.30              1.31           43.21",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Gross Carrying Value_Office Equipments",
+    "scope": "consolidated",
+    "found": true,
+    "value": "62.88",
+    "value_prior": "53.09",
+    "unit": "` in Crores",
+    "reported_label": "Office Equipment",
+    "evidence_quote": "Office Equipment                                      43.68            12.32             2.92             0.01           53.09            13.33                \u2013            2.23            1.42            0.11            62.88",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Accumulated Depreciation_Furnitures & Fixtures",
+    "scope": "standalone",
+    "found": true,
+    "value": "161.61",
+    "value_prior": "617.64",
+    "unit": "` in Crores",
+    "reported_label": "Furniture and Fixtures",
+    "evidence_quote": "Furniture and Fixtures                                          540.82         82.82           6.00         617.64         70.84           5.13          521.74       161.61        100.13        421.07",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Accumulated Depreciation_Furnitures & Fixtures",
+    "scope": "consolidated",
+    "found": true,
+    "value": "169.33",
+    "value_prior": "629.92",
+    "unit": "` in Crores",
+    "reported_label": "Furniture and Fixtures",
+    "evidence_quote": "Furniture and Fixtures                          554.30          84.10            8.51           0.03        629.92        111.12                \u2013          5.83        566.84            0.96        169.33         113.03         438.16",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Accumulated Depreciation_Office Equipments",
+    "scope": "standalone",
+    "found": true,
+    "value": "24.77",
+    "value_prior": "23.93",
+    "unit": "` in Crores",
+    "reported_label": "Office Equipment",
+    "evidence_quote": "Office Equipment                                                 21.79          2.96           0.82          23.93          3.18           1.10            1.24        24.77         18.44         12.34",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Accumulated Depreciation_Office Equipments",
+    "scope": "consolidated",
+    "found": true,
+    "value": "36.33",
+    "value_prior": "33.94",
+    "unit": "` in Crores",
+    "reported_label": "Office Equipment",
+    "evidence_quote": "Office Equipment                                 32.19            4.24           2.49              \u2013         33.94           5.63               \u2013          1.98           1.29           0.03          36.33          26.55          19.15",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Other CWIP",
+    "scope": "standalone",
+    "found": true,
+    "value": "1067.79",
+    "value_prior": "",
+    "reported_label": "Capital work-in-progress",
+    "evidence_quote": "(b) Capital work-in-progress  3B  1067.79  1077.97",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other CWIP",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1087.60",
+    "value_prior": "",
+    "reported_label": "Capital work-in-progress",
+    "evidence_quote": "Consolidated Balance Sheet as at 31st March, 2025 ... (b) Capital work-in-progress 3B 1087.60 2851.14",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Gross Investment Property",
+    "scope": "standalone",
+    "found": true,
+    "value": "505.45",
+    "value_prior": "452.03",
+    "unit": "` in Crores",
+    "reported_label": "3C. Investment Property 3",
+    "evidence_quote": "3C. Investment Property 3                                         410.63              \u2013           (41.40)           452.03              1.75         (51.67)                \u2013          505.45",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Gross Investment Property",
+    "scope": "consolidated",
+    "found": true,
+    "value": "408.54",
+    "value_prior": "411.58",
+    "unit": "` in Crores",
+    "reported_label": "3C. Investment Property 3",
+    "evidence_quote": "3C. Investment Property 3                                   410.63                 \u2013          (0.95)                \u2013         411.58              1.75                \u2013            4.79               \u2013                \u2013         408.54",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Loss On Disposal Of Fixed Asset",
+    "scope": "standalone",
+    "found": true,
+    "value": "(108.26)",
+    "value_prior": "",
+    "reported_label": "(Gain) / Loss on sale of property, plant and equipment - Net",
+    "evidence_quote": "(Gain) / Loss on sale of property, plant and equipment - Net                                    (108.26)                      (58.86)",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Loss On Disposal Of Fixed Asset",
+    "scope": "consolidated",
+    "found": true,
+    "value": "(138.76)",
+    "value_prior": "",
+    "reported_label": "(Gain) / Loss on sale of property, plant and equipment - Net",
+    "evidence_quote": "(Gain) / Loss on sale of property, plant and equipment - Net                  (138.76)                (62.26)",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Fixed Assets Written Off",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Fixed Assets Written Off",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Sundry Creditors",
+    "scope": "standalone",
+    "found": true,
+    "value": "4,489.82",
+    "value_prior": "",
+    "reported_label": "Trade Payables (total outstanding dues of micro and small enterprises + creditors other than micro and small enterprises)",
+    "evidence_quote": "(A) total outstanding dues of micro and small enterprises; 178.24 ... (B) total outstanding dues of creditors other than micro and small enterprises 4311.58",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Sundry Creditors",
+    "scope": "consolidated",
+    "found": true,
+    "value": "4,807.30",
+    "value_prior": "",
+    "reported_label": "Trade Payables (A+B total)",
+    "evidence_quote": "(A) total outstanding dues of micro and small enterprises; and 180.64 ... (B) total outstanding dues of creditors other than micro and small enterprises 4626.66",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Noncurrent Borrowings_Unsecured Loans_Loans and advances from others",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Noncurrent Borrowings_Unsecured Loans_Loans and advances from others",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Noncurrent Borrowings_Secured Loans_Deferred payment for acquisition of property, plant and equipment",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Current Borrowings_Unsecured Loans_Subordinated debts",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Current Borrowings_Unsecured Loans_Subordinated debts",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Other Long Term Liabilities",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Other Long Term Liabilities",
+    "scope": "consolidated",
+    "found": true,
+    "value": "34.51",
+    "value_prior": "149.72",
+    "unit": "` in Crores",
+    "reported_label": "Other non-current liabilities",
+    "evidence_quote": "(d) Other non-current liabilities                        20                  34.51     3358.63                     149.72      3245.79",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Total Long Term Liabilities",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Noncurrent Liabilities_Total Long Term Liabilities",
+    "scope": "consolidated",
+    "found": true,
+    "value": "34.51",
+    "value_prior": "",
+    "reported_label": "Other non-current liabilities",
+    "evidence_quote": "(d) Other non-current liabilities 20 34.51 3358.63",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other Current Liabilities_Revenue received in advance",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Liabilities_Revenue received in advance",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Liabilities_Accrued Salary Payable",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Liabilities_Accrued Salary Payable",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Liabilities_Employees Stock Options Outstanding",
+    "scope": "standalone",
+    "found": true,
+    "value": "422.76",
+    "value_prior": "",
+    "reported_label": "Share Options Outstanding Account",
+    "evidence_quote": "Balance as at 31st March, 2025                           2.48     15834.70         422.76            0.30       363.05             \u2013         47735.79            48.71          2245.48         (4.54)              \u2013       66648.73",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other Current Liabilities_Employees Stock Options Outstanding",
+    "scope": "consolidated",
+    "found": true,
+    "value": "422.76",
+    "value_prior": "",
+    "reported_label": "Share Options Outstanding Account",
+    "evidence_quote": "Balance as at 31st March, 2025                            5.37 15834.70             0.89      185.22       81.45        0.14      422.76       13.98",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Short Term Loans And Advances_Other Deposit Assets",
+    "scope": "standalone",
+    "found": true,
+    "value": "6.74",
+    "value_prior": "",
+    "reported_label": "Security Deposits",
+    "evidence_quote": "Security Deposits\n\t\t      \u2013   With Statutory Authorities                                                     0.48        702.34\n\t\t \u2013        Others                                                                         6.26        117.60",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Short Term Loans And Advances_Other Deposit Assets",
+    "scope": "consolidated",
+    "found": true,
+    "value": "6.76",
+    "value_prior": "1.75",
+    "unit": "` in Crores",
+    "reported_label": "Security Deposits \u2013 With Statutory Authorities / \u2013 Others",
+    "evidence_quote": "Security Deposits\n\t\t\u2013 With Statutory Authorities                                                                 0.50          726.37              0.78             813.46\n\t\t \u2013 Others                                                                                            6.26          118.15              0.97             163.30",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Short Term Loans And Advances_Advances to related parties",
+    "scope": "standalone",
+    "found": true,
+    "value": "\u2013",
+    "value_prior": "",
+    "reported_label": "Advances to related parties",
+    "evidence_quote": "Advances to related parties (Refer Note 31)                                           \u2013              \u2013         21.30              \u2013",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Short Term Loans And Advances_Advances to related parties",
+    "scope": "consolidated",
+    "found": true,
+    "value": "21.30",
+    "value_prior": "",
+    "reported_label": "Advances to related parties",
+    "evidence_quote": "Advances to related parties (Refer Note 32)                                                          \u2013             8.62          21.30                 9.54",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Short Term Loans And Advances_Allowance for bad and doubtful loans",
+    "scope": "standalone",
+    "found": true,
+    "value": "195.76",
+    "value_prior": "203.76",
+    "unit": "` in Crores",
+    "reported_label": "Closing Balance",
+    "evidence_quote": "Closing Balance                                                                195.76                      203.76",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Short Term Loans And Advances_Allowance for bad and doubtful loans",
+    "scope": "consolidated",
+    "found": true,
+    "value": "218.63",
+    "value_prior": "",
+    "reported_label": "Closing Balance",
+    "evidence_quote": "The movement of the expected loss provision (allowance for bad and doubtful loans, advances and receivables etc.) made by the Group are as under:\n... Closing Balance 218.63 232.19",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other Current Assets_Advances to related parties",
+    "scope": "standalone",
+    "found": true,
+    "value": "\u2013",
+    "value_prior": "",
+    "reported_label": "Advances to related parties (Refer Note 31)",
+    "evidence_quote": "Advances to related parties (Refer Note 31)                                           \u2013              \u2013         21.30              \u2013",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other Current Assets_Advances to related parties",
+    "scope": "consolidated",
+    "found": true,
+    "value": "21.30",
+    "value_prior": "",
+    "reported_label": "Advances to related parties",
+    "evidence_quote": "Advances to related parties (Refer Note 32)                                                          \u2013             8.62          21.30                 9.54",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Other Current Assets_Advances given suppliers",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Assets_Advances given suppliers",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Assets_Export incentives receivables",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Assets_Export incentives receivables",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Assets_Less : Doubtful Advances",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Other Current Assets_Less : Doubtful Advances",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Authorised Equity Share Capital",
+    "scope": "standalone",
+    "found": true,
+    "value": "2000.00",
+    "value_prior": "2000.00",
+    "unit": "` in Crores",
+    "reported_label": "Authorised",
+    "evidence_quote": "Authorised\n    Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Authorised Equity Share Capital",
+    "scope": "consolidated",
+    "found": true,
+    "value": "2000.00",
+    "value_prior": "2000.00",
+    "unit": "` in Crores",
+    "reported_label": "Authorised Ordinary Shares of ` 1.00 each",
+    "evidence_quote": "Authorised\n    Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Issued",
+    "scope": "standalone",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Issued and Subscribed",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid              12,51,41,19,781                 1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Issued",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Issued and Subscribed",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid             12,51,41,19,781                  1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Subscribed fully paid",
+    "scope": "standalone",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid              12,51,41,19,781                 1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Subscribed fully paid",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed    Ordinary Shares of ` 1.00 each, fully paid             12,51,41,19,781                  1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Forfeited",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Equity Forfeited",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Equity Paid Up",
+    "scope": "standalone",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Equity Share capital",
+    "evidence_quote": "Equity\n   (a) Equity Share capital                       13                     1251.41                               1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Equity Paid Up",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1251.41",
+    "value_prior": "1248.47",
+    "unit": "` in Crores",
+    "reported_label": "Equity Share capital",
+    "evidence_quote": "(a) Equity Share capital                                 15                1251.41                                1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Face Value of Share (in Rs)",
+    "scope": "standalone",
+    "found": true,
+    "value": "1.00",
+    "value_prior": "",
+    "unit": "Rs per share",
+    "reported_label": "Ordinary Shares of ` 1.00 each",
+    "evidence_quote": "Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Face Value of Share (in Rs)",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1.00",
+    "value_prior": "",
+    "unit": "Rs per share",
+    "reported_label": "Ordinary Shares of ` 1.00 each",
+    "evidence_quote": "Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Authorised Equity Shares",
+    "scope": "standalone",
+    "found": true,
+    "value": "20,00,00,00,000",
+    "value_prior": "20,00,00,00,000",
+    "unit": "shares",
+    "reported_label": "Ordinary Shares of ` 1.00 each",
+    "evidence_quote": "Authorised\n    Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Authorised Equity Shares",
+    "scope": "consolidated",
+    "found": true,
+    "value": "20,00,00,00,000",
+    "value_prior": "20,00,00,00,000",
+    "unit": "shares",
+    "reported_label": "Authorised Ordinary Shares of ` 1.00 each",
+    "evidence_quote": "Authorised\n    Ordinary Shares of ` 1.00 each                         20,00,00,00,000                  2000.00        20,00,00,00,000                 2000.00",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Issued Equity Shares",
+    "scope": "standalone",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid              12,51,41,19,781                 1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Issued Equity Shares",
+    "scope": "consolidated",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Issued and Subscribed Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid             12,51,41,19,781                  1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Subscribed Equity Shares Fully Paid",
+    "scope": "standalone",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid              12,51,41,19,781                 1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Subscribed Equity Shares Fully Paid",
+    "scope": "consolidated",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Issued and Subscribed\n    Ordinary Shares of ` 1.00 each, fully paid             12,51,41,19,781                  1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Paid up Equity Shares",
+    "scope": "standalone",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Ordinary Shares of ` 1.00 each, fully paid              12,51,41,19,781                 1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "No Of Paid up Equity Shares",
+    "scope": "consolidated",
+    "found": true,
+    "value": "12,51,41,19,781",
+    "value_prior": "12,48,47,21,471",
+    "unit": "shares",
+    "reported_label": "Ordinary Shares of ` 1.00 each, fully paid",
+    "evidence_quote": "Ordinary Shares of ` 1.00 each, fully paid             12,51,41,19,781                  1251.41        12,48,47,21,471                 1248.47",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Number of shares outstanding at beginning of period",
+    "scope": "standalone",
+    "found": true,
+    "value": "12,48,47,21,471",
+    "value_prior": "",
+    "reported_label": "As at beginning of the year",
+    "evidence_quote": "As at beginning of the year                         12,48,47,21,471                 1248.47",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Number of shares outstanding at beginning of period",
+    "scope": "consolidated",
+    "found": true,
+    "value": "12,48,47,21,471",
+    "value_prior": "",
+    "reported_label": "As at beginning of the year",
+    "evidence_quote": "As at beginning of the year                        12,48,47,21,471                  1248.47        12,42,80,17,741                 1242.80",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "No Of Shares Increase Towards Stock Split",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "No Of Shares Increase Towards Stock Split",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "No Of Shares bought back or treasury shares",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "No Of Shares bought back or treasury shares",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Equity attributable to the equity holders of the parent",
+    "scope": "consolidated",
+    "found": true,
+    "value": "70030.05",
+    "value_prior": "",
+    "reported_label": "Attributable to owners of the parent",
+    "evidence_quote": "Attributable to owners of the parent 70030.05 74507.00",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Share Depreciation Joint ventures",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Total Power & Fuel Expenses",
+    "scope": "standalone",
+    "found": true,
+    "value": "942.47",
+    "value_prior": "",
+    "reported_label": "Power and fuel",
+    "evidence_quote": "Power and fuel                                                                                  942.47                       929.54",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Total Power & Fuel Expenses",
+    "scope": "consolidated",
+    "found": true,
+    "value": "975.35",
+    "value_prior": "",
+    "reported_label": "Power and fuel",
+    "evidence_quote": "Power and fuel                                                                 975.35                952.90",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Consumption Of Stores And Spare Parts",
+    "scope": "standalone",
+    "found": true,
+    "value": "390.49",
+    "value_prior": "",
+    "reported_label": "Consumption of stores and spare parts",
+    "evidence_quote": "Consumption of stores and spare parts                                                           390.49                       358.90",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Consumption Of Stores And Spare Parts",
+    "scope": "consolidated",
+    "found": true,
+    "value": "397.38",
+    "value_prior": "",
+    "reported_label": "Consumption of stores and spare parts",
+    "evidence_quote": "Consumption of stores and spare parts                                          397.38                365.04",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Brokerage/Commission To Agents",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Brokerage/Commission To Agents",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Carriage Outwards",
+    "scope": "standalone",
+    "found": true,
+    "value": "1891.85",
+    "value_prior": "",
+    "reported_label": "Outward freight and handling charges",
+    "evidence_quote": "Outward freight and handling charges                                                           1891.85                      1582.34",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Carriage Outwards",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1928.59",
+    "value_prior": "",
+    "reported_label": "Outward freight and handling charges",
+    "evidence_quote": "Outward freight and handling charges                                         1928.59                1617.89",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Legal & Professional Charges",
+    "scope": "standalone",
+    "found": true,
+    "value": "223.10",
+    "value_prior": "",
+    "reported_label": "Legal and professional fees",
+    "evidence_quote": "Legal and professional fees                                                                      223.10                      206.01",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Legal & Professional Charges",
+    "scope": "consolidated",
+    "found": true,
+    "value": "723.81",
+    "value_prior": "",
+    "reported_label": "Legal and professional fees",
+    "evidence_quote": "Legal and professional fees                                                    723.81                693.85",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Payments To Auditor",
+    "scope": "standalone",
+    "found": true,
+    "value": "7.43",
+    "value_prior": "",
+    "reported_label": "Auditors\u2019 remuneration and expenses",
+    "evidence_quote": "Audit fees 3.80; Tax audit fees 0.78; Fees for limited review 1.62; Fees for other services 0.97; Reimbursement of expenses 0.26",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Payments To Auditor",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Payment for reimbursement of expenses",
+    "scope": "standalone",
+    "found": true,
+    "value": "0.26",
+    "value_prior": "",
+    "reported_label": "Reimbursement of expenses",
+    "evidence_quote": "Reimbursement of expenses                                                                      0.26                         0.19",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Payment for reimbursement of expenses",
+    "scope": "consolidated",
+    "found": true,
+    "value": "15.35",
+    "value_prior": "0.31",
+    "unit": "` in Crores",
+    "reported_label": "Expenses Reimbursed",
+    "evidence_quote": "15. Expenses Reimbursed                                                           15.30         0.27           0.03         0.01         0.02         0.03                                                            15.35         0.31",
+    "observed_scope": "consolidated",
+    "confidence": 1.0,
+    "votes": "1/1"
+  },
+  {
+    "key": "Donations Subscriptions",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Donations Subscriptions",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "CSR Expenditure",
+    "scope": "standalone",
+    "found": true,
+    "value": "461.50",
+    "value_prior": "",
+    "reported_label": "Expenditure incurred during the year",
+    "evidence_quote": "Expenditure incurred during the year is ` 461.50 Crores (2024 - ` 404.05 Crores)",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "CSR Expenditure",
+    "scope": "consolidated",
+    "found": true,
+    "value": "475.33",
+    "value_prior": "",
+    "reported_label": "Expenditure incurred during the year",
+    "evidence_quote": "Expenditure incurred during the year is ` 475.33 Crores (2024 - ` 418.39 Crores)",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Impairment loss on financial assets loans and advances",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Impairment loss on financial assets loans and advances",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Provision Bad Doubtful Loans Advances",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Provision Bad Doubtful Loans Advances",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Bad Debts Advances Written Off",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Bad Debts Advances Written Off",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Interest Expense Borrowings",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Interest Expense Borrowings",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",
+    "scope": "standalone",
+    "found": true,
+    "value": "(640.50)",
+    "value_prior": "",
+    "reported_label": "Changes in inventories of finished goods, Stock-in-Trade, work-in-progress and intermediates",
+    "evidence_quote": "Changes in inventories of finished goods, Stock-in-Trade, work-in-progress and intermediates                                          24                     (640.50)                    (370.09)",
+    "observed_scope": "standalone",
+    "confidence": 1.0
+  },
+  {
+    "key": "Total Changes In Inventories Of Finished Goods, Work-In-Progress And Stock-In-Trade",
+    "scope": "consolidated",
+    "found": true,
+    "value": "(725.65)",
+    "value_prior": "",
+    "reported_label": "Changes in inventories of finished goods, Stock-in-Trade, work-in-progress, intermediates and Biological Assets",
+    "evidence_quote": "Changes in inventories of finished goods, Stock-in-Trade, work-in-progress, intermediates and Biological Assets 25 (725.65) (367.77)",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Deferred Tax Assets (Net)_Deferred tax liabilities_Accumulated Depreciation",
+    "scope": "consolidated",
+    "found": true,
+    "value": "1556.24",
+    "value_prior": "",
+    "reported_label": "On fiscal allowances on property, plant and equipment, investment property etc.",
+    "evidence_quote": "On fiscal allowances on property, plant and equipment, investment property etc.             1886.62      114.33           \u2013          \u2013           \u2013          \u2013     (444.71)           \u2013       1556.24",
+    "observed_scope": "consolidated",
+    "confidence": 1.0
+  },
+  {
+    "key": "Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment",
+    "scope": "standalone",
+    "found": false,
+    "value": ""
+  },
+  {
+    "key": "Deferred Tax Liability (Net)_Deferred Tax Assets_Leave Encashment",
+    "scope": "consolidated",
+    "found": false,
+    "value": ""
+  }
+]
