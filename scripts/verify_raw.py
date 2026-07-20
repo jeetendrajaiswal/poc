@@ -85,7 +85,8 @@ def check_results(grid):
     tax = (_find_row(grid, ["total tax"]) or
            _find_row(grid, ["tax expense"], must_not=["current", "deferred"]))
     profit = _find_row_any(grid, [("profit for the period",), ("profit for the year",),
-                                  ("profit for the quarter",)], must_not=["attributable"])
+                                  ("profit for the quarter",), ("profit after tax",)],
+                           must_not=["attributable", "before"])
     oci = _find_row(grid, ["total other comprehensive"])
     tci = _find_row(grid, ["total comprehensive income"], must_not=["attributable"])
     checks = []

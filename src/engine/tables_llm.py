@@ -472,7 +472,7 @@ def vision_tables_consensus(pdf_path: str, pages: list[int],
     return sorted(out, key=lambda t: (t.page, t.n))
 
 
-def maybe_trim_large_filing(pdf_path: str, max_pages: int = 40,
+def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
                              log=print) -> str:
     """Disclosure PACKAGES (100+ pages) waste upload cost on non-statement
     content. For those — and only those — locate the statement pages by
@@ -493,9 +493,14 @@ def maybe_trim_large_filing(pdf_path: str, max_pages: int = 40,
     drop = re.compile(r"\bifrs\b|dollars in millions", re.I)
     for i in range(n):
         t = " ".join(doc[i].get_text().split())
+        if len(t.strip()) < 100:
+            keep.add(i)                          # scanned page: text heuristics are
+            continue                             # blind here — never drop it
         if drop.search(t[:600].lower()):
             continue                             # IFRS variants are excluded downstream
-        if len(re.findall(r"\d[\d,]*\.?\d*", t)) >= 25 and pat.search(t[:500].lower()):
+        # heading window is generous: filings open with long registered-office
+        # preambles before the statement title
+        if len(re.findall(r"\d[\d,]*\.?\d*", t)) >= 25 and pat.search(t[:1500].lower()):
             keep.add(i)
             if i + 1 < n and not drop.search(" ".join(doc[i+1].get_text().split())[:600].lower()):
                 keep.add(i + 1)                  # statements span page breaks
