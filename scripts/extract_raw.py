@@ -27,7 +27,9 @@ def run(name: str) -> str:
     if not os.path.exists(pdf):
         sys.exit(f"missing PDF: {pdf}")
     reset_usage()
-    tables = extract_tables_smart(pdf, mode="quarterly",
+    from src.engine.tables_llm import maybe_trim_large_filing
+    pdf_in = maybe_trim_large_filing(pdf, log=lambda m: print(str(m), flush=True))
+    tables = extract_tables_smart(pdf_in, mode="quarterly",
                                   log=lambda m: print("  " + str(m), flush=True))
     rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
     out = os.path.join(PKL_DIR, f"{name}.pkl")

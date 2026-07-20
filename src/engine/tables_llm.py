@@ -22,6 +22,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
+import os
 import pymupdf
 
 from src.engine.tables import (RawTable, _cluster_rows, _is_numericish,
@@ -469,6 +470,45 @@ def vision_tables_consensus(pdf_path: str, pages: list[int],
     n_flagged = sum(1 for t in out if "⚠" in t.title)
     log(f"  consensus: {len(out)} tables, {n_flagged} need review")
     return sorted(out, key=lambda t: (t.page, t.n))
+
+
+def maybe_trim_large_filing(pdf_path: str, max_pages: int = 40,
+                             log=print) -> str:
+    """Disclosure PACKAGES (100+ pages) waste upload cost on non-statement
+    content. For those — and only those — locate the statement pages by
+    heading + digit density (the annual engine's locate step), write a
+    trimmed copy to the temp dir, and extract from that. Small filings are
+    returned unchanged and flow through the proven whole-file path."""
+    import re
+    import tempfile
+    doc = pymupdf.open(pdf_path)
+    n = len(doc)
+    if n <= max_pages:
+        doc.close()
+        return pdf_path
+    pat = re.compile(r"statement of .{0,30}(financial results|profit and loss"
+                     r"|assets and liabilit|cash flow)|balance sheet"
+                     r"|financial results|segment information|segment report", re.I)
+    keep = {0}                                   # cover page: banner/units context
+    drop = re.compile(r"\bifrs\b|dollars in millions", re.I)
+    for i in range(n):
+        t = " ".join(doc[i].get_text().split())
+        if drop.search(t[:600].lower()):
+            continue                             # IFRS variants are excluded downstream
+        if len(re.findall(r"\d[\d,]*\.?\d*", t)) >= 25 and pat.search(t[:500].lower()):
+            keep.add(i)
+            if i + 1 < n and not drop.search(" ".join(doc[i+1].get_text().split())[:600].lower()):
+                keep.add(i + 1)                  # statements span page breaks
+    out = pymupdf.open()
+    for p in sorted(keep):
+        out.insert_pdf(doc, from_page=p, to_page=p)
+    trimmed = os.path.join(tempfile.gettempdir(),
+                           os.path.basename(pdf_path).replace(".pdf", "_trimmed.pdf"))
+    out.save(trimmed)
+    out.close()
+    doc.close()
+    log(f"  {n}-page package -> {len(keep)} statement pages (annual-style locate)")
+    return trimmed
 
 
 def extract_tables_smart(pdf_path: str, financial_only: bool = True,

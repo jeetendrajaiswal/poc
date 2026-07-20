@@ -509,7 +509,9 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         raw_name = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else name.lower()
 
         jobs[job_id]["message"] = "Processing…"
-        tables = extract_tables_smart(pdf_path, mode="quarterly", log=lambda m: None)
+        from src.engine.tables_llm import maybe_trim_large_filing
+        pdf_in = maybe_trim_large_filing(pdf_path, log=lambda m: None)
+        tables = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
         rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
         pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
 
