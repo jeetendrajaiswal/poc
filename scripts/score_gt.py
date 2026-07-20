@@ -107,7 +107,7 @@ if __name__ == "__main__":
         g_ok = g_tot = 0
         all_misses = []
         for comp, gtf in sorted(GT_FILES.items()):
-            wbp = os.path.join(d, f"{comp}_Q2FY2026_dummytest.xlsx")
+            wbp = os.path.join(d, f"{comp}_Q2FY2026.xlsx")
             if not os.path.exists(wbp):
                 continue
             gt = load_gt(os.path.join(GT_DIR, gtf))

@@ -24,8 +24,13 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 TABLES_DIR = os.path.join(OUT_DIR, "tables")
 MDNA_DIR = os.path.join(OUT_DIR, "mdna")
-os.makedirs(TABLES_DIR, exist_ok=True)
-os.makedirs(MDNA_DIR, exist_ok=True)
+CLIENT_DIR = os.path.join(OUT_DIR, "client")
+QTR_RAW_DIR = os.path.join(OUT_DIR, "qtr_raw")
+TEMPLATE = os.getenv("CLIENT_TEMPLATE",
+                     os.path.join(ROOT, "config", "client_template_software.xlsx"))
+TAXONOMY = os.path.join(ROOT, "config", "client_taxonomy_software.yaml")
+for _d in (TABLES_DIR, MDNA_DIR, CLIENT_DIR, QTR_RAW_DIR):
+    os.makedirs(_d, exist_ok=True)
 
 jobs: dict = {}   # job_id -> {state, company, message}
 
@@ -112,7 +117,7 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Financia
     <input type=text name=company id=company placeholder="e.g. Wipro" required oninput="updateId()">
    </div>
    <div class=field>
-    <label>Fiscal year</label>
+    <label>Financial year</label>
     <select name=fy id=fy onchange="updateId()">
      <option value=2025>2025</option>
      <option value=2026 selected>2026</option>
@@ -137,7 +142,7 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Financia
    <input type=file name=pdf id=pdf accept="application/pdf" required>
   </div>
   <div class=actions>
-   <button id=go type=submit>Extract all tables</button>
+   <button id=go type=submit>Process &amp; map to client format</button>
    <span class=idpreview id=idprev></span>
   </div>
  </form>
@@ -181,7 +186,7 @@ function setMode(m){
  const opt2027=$('fy_2027'); opt2027.hidden=(m!=='quarterly');
  if(m!=='quarterly'&&$('fy').value==='2027')$('fy').value='2026';
  $('pdf_label').textContent=(m==='quarterly')?'Quarterly results filing (PDF)':'Annual report (PDF)';
- $('go').textContent=(m==='mdna')?'Generate MD&A summary':'Extract all tables';
+ $('go').textContent=(m==='mdna')?'Generate MD&A summary':'Process & map to client format';
  updateId(); applyVis();
 }
 // file drop
@@ -213,7 +218,7 @@ f.onsubmit=async e=>{e.preventDefault();
 };
 async function poll(job){
  let r=await fetch('/tables/status/'+job); let j=await r.json();
- if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),2000);}
+ if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),20000);}
  else if(j.state==='done'){st.className='ok';st.textContent='✓ '+j.message;go.disabled=false;loadList();loadMdna();if(j.kind==='mdna'&&j.doc){viewMdna(j.doc);}}
  else{st.className='err';st.textContent='✗ '+j.message;go.disabled=false;}
 }
@@ -221,8 +226,8 @@ async function loadList(){
  let r=await fetch('/tables/list'); let js=await r.json();
  wbHas=js.length>0; applyVis();
  $('list').innerHTML=js.length?js.map(x=>
-  `<div class=wbcard><div class=wbname>${x.name.replace('_tables.xlsx','')}</div>`+
-  `<div class=wbmeta><span class=wbbadge>${x.tables??'?'} tables</span>`+
+  `<div class=wbcard><div class=wbname>${x.name.replace('.xlsx','')}</div>`+
+  `<div class=wbmeta><span class=wbbadge>${x.tables??'?'} sheets</span>`+
   `<a class=dl href="/tables/download/${encodeURIComponent(x.name)}">⬇ download</a></div></div>`).join('')
   :'<div class=empty>No workbooks yet.</div>';
 }
@@ -296,17 +301,52 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                             "doc": f"{name}_MDNA.md",
                             "message": "Done — MD&A summary generated"}
             return
-        from src.engine.tables import write_workbook
+        # quarterly filing -> FULL client pipeline:
+        # extract raw statements -> verify identities -> map to the client
+        # taxonomy -> final client workbook (wide; long kept alongside)
+        import pickle
+        import subprocess
+        import sys as _sys
         from src.engine.tables_llm import extract_tables_smart
-        out = os.path.join(TABLES_DIR, f"{name}_tables.xlsx")
+        from src.engine.client_map import (filing_unit, load_template,
+                                           load_taxonomy, map_quarter, to_wide,
+                                           write_client_workbook_long)
+        m = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
+        raw_name = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else name.lower()
 
-        tables = extract_tables_smart(pdf_path, financial_only=fin_only,
-                                      vision=vision, progress=None,
-                                      log=lambda m: None, mode=mode)
-        write_workbook(tables, out)
-        n = len(tables)
+        jobs[job_id]["message"] = "1/3 Extracting statements from the filing…"
+        tables = extract_tables_smart(pdf_path, mode="quarterly", log=lambda m: None)
+        rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
+        pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
+
+        jobs[job_id]["message"] = "2/3 Verifying arithmetic identities…"
+        note = ""
+        try:
+            v = subprocess.run([_sys.executable,
+                                os.path.join(ROOT, "scripts", "verify_raw.py"), raw_name],
+                               capture_output=True, text=True, timeout=600)
+            vm = re.search(r"identities (\d+/\d+ tie)", v.stdout or "")
+            note = f" — identities {vm.group(1)}" if vm else ""
+        except Exception:
+            pass
+
+        jobs[job_id]["message"] = "3/3 Mapping to the client format…"
+        unit = filing_unit(pdf_path)
+        template = load_template(TEMPLATE)
+        taxonomy = load_taxonomy(TAXONOMY)
+        mapped = map_quarter(rows, template, taxonomy, default_unit=unit)
+        cache = os.path.join(CLIENT_DIR, ".cache", f"{raw_name}.pkl")
+        os.makedirs(os.path.dirname(cache), exist_ok=True)
+        pickle.dump(mapped, open(cache, "wb"))
+        long_dir = os.path.join(CLIENT_DIR, "long")
+        os.makedirs(long_dir, exist_ok=True)
+        long_out = os.path.join(long_dir, f"{name}_long.xlsx")
+        write_client_workbook_long(name.split("_")[0], mapped, template, long_out)
+        out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
+        to_wide(long_out, out)
         jobs[job_id] = {"state": "done", "company": name,
-                        "message": f"Done — {n} tables extracted to {os.path.basename(out)}"}
+                        "message": f"Done — client workbook <b>{os.path.basename(out)}</b>"
+                                   f" is ready below{note}."}
     except Exception as e:
         jobs[job_id] = {"state": "error", "company": name, "message": f"{type(e).__name__}: {e}"}
     finally:
@@ -362,10 +402,10 @@ def tables_process():
                            doc=f"{name}_MDNA.md",
                            message=f"Already generated — showing existing MD&A summary for <b>{name}</b>.")
     else:
-        existing = os.path.join(TABLES_DIR, f"{name}_tables.xlsx")
+        existing = os.path.join(CLIENT_DIR, f"{name}.xlsx")
         if os.path.exists(existing):
             return jsonify(cached=True, kind="tables", name=name,
-                           message=f"Already generated — existing workbook <b>{name}</b> is ready below.")
+                           message=f"Already generated — client workbook <b>{name}</b> is ready below.")
 
     pdf = request.files.get("pdf")
     if not pdf or not pdf.filename.lower().endswith(".pdf"):
@@ -390,14 +430,14 @@ def tables_status(job_id):
 @app.route("/tables/list")
 def tables_list():
     out = []
-    for fn in sorted(os.listdir(TABLES_DIR)):
-        if not fn.endswith(".xlsx"):
+    for fn in sorted(os.listdir(CLIENT_DIR)):
+        if not re.match(r"[A-Z0-9_]+_Q[1-4]FY\d+\.xlsx$", fn):
             continue
         ntab = None
         try:
             from openpyxl import load_workbook
-            wb = load_workbook(os.path.join(TABLES_DIR, fn), read_only=True)
-            ntab = len(wb.sheetnames) - 1          # minus the Index sheet
+            wb = load_workbook(os.path.join(CLIENT_DIR, fn), read_only=True)
+            ntab = len(wb.sheetnames)
             wb.close()
         except Exception:
             pass
@@ -408,7 +448,7 @@ def tables_list():
 @app.route("/tables/download/<path:name>")
 def tables_download(name):
     name = os.path.basename(name)                  # no path traversal
-    path = os.path.join(TABLES_DIR, name)
+    path = os.path.join(CLIENT_DIR, name)
     if not name.endswith(".xlsx") or not os.path.exists(path):
         return "not found", 404
     return send_file(path, as_attachment=True, download_name=name)
