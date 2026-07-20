@@ -54,7 +54,9 @@ def _find_row(grid, must, must_not=()):
     column ('Sr. No.' 5, 7, 9 ...) whose numbers are not data."""
     for row in grid:
         label = " ".join(c for c in row if c and _num(c) is None).lower()
-        if all(m in label for m in must) and not any(m in label for m in must_not):
+        sq = label.replace(" ", "")              # OCR splits words: 'exceptiona l'
+        if (all(m in label or m.replace(" ", "") in sq for m in must)
+                and not any(m in label or m.replace(" ", "") in sq for m in must_not)):
             li = next((j for j, c in enumerate(row)
                        if str(c).strip() and _num(c) is None), -1)
             vals = [_num(c) for c in row[li + 1:]]
@@ -81,7 +83,7 @@ def _eq(a, b, tol_abs=2.0):
 # ---------------------------------------------------------------- identity suites
 
 def check_results(grid):
-    pbt = _find_row(grid, ["profit before tax"])
+    pbt = _find_row(grid, ["profit before tax"], must_not=["exceptional"])
     tax = (_find_row(grid, ["total tax"]) or
            _find_row(grid, ["tax expense"], must_not=["current", "deferred"]))
     profit = _find_row_any(grid, [("profit for the period",), ("profit for the year",),
