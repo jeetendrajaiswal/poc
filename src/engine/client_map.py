@@ -166,7 +166,8 @@ def statement_of(section: str, title: str) -> str | None:
     return None
 
 
-def map_quarter(tables, template, taxonomy, model: str | None = None):
+def map_quarter(tables, template, taxonomy, model: str | None = None,
+                default_unit: str = ""):
     """Map one filing's raw tables to the client taxonomy.
 
     tables: iterable of (page, n, title, scope, section, grid).
@@ -189,7 +190,9 @@ def map_quarter(tables, template, taxonomy, model: str | None = None):
         width = max(len(r) for g in gl for r in g)
         merged = [r + [""] * (width - len(r)) for g in gl for r in g]
         ms = map_statement(merged, key[0], taxonomy, template[key], model=model)
-        if key[0] == "cashflow":
+        if default_unit and not ms.unit:
+            ms.unit = default_unit        # units line is printed above the
+        if key[0] == "cashflow":          # table, not inside the grid
             reconcile_cashflow_opening(ms, template[key])
         out[key] = ms
     return out
@@ -948,6 +951,9 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
 
     STMT_NAME = {"income": "Income Statement", "balance": "Balance Sheet",
                  "cashflow": "Cash Flow", "segment": "Segment Finance"}
+    # per-share figures are rupees, never the statement denomination
+    # (filings print 'Rs. in lakhs EXCEPT EPS')
+    _EPS = re.compile(r"\bEPS\b|earnings per (equity )?share", re.IGNORECASE)
     STMT_ORDER = {"income": 0, "balance": 1, "cashflow": 2, "segment": 3}
     HDR = ["Field id", "Display Name", "Period End", "Months", "Audited",
            "Value", "Denomination", "Currency", "Method", "Sub-items (report lines / calculation)"]
@@ -1012,7 +1018,9 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                 months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
                 ws.append([f.fid, f.name, p.end or p.raw,
                            months, p.audited,
-                           per_vals[p.col], denom, ms.currency, method,
+                           per_vals[p.col],
+                           "rupees" if _EPS.search(f.name) else denom,
+                           ms.currency, method,
                            per_sub.get(p.col, "")])
             audit.append([stmt, scope, f.fid, f.name, method,
                           "; ".join(ms.sources.get(f.fid, [])),
@@ -1084,6 +1092,9 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
 
     STMT_NAME = {"income": "Income Statement", "balance": "Balance Sheet",
                  "cashflow": "Cash Flow", "segment": "Segment Finance"}
+    # per-share figures are rupees, never the statement denomination
+    # (filings print 'Rs. in lakhs EXCEPT EPS')
+    _EPS = re.compile(r"\bEPS\b|earnings per (equity )?share", re.IGNORECASE)
     wb = Workbook()
     audit = wb.active
     audit.title = "Audit"
