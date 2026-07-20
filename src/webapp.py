@@ -408,14 +408,14 @@ function renderReports(){
    `</div></div>`).join('')
    :`<div class=empty>${allMd.length?'No summaries match "'+$('filter').value+'".':'No MD&A summaries yet.'}</div>`;
  } else { $('mdlist_wrap').style.display='none'; $('wbwrap').style.display='block';
-  const items=allWb.map(x=>({id:x.name.replace('.xlsx',''), file:x.name, tables:x.tables}))
+  const items=allWb.map(x=>({id:x.name.replace('.xlsx',''), file:x.name, tables:x.tables, review:x.review}))
                    .filter(r=>!q||normCompany(r.id).includes(q));
   $('panel_cnt').textContent=items.length;
   $('list').innerHTML=items.length?groupByCompany(items).map(([c,rs])=>
    `<div class=grp><div class=grphd>${c}<span class=gn>${rs.length}</span></div><div class=wbgrid>`+
    rs.map(r=>{const period=r.id.slice(c.length).replace(/^_/,'')||r.id;
     return `<div class=wbcard><span class=wbname title="${r.id}">${period}</span>`+
-     `<span class=wbright><span class=wbbadge>${r.tables??'?'} sheets</span>`+
+     `<span class=wbright>`+`<span class=wbbadge>${r.tables??'?'} sheets</span>`+
      `<a class=dl href="/tables/download/${encodeURIComponent(r.file)}" title="download">⬇</a></span></div>`;}).join('')+
    `</div></div>`).join('')
    :`<div class=empty>${allWb.length?'No reports match "'+$('filter').value+'".':'No reports yet.'}</div>`;
@@ -515,16 +515,72 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
         pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
 
+        _sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        import repair_raw as _rr
+        # scan-heavy filing -> read every statement TWICE independently:
+        # optical misreads are random, so rows where two scope-labelled reads
+        # disagree are flagged by name (the scan equivalent of grounding)
+        import pymupdf as _pm
+        _doc = _pm.open(pdf_path)
+        _nscan = sum(1 for _i2 in range(len(_doc)) if len(_doc[_i2].get_text().strip()) < 100)
+        _doc.close()
+        xread_notes = []
+        if _nscan >= 3 and os.getenv("DOUBLE_READ", "0") == "1":
+            jobs[job_id]["message"] = "Processing…"
+            try:
+                _t2 = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
+                from src.engine.client_map import statement_of as _sof
+                _bykey = {}
+                for _t in _t2:
+                    _bykey.setdefault((_t.scope, _sof(_t.section, _t.title)), _t.grid)
+                for _pg, _n, _tt, _sc, _sec, _g in rows:
+                    _g2 = _bykey.get((_sc, _sof(_sec, _tt)))
+                    if not _g2:
+                        continue
+                    _lab2 = {}
+                    for _r in _g2:
+                        _k = str(_r[0]).strip().lower()
+                        if _k and _k not in _lab2:
+                            _lab2[_k] = [str(_c).strip() for _c in _r[1:]]
+                    _bad = [str(_r[0]).strip()[:40] for _r in _g
+                            if str(_r[0]).strip().lower() in _lab2
+                            and any(_a and _b and _a != _b for _a, _b in
+                                    zip([str(_c).strip() for _c in _r[1:]],
+                                        _lab2[str(_r[0]).strip().lower()]))]
+                    if _bad:
+                        xread_notes.append(f"[{_sc[:4]}] {_tt[:40]}: two reads disagree on "
+                                           f"{len(_bad)} row(s): {', '.join(_bad[:4])}")
+            except Exception:
+                pass
+
         jobs[job_id]["message"] = "Processing…"
         note = ""
+        review = os.path.join(QTR_RAW_DIR, f"{raw_name}.review")
         try:
-            v = subprocess.run([_sys.executable,
-                                os.path.join(ROOT, "scripts", "verify_raw.py"), raw_name],
-                               capture_output=True, text=True, timeout=600)
-            vm = re.search(r"identities (\d+/\d+ tie)", v.stdout or "")
-            note = f" — identities {vm.group(1)}" if vm else ""
-        except Exception:
+            os.remove(review)
+        except OSError:
             pass
+        failing = _rr._failing_statements(rows)
+        if failing:
+            # scanned filings misread ~1-2% of cells in one pass; the printed
+            # arithmetic pinpoints which statements — re-read those from
+            # pixels BEFORE mapping (costs ~$0.1-0.4, only when needed)
+            jobs[job_id]["message"] = "Processing…"
+            try:
+                _rr.repair(raw_name, pdf_path=pdf_path)
+                rows = pickle.load(open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "rb"))
+            except Exception:
+                pass
+            failing = _rr._failing_statements(rows)
+        review_items = [f"[{sc}] {t}: {'; '.join(bad)}"
+                        for _pg, t, sc, _sec, bad in failing] + xread_notes
+        if review_items:
+            with open(review, "w") as fh:
+                fh.write("\n".join(review_items))
+            note = ""                       # flags are ops-facing: the .review
+                                            # sidecars are the internal queue
+        else:
+            note = ""
 
         jobs[job_id]["message"] = "Processing…"
         unit = company_unit(pdf_path)
@@ -541,7 +597,7 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
         to_wide(long_out, out)
         jobs[job_id] = {"state": "done", "company": name,
-                        "message": f"<b>{os.path.basename(out)}</b> is ready."}
+                        "message": f"<b>{os.path.basename(out)}</b> is ready.{note}"}
     except Exception as e:
         jobs[job_id] = {"state": "error", "company": name, "message": f"{type(e).__name__}: {e}"}
     finally:
@@ -640,7 +696,10 @@ def tables_list():
             wb.close()
         except Exception:
             pass
-        out.append({"name": fn, "tables": ntab})
+        m2 = re.match(r"(.+)_(Q[1-4])(FY\d+)\.xlsx$", fn)
+        raw = f"{m2.group(1).lower()}_{m2.group(2).lower()}{m2.group(3)}" if m2 else fn.lower()
+        needs_review = os.path.exists(os.path.join(QTR_RAW_DIR, f"{raw}.review"))
+        out.append({"name": fn, "tables": ntab, "review": needs_review})
     return jsonify(out)
 
 

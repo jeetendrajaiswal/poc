@@ -69,12 +69,19 @@ def _stmt_kind(section, title):
 
 
 def _locate_pages(pdf_path, kind, scope):
-    """Pages whose heading names this statement (and scope when stated)."""
+    """Pages whose heading names this statement (and scope when stated).
+    Scanned pages have no text to match — when text-locate finds nothing,
+    fall back to ALL scanned pages (consensus sorts out which tables are
+    which; the caller matches replacements by label overlap)."""
     doc = pymupdf.open(pdf_path)
-    hits = []
+    hits, scans = [], []
     for i in range(len(doc)):
-        head = " ".join(doc[i].get_text().split())[:400].lower()
-        nnum = len(re.findall(r"\d[\d,]*\.?\d*", doc[i].get_text()))
+        text = doc[i].get_text()
+        if len(text.strip()) < 100:
+            scans.append(i + 1)
+            continue
+        head = " ".join(text.split())[:400].lower()
+        nnum = len(re.findall(r"\d[\d,]*\.?\d*", text))
         if nnum < 25 or not re.search(_PAGE_PAT[kind], head):
             continue
         if scope == "consolidated" and "consolidated" not in head:
@@ -83,11 +90,18 @@ def _locate_pages(pdf_path, kind, scope):
             continue
         hits.append(i + 1)
     doc.close()
-    return hits
+    return hits or scans
 
 
-def repair(name: str, cross: bool = False) -> bool:
-    pdf = os.path.join(PDF_DIR, f"{name}.pdf")
+def grid_of(rows, page, title):
+    for r in rows:
+        if r[0] == page and r[2] == title:
+            return r[5]
+    return []
+
+
+def repair(name: str, cross: bool = False, pdf_path: str | None = None) -> bool:
+    pdf = pdf_path or os.path.join(PDF_DIR, f"{name}.pdf")
     pkl = os.path.join(PKL_DIR, f"{name}.pkl")
     rows = pickle.load(open(pkl, "rb"))
     fails = _failing_statements(rows)
@@ -104,15 +118,39 @@ def repair(name: str, cross: bool = False) -> bool:
                 continue
             vt = vision_tables_consensus(pdf, pages, log=lambda m: print("   ", m))
             best = None
+            old_grid = grid_of(rows, page, title)
+            labs_old = {str(r[0]).strip().lower() for r in old_grid if str(r[0]).strip()}
+            vals_old = {str(c).strip() for r in old_grid for c in r[1:]
+                        if re.search(r"\d", str(c))}
             for t in vt:
-                checks = suite_for(section, title)(t.grid) if suite_for(section, title) else []
-                score = sum(1 for _n, ok in checks if ok) - sum(1 for _n, ok in checks if not ok)
+                suite = suite_for(section, title)
+                checks = suite(t.grid) if suite else []
+                if not checks:
+                    continue
+                # candidate must BE this statement: labels overlap AND most
+                # of the original's numbers reappear (standalone/consolidated
+                # share labels but not magnitudes — value overlap is the
+                # scope discriminator label overlap cannot be)
+                labs_new = {str(r[0]).strip().lower() for r in t.grid if str(r[0]).strip()}
+                if labs_old and len(labs_old & labs_new) < min(4, max(1, len(labs_old) // 3)):
+                    continue
+                vals_new = {str(c).strip() for r in t.grid for c in r[1:]
+                            if re.search(r"\d", str(c))}
+                if vals_old and len(vals_old & vals_new) < len(vals_old) // 2:
+                    continue
+                score = sum(1 for _n, ok in checks if ok) - sum(2 for _n, ok in checks if not ok)
                 if best is None or score > best[0]:
                     best = (score, t)
             if best is None:
                 print("   vision produced nothing — statement stays ⚠-flagged")
                 continue
             _sc, t = best
+            old_suite = suite_for(section, title)
+            old_bad = sum(1 for _n, ok in old_suite(grid_of(rows, page, title)) if not ok)
+            new_bad = sum(1 for _n, ok in old_suite(t.grid) if not ok)
+            if new_bad >= old_bad:
+                print("   re-read no better — statement stays ⚠-flagged")
+                continue
             new_rows = []
             replaced = False
             for r in rows:

@@ -91,7 +91,41 @@ def check_results(grid):
                            must_not=["attributable", "before"])
     oci = _find_row(grid, ["total other comprehensive"])
     tci = _find_row(grid, ["total comprehensive income"], must_not=["attributable"])
+    ti = _find_row(grid, ["total income"])
+    rev = _find_row(grid, ["revenue from operations"])
+    oi = _find_row(grid, ["other income"], must_not=["comprehensive", "total"])
+    te = _find_row(grid, ["total expenses"])
     checks = []
+    if ti and rev and oi:
+        n = min(len(ti), len(rev), len(oi))
+        checks.append(("revenue + other income = total income",
+                       _eq([rev[i] + oi[i] for i in range(n)], ti[:n])))
+    # total expenses = sum of the component rows printed between the income
+    # block and the total-expenses row (catches component-cell misreads on
+    # scans that the profit identities cannot see)
+    if te:
+        comp = []
+        started = False
+        for row in grid:
+            label = " ".join(c for c in row if c and _num(c) is None).lower()
+            sq = label.replace(" ", "")
+            if "totalincome" in sq or (not started and "expenses" in sq and "total" not in sq):
+                started = True
+                comp = []
+                continue
+            if "totalexpense" in sq:
+                break
+            if started and not label.startswith("total"):
+                li = next((j for j, c in enumerate(row)
+                           if str(c).strip() and _num(c) is None), -1)
+                vals = [_num(c) for c in row[li + 1:]]
+                if any(v is not None for v in vals):
+                    comp.append(vals)
+        if len(comp) >= 3:
+            n = min(len(te), min(len(v) for v in comp))
+            sums = [sum(v[i] for v in comp if v[i] is not None) for i in range(n)]
+            checks.append(("expense components = total expenses",
+                           _eq(sums, te[:n])))
     if pbt and tax and profit:
         n = min(len(pbt), len(tax), len(profit))
         checks.append(("PBT - tax = profit",
