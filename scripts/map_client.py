@@ -13,7 +13,7 @@ import pickle
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.engine.client_map import (filing_unit, load_template, load_taxonomy,
+from src.engine.client_map import (company_unit, load_template, load_taxonomy,
                                    map_quarter, to_wide,
                                    write_client_workbook_long)
 from src.llm import usage_cost, reset_usage
@@ -31,7 +31,7 @@ TAXONOMY = os.path.join(ROOT, "config", "client_taxonomy_software.yaml")
 def run(name: str, template, taxonomy) -> str:
     cache = os.path.join(OUT_DIR, ".cache", f"{name}.pkl")
     rows = pickle.load(open(os.path.join(PKL_DIR, f"{name}.pkl"), "rb"))
-    unit = filing_unit(os.path.join(PDF_DIR, f"{name}.pdf"))
+    unit = company_unit(os.path.join(PDF_DIR, f"{name}.pdf"))
     mapped = map_quarter(rows, template, taxonomy, default_unit=unit)
     os.makedirs(os.path.dirname(cache), exist_ok=True)
     pickle.dump(mapped, open(cache, "wb"))     # offline re-writes / debugging

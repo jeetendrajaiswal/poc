@@ -958,11 +958,24 @@ def filing_unit(pdf_path: str) -> str:
         t = " ".join(page.get_text().split())
         if len(re.findall(r"\d[\d,]{2,}", t)) < 15:
             continue                              # statement pages only
-        for m in re.finditer(r"\(.{0,20}\b(lakh|lac|crore|million|billion|thousand)s?\b.{0,20}\)", t, re.I):
-            span = m.group(0).lower()
-            if "$" in span or "usd" in span or "us$" in span:
+        for m in re.finditer(r"\(([^()]{0,40})\)", t):
+            span = m.group(1).lower()
+            if "$" in span or "usd" in span:
                 continue                          # foreign-currency note, not the denomination
-            votes[_UNIT_WORDS[m.group(1).lower()]] += 1
+            w = re.search(r"\b(lakh|lac|crore|million|billion|thousand)s?\b", span)
+            if w is None:
+                continue
+            pre = span[:w.start()]
+            # a denomination reads '(In ₹ Million)' / '(Rs. in lakhs)': the unit
+            # follows 'in' or a currency marker — never a QUANTITY, as in the
+            # share-count note '(Five Hundred Fifty Thousand only)'
+            if re.search(r"(\d|one|two|three|four|five|six|seven|eight|nine|ten|"
+                         r"twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|"
+                         r"hundred|thousand|lakh|crore|million)\s*$", pre):
+                continue
+            if re.search(r"[a-z]{3,}", pre) and not re.search(r"\b(in|rs|inr|rupee|rupees|amount|amounts|figures|values)\b", pre):
+                continue                          # words before the unit, none of them a currency marker
+            votes[_UNIT_WORDS[w.group(1)]] += 1
     doc.close()
     return votes.most_common(1)[0][0] if votes else ""
 
@@ -970,6 +983,31 @@ def filing_unit(pdf_path: str) -> str:
 
 
 
+
+
+def company_unit(pdf_path: str) -> str:
+    """filing_unit, with a sibling fallback: scanned filings may carry the
+    denomination only as pixels ('In ₹ Million' on an image page). A company
+    reports in ONE unit, so the same company's other filings in the folder
+    decide when this filing's text layer has no vote."""
+    u = filing_unit(pdf_path)
+    if u:
+        return u
+    import collections
+    import glob
+    import os
+    base = os.path.basename(pdf_path)
+    if "_q" not in base:
+        return ""
+    comp = base.split("_q")[0]
+    votes = collections.Counter()
+    for f in glob.glob(os.path.join(os.path.dirname(pdf_path), comp + "_q*.pdf")):
+        if os.path.abspath(f) == os.path.abspath(pdf_path):
+            continue
+        u2 = filing_unit(f)
+        if u2:
+            votes[u2] += 1
+    return votes.most_common(1)[0][0] if votes else ""
 
 
 def to_wide(long_path: str, wide_path: str) -> None:

@@ -48,11 +48,16 @@ def _norm(s):
 
 
 def _find_row(grid, must, must_not=()):
-    """First row whose label contains all `must` substrings; returns its numbers."""
+    """First row whose label contains all `must` substrings; returns its numbers.
+
+    Values start AFTER the label cell: grids may lead with an enumerator
+    column ('Sr. No.' 5, 7, 9 ...) whose numbers are not data."""
     for row in grid:
         label = " ".join(c for c in row if c and _num(c) is None).lower()
         if all(m in label for m in must) and not any(m in label for m in must_not):
-            vals = [_num(c) for c in row]
+            li = next((j for j, c in enumerate(row)
+                       if str(c).strip() and _num(c) is None), -1)
+            vals = [_num(c) for c in row[li + 1:]]
             if any(v is not None for v in vals):
                 return [v for v in vals if v is not None]
     return None
