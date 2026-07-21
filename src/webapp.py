@@ -242,7 +242,14 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
  a.dl:hover{text-decoration:underline}
  /* MD&A modal */
  #mdoverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50}
- #mdmodal{position:fixed;top:5vh;left:50%;transform:translateX(-50%);width:min(920px,92vw);height:88vh;background:#fff;border-radius:14px;z-index:51;display:none;flex-direction:column;box-shadow:0 18px 60px rgba(15,23,42,.35)}
+ #mdmodal{position:fixed;top:3vh;left:50%;transform:translateX(-50%);width:min(1420px,96vw);height:94vh;background:#fff;border-radius:14px;z-index:51;display:none;flex-direction:column;box-shadow:0 18px 60px rgba(15,23,42,.35)}
+ #mdbody{display:flex;flex:1;min-height:0}
+ #mdnav{width:250px;flex:0 0 250px;overflow-y:auto;border-right:1px solid var(--line);padding:14px 10px;background:#fafbff}
+ #mdnav .tocitem{display:block;padding:7px 10px;margin:2px 0;border-radius:8px;font-size:12.5px;font-weight:600;color:#334155;cursor:pointer;line-height:1.3}
+ #mdnav .tocitem:hover{background:#eef2ff;color:#3730a3}
+ #mdnav .tocitem.active{background:#e0e7ff;color:#3730a3}
+ #mdnav .tochead{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:2px 10px 8px}
+ @media (max-width:900px){#mdnav{display:none}}
  #mdhead{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line)}
  #mdhead h1{margin:0;font-size:17px;color:var(--brand)}
  #mdclose{background:none;border:0;font-size:26px;color:var(--muted);cursor:pointer;margin:0;padding:0 4px;line-height:1;box-shadow:none}
@@ -328,7 +335,8 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
 <div id=mdoverlay onclick="closeMdna()"></div>
 <div id=mdmodal>
  <div id=mdhead><h1 id=mdtitle></h1><button id=mdclose onclick="closeMdna()">&times;</button></div>
- <div id=mdview></div>
+ <div id=mdbody><nav id=mdnav></nav>
+<div id=mdview></div></div>
 </div>
 <script>
 const f=document.getElementById('f'),st=document.getElementById('status'),go=document.getElementById('go');
@@ -465,7 +473,23 @@ async function loadMdna(){
 async function viewMdna(n){
  let r=await fetch('/mdna/view/'+encodeURIComponent(n)); let md=await r.text();
  document.getElementById('mdtitle').textContent=n.replace('_MDNA.md','')+' — MD&A Summary';
- document.getElementById('mdview').innerHTML=mdToHtml(md);
+ const html=mdToHtml(md);
+ document.getElementById('mdview').innerHTML=html;
+ // docs-style table of contents: one entry per theme, click to jump,
+ // active section highlighted while scrolling
+ const mv=document.getElementById('mdview');
+ const nav=document.getElementById('mdnav');
+ const heads=[...mv.querySelectorAll('h1,h2')];
+ nav.innerHTML='<div class=tochead>Contents</div>';
+ const items=heads.map((h,i)=>{h.id='theme_'+i;
+  const it=document.createElement('a');it.className='tocitem';it.textContent=h.textContent;
+  it.onclick=()=>{h.scrollIntoView({behavior:'smooth',block:'start'});};
+  nav.appendChild(it);return it;});
+ nav.style.display=heads.length>1?'block':'none';
+ mv.onscroll=()=>{let a=0;
+  heads.forEach((h,i)=>{if(h.getBoundingClientRect().top-mv.getBoundingClientRect().top<90)a=i;});
+  items.forEach((it,i)=>it.classList.toggle('active',i===a));};
+ mv.onscroll();
  document.getElementById('mdoverlay').style.display='block';
  document.getElementById('mdmodal').style.display='flex';
  document.getElementById('mdview').scrollTop=0;

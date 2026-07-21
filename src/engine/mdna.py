@@ -131,7 +131,16 @@ You are given the FULL TEXT of the Management Discussion & Analysis (MD&A) secti
 Write a DETAILED, faithful summary of the MD&A — and ONLY the MD&A.
 
 RULES:
-- Cover EVERY substantive theme the MD&A itself discusses (typically: industry/macro environment, business overview and strategy, segment/service-line performance, financial performance and ratios, liquidity/capital allocation, risks and mitigation, outlook, people/HR, internal controls) — use the themes actually present; do not force a template.
+- Organise the ENTIRE summary under top-level THEME headings, each written as
+  `## <Theme>`. Use these canonical themes IN THIS ORDER, including only the
+  ones the MD&A actually discusses:
+  `## Macroeconomic & Industry Environment`, `## Business Overview & Strategy`,
+  `## Operational & Segment Performance`, `## Financial Performance`,
+  `## Balance Sheet, Liquidity & Capital`, `## Risks & Mitigation`,
+  `## Outlook`, `## Human Resources`, `## Internal Controls & Governance`,
+  `## Other Disclosures` (anything that fits no other theme).
+  Sub-topics go under the theme as `###` headings.
+- Cover EVERY substantive topic the MD&A itself discusses — map each to the closest theme; do not drop content because it fits no theme (use Other Disclosures).
 - Preserve EXACT figures as printed (₹/$ amounts, %, bps, headcounts, ratios) with their period context; numbers in parentheses are negative.
 - Be comprehensive but summarised: condense prose, keep every material fact, figure and management statement. Use markdown headings and bullet points; short tables where the MD&A gives comparative numbers.
 - Do NOT add your own analysis, opinions, or information from outside the provided text.
@@ -156,7 +165,7 @@ def _ungrounded_figures(summary: str, source_digits: str) -> list[str]:
 
 
 def summarize_mdna(pdf_path: str, model: str | None = None,
-                   max_output_tokens: int = 8000, log=print) -> str:
+                   max_output_tokens: int = 16000, log=print) -> str:
     """Locate the MD&A, produce a detailed markdown summary, and VERIFY it:
     every figure in the summary must be printed in the MD&A source text.
     Ungrounded figures trigger one corrective re-ask; any that remain are
@@ -174,13 +183,37 @@ def summarize_mdna(pdf_path: str, model: str | None = None,
     pos = low.find(_MDNA)
     if pos > 200:
         pages[0] = pages[0][pos:]
+    # ...and may END mid-page: drop whatever follows the next chapter's
+    # heading on the last page, so no non-MD&A prose enters the input
+    last = pages[-1].lower()
+    cut = min((last.find(m) for m in _NEXT_SECTIONS if last.find(m) > 200),
+              default=-1)
+    if cut > 200:
+        pages[-1] = pages[-1][:cut]
     text = "\n\n".join(f"[PAGE {start + i}]\n{t.strip()}" for i, t in enumerate(pages))
     source_digits = _digits(text)
 
     def gen(question: str) -> str:
-        return ask_text(instructions=_SUMMARY_PROMPT, question=question,
-                        model=model, max_output_tokens=max_output_tokens,
-                        temperature=0.1)
+        out = ask_text(instructions=_SUMMARY_PROMPT, question=question,
+                       model=model, max_output_tokens=max_output_tokens,
+                       temperature=0.1)
+        # anti-truncation: an answer that nearly fills the output budget was
+        # almost certainly cut off mid-sentence/mid-table -> ask the model to
+        # continue from where it stopped, until it finishes naturally
+        for _ in range(3):
+            if len(out) < max_output_tokens * 3.2:
+                break
+            log("  output near budget — continuing…")
+            tail = out[-1200:]
+            more = ask_text(instructions=_SUMMARY_PROMPT,
+                            question=question + "\n\nYour summary was cut off. "
+                            "Here are the final characters of what you wrote:\n\n"
+                            + tail + "\n\nCONTINUE the summary exactly from that "
+                            "point (do not repeat anything, do not restart).",
+                            model=model, max_output_tokens=max_output_tokens,
+                            temperature=0.1)
+            out += more
+        return out
 
     if len(text) > 240_000:
         mid = len(pages) // 2
