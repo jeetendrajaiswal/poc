@@ -46,11 +46,9 @@ app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 # are hashed at startup (never compared in plaintext). Override in production by
 # supplying your own store and a real SECRET_KEY via the environment.
 # ---------------------------------------------------------------------------
-# username : (display name, password)   <-- TEST CREDENTIALS
+# username : (display name, password)
 _TEST_ACCOUNTS = {
-    "analyst": ("Analyst",       "Radar@2026"),
-    "admin":   ("Administrator", "Admin@2026"),
-    "demo":    ("Demo User",     "Demo@1234"),
+    "analyst": ("Analyst", "Radar@2026"),
 }
 USERS = {u: {"name": n, "pw": generate_password_hash(p)}
          for u, (n, p) in _TEST_ACCOUNTS.items()}
@@ -125,11 +123,6 @@ LOGIN_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports R
   <input type=password name=password autocomplete=current-password required>
  </div>
  <button type=submit>Sign in</button>
- <div class=demo>
-  <b>Demo accounts</b><br>
-  <code>analyst</code> / <code>Radar@2026</code><br>
-  <code>demo</code> / <code>Demo@1234</code>
- </div>
 </form>
 </body></html>"""
 
@@ -311,7 +304,7 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
     <input type=file name=pdf id=pdf accept="application/pdf" required>
    </div>
    <div class=actions>
-    <button id=go type=submit>Process &amp; map to client format</button>
+    <button id=go type=submit>Process</button>
     <div class=idpreview id=idprev></div>
    </div>
   </form>
@@ -363,7 +356,7 @@ function setMode(m){
  const opt2027=$('fy_2027'); opt2027.hidden=(m!=='quarterly');   // FY2027 = quarterly only
  if(m!=='quarterly'&&$('fy').value==='2027')$('fy').value='2026';
  $('pdf_label').textContent=(m==='quarterly')?'Quarterly results filing (PDF)':'Annual report (PDF)';
- $('go').textContent=(m==='mdna')?'Generate MD&A summary':'Process & map to client format';
+ $('go').textContent=(m==='mdna')?'Generate MD&A summary':'Process';
  $('panel_icon').textContent=(m==='mdna')?'📝':'📊';
  $('panel_title').textContent=(m==='mdna')?'MD&A summaries':'Generated reports';
  updateId(); renderReports();
