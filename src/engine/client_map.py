@@ -1249,16 +1249,25 @@ def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -
     for c in rv[3]:
         c.font = Font(bold=True)
     for s in suspects:
-        rv.append([STMT_NAME.get(s["stmt"], s["stmt"]), str(s["scope"]).title(),
-                   s["label"], s["col"], s["v1"], s["v2"], s["page"]])
+        _ws_append(rv, [STMT_NAME.get(s["stmt"], s["stmt"]), str(s["scope"]).title(),
+                        s["label"], s["col"], s["v1"], s["v2"], s["page"]])
     for f in failing:
-        rv.append([STMT_NAME.get(f["stmt"], f["stmt"]), str(f["scope"]).title(),
-                   "(whole statement) — values could not be fully verified; "
-                   "please check this statement against the source",
-                   "", "", "", f["page"]])
+        _ws_append(rv, [STMT_NAME.get(f["stmt"], f["stmt"]), str(f["scope"]).title(),
+                        "(whole statement) — values could not be fully verified; "
+                        "please check this statement against the source",
+                        "", "", "", f["page"]])
     for col, w in zip("ABCDEFG", (22, 14, 52, 40, 12, 12, 11)):
         rv.column_dimensions[col].width = w
     wb.save(wide_path)
+
+
+def _ws_append(sheet, row):
+    """Append a row, stripping characters Excel/openpyxl refuse — control
+    characters that leak in from a filing's text layer (e.g. a mis-decoded ₹
+    glyph), which otherwise raise IllegalCharacterError."""
+    from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+    sheet.append([ILLEGAL_CHARACTERS_RE.sub("", c) if isinstance(c, str) else c
+                  for c in row])
 
 
 def to_wide(long_path: str, wide_path: str) -> None:
@@ -1470,19 +1479,19 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                     continue
                 # balance sheets are point-in-time ('As at ...'): no Months
                 months = "" if stmt == "balance" else _SPAN_MONTHS.get(p.span, "")
-                ws.append([f.fid, f.name, p.end or p.raw,
-                           months, p.audited,
-                           per_vals[p.col],
-                           "rupees" if _EPS.search(f.name) else denom,
-                           ms.currency, method,
-                           per_sub.get(p.col, "")])
-            audit.append([stmt, scope, f.fid, f.name, method,
-                          "; ".join(ms.sources.get(f.fid, [])),
-                          denom, ms.currency,
-                          "; ".join(v for v in ms.verification if f"[{f.fid}]" in v)[:180]])
+                _ws_append(ws, [f.fid, f.name, p.end or p.raw,
+                                months, p.audited,
+                                per_vals[p.col],
+                                "rupees" if _EPS.search(f.name) else denom,
+                                ms.currency, method,
+                                per_sub.get(p.col, "")])
+            _ws_append(audit, [stmt, scope, f.fid, f.name, method,
+                               "; ".join(ms.sources.get(f.fid, [])),
+                               denom, ms.currency,
+                               "; ".join(v for v in ms.verification if f"[{f.fid}]" in v)[:180]])
         if ms.unmapped:
-            audit.append([stmt, scope, "", "UNMAPPED LINES", "",
-                          "; ".join(ms.unmapped)[:300], "", "", ""])
+            _ws_append(audit, [stmt, scope, "", "UNMAPPED LINES", "",
+                               "; ".join(ms.unmapped)[:300], "", "", ""])
         for j, w in zip(range(1, 11), (10, 48, 12, 8, 11, 16, 13, 9, 10, 80)):
             ws.column_dimensions[get_column_letter(j)].width = w
         ws.freeze_panes = "A2"
@@ -1521,8 +1530,8 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                     entries[key] = (RANK.get(cls, 1), reason, denom)
     for (stmt, scope, lab, pend, months, v) in order:
         _rk, reason, denom = entries[(stmt, scope, lab, pend, months, v)]
-        un.append([STMT_NAME.get(stmt, stmt), scope.title(), lab,
-                   pend, months, v, denom, reason])
+        _ws_append(un, [STMT_NAME.get(stmt, stmt), scope.title(), lab,
+                        pend, months, v, denom, reason])
     for j, w in zip(range(1, 9), (16, 12, 52, 12, 8, 16, 13, 72)):
         un.column_dimensions[get_column_letter(j)].width = w
     un.freeze_panes = "A2"

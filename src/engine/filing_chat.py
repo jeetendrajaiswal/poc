@@ -332,6 +332,113 @@ def _repair_dropped_decimals(grid):
     return out
 
 
+def _numeric_word(w):
+    w = str(w or "").strip()
+    return bool(re.search(r"\d", w)) and bool(re.fullmatch(r"\(?-?[\d,]*\.?\d+\)?", w))
+
+
+def _page_word_lines(pdf_path):
+    """Per page: printed visual lines as [(x_center, word), …] sorted by x —
+    used for coordinate-based column alignment."""
+    import pymupdf
+    doc = pymupdf.open(pdf_path)
+    out = []
+    for pg in doc:
+        groups = {}
+        for x0, y0, x1, y1, w, *_ in pg.get_text("words"):
+            groups.setdefault(round(y0 / 2), []).append(((x0 + x1) / 2, w))
+        out.append([sorted(v) for _k, v in sorted(groups.items())])
+    doc.close()
+    return out
+
+
+def _column_centers(lines, n):
+    """x-centre of each of the n period columns, from lines that print all n
+    values (full rows). None if they can't be established."""
+    import statistics
+    cols = [[] for _ in range(n)]
+    for ln in lines:
+        nums = [xc for xc, w in ln if _numeric_word(w)]
+        if len(nums) == n:
+            for i, xc in enumerate(nums):
+                cols[i].append(xc)
+    return [statistics.median(c) for c in cols] if all(cols) else None
+
+
+_OCR_MAP = str.maketrans({"O": "0", "o": "0", "Q": "0", "I": "1", "l": "1", "i": "1",
+                          "Z": "2", "S": "5", "s": "5", "B": "8", "G": "6", "b": "6",
+                          "g": "9", "q": "9"})
+
+
+def _ocr_digits(w):
+    """Digit sequence of an OCR-corrupted numeric token (S->5, O->0, l->1, …).
+    Used ONLY to locate a value's printed x-position for column alignment —
+    never to change a value. Conservative: needs >=2 digits and at most one OCR
+    letter, so real words ('loss', 'SO') are never mistaken for numbers."""
+    core = re.sub(r"[.,\s()\-]", "", str(w).strip())
+    if not core:
+        return ""
+    letters = sum(c.isalpha() for c in core)
+    digits = sum(c.isdigit() for c in core)
+    if digits < 2 or letters > 1 or digits < letters:
+        return ""
+    t = core.translate(_OCR_MAP)
+    return t if t.isdigit() else ""
+
+
+def _realign_sparse_rows(grid, lines):
+    """Fix LLM column-shift: when the model drops a blank period cell, a row has
+    fewer values than the header and a comparative-only value lands in the wrong
+    year. Re-place each value in a SHORT row by its printed x-position (its true
+    column). Full/correct rows and rows we can't confidently place are never
+    touched — so correctly-extracted output is unaffected."""
+    counts = [sum(1 for c in r if _numeric_word(c)) for r in grid]
+    N = max(counts) if counts else 0
+    if N < 2:
+        return grid
+    centers = _column_centers(lines, N)
+    if not centers:
+        return grid
+    out = [list(r) for r in grid]
+    for ri, row in enumerate(grid):
+        nums = [str(c).strip() for c in row if _numeric_word(c)]
+        if not nums or len(nums) == N:                 # empty or already full -> leave
+            continue
+        labcells = [c for c in row if not _numeric_word(c)]
+        labwords = set(re.findall(r"[a-z]{3,}", " ".join(map(str, labcells)).lower()))
+        rowdigs = {_digits_only(v) for v in nums if _digits_only(v)}
+        best, bscore = None, -1
+        for ln in lines:                                # find the printed line for this row
+            m = {}
+            for xc, w in ln:                            # OCR-tolerant so '41.S8' locates 41.58
+                dg = _digits_only(w) if _numeric_word(w) else _ocr_digits(w)
+                if dg:
+                    m[dg] = xc
+            if not (rowdigs & set(m)):
+                continue
+            sc = len(labwords & set(re.findall(r"[a-z]{3,}",
+                                               " ".join(w for _, w in ln).lower())))
+            if sc > bscore:
+                bscore, best = sc, m
+        if best is None:
+            continue
+        newv = [""] * N
+        ok = True
+        for v in nums:
+            d = _digits_only(v)
+            if d not in best:
+                ok = False
+                break
+            col = min(range(N), key=lambda k: abs(centers[k] - best[d]))
+            if newv[col]:                               # column collision -> don't guess
+                ok = False
+                break
+            newv[col] = v
+        if ok:
+            out[ri] = labcells + newv
+    return out
+
+
 def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                                log=print) -> list:
     """Upload the filing ONCE; internally ask for each detailed statement
@@ -371,6 +478,7 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
     # Text layer = the authority for reconciling decimal/grouping misreads the
     # LLM made while visually transcribing (e.g. '48.20' read as '4,820').
     page_forms = _page_number_forms(pdf_path)
+    page_lines = _page_word_lines(pdf_path)
     for i, (scope, label, answer) in enumerate(results, 1):
         if "NOT PRESENT" in answer[:400] and answer.count("|") < 10:
             log(f"  {label}: not present in filing")
@@ -385,6 +493,8 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
             _pg = _best_page(grid, page_forms)
             if _pg >= 0:
                 grid = _reconcile_grid(grid, page_forms[_pg])
+                # re-place values the LLM shifted into the wrong period column
+                grid = _realign_sparse_rows(grid, page_lines[_pg])
             # recover decimals that are absent from the source text entirely
             grid = _repair_dropped_decimals(grid)
             sc = scope
