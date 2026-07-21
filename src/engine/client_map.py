@@ -31,15 +31,35 @@ class ClientField:
     name: str
     order: int
     row: int
-    formula: list[tuple[int, int]] | None    # [(sign, template_row), ...]
+    formula: list[tuple[int, int]] | None    # [(sign, template_row), ...]  additive only
     group: str = ""                          # parent aggregate name(s), derived from formulas
+    ratio: tuple[int, int, float] | None = None   # (num_row, den_row, scale) for =Cn/Cd*scale
 
 
 def _parse_formula(expr) -> list[tuple[int, int]] | None:
     if not expr or not str(expr).startswith("="):
         return None
-    out = [(-1 if s == "-" else 1, int(r)) for s, r in re.findall(r"([+\-]?)C(\d+)", str(expr))]
+    s = str(expr)
+    # Ratio/percentage formulas (=Cn/Cd*scale) are NOT additive — a signed C-ref
+    # sum would silently turn a division into an addition. They are handled
+    # separately via _parse_ratio, so decline them here.
+    if "*" in s or "/" in s:
+        return None
+    out = [(-1 if sg == "-" else 1, int(r)) for sg, r in re.findall(r"([+\-]?)C(\d+)", s)]
     return out or None
+
+
+def _parse_ratio(expr) -> tuple[int, int, float] | None:
+    """Ratio/percentage formulas of the form =C<num>/C<den> with an optional
+    *<scale> (all margins in the template are =Cn/Cd*100; a plain =Cn/Cd is a
+    bare ratio with scale 1). Returns (num_row, den_row, scale) or None."""
+    if not expr:
+        return None
+    m = re.fullmatch(r"=\s*C(\d+)\s*/\s*C(\d+)\s*(?:\*\s*(\d+(?:\.\d+)?))?",
+                     str(expr).strip())
+    if not m:
+        return None
+    return (int(m.group(1)), int(m.group(2)), float(m.group(3)) if m.group(3) else 1.0)
 
 
 def load_template(path: str) -> dict[tuple[str, str], list[ClientField]]:
@@ -56,9 +76,11 @@ def load_template(path: str) -> dict[tuple[str, str], list[ClientField]]:
         for i, r in enumerate(wb[sn].iter_rows(values_only=True), 1):
             if i == 1 or not r or r[3] is None:
                 continue
+            raw_formula = r[6] if len(r) > 6 else None
             fields.append(ClientField(str(r[3]).strip(), str(r[2] or "").strip(),
                                       int(r[5] or 0), i,
-                                      _parse_formula(r[6] if len(r) > 6 else None)))
+                                      _parse_formula(raw_formula),
+                                      ratio=_parse_ratio(raw_formula)))
         # derive each field's GROUP (parent aggregate chain) from the formulas —
         # this is what disambiguates duplicate display names (two 'Basic EPS',
         # two 'Interest Received') without any hand-written conventions
@@ -306,17 +328,81 @@ def infer_spans(periods: list[Period]) -> list[Period]:
     return periods
 
 
-def _num(cell) -> float | None:
+def _num(cell, mode: str = "clean") -> float | None:
+    """Parse a numeric cell. mode='clean' is the original behaviour (commas are
+    thousands separators). mode='repair' is used ONLY for statements whose text
+    layer is detected as corrupted (decimal point rendered as a comma or space,
+    e.g. '296,99' → 296.99, '218 92' → 218.92); clean tokens are still parsed
+    exactly as before, so a repair-mode grid's already-correct cells are safe."""
     s = str(cell or "").strip().strip("*^#@")
     if not s or s in "-–—" or s.lower() in ("nil", "na", "n.a.", "-"):
         return None
     neg = s.startswith("(") and s.endswith(")")
-    s = s.strip("()").replace(",", "").replace("₹", "").replace("`", "").strip()
+    s = s.strip("()").replace("₹", "").replace("`", "").strip()
+    if mode == "repair":
+        v = _num_repair(s)
+        return None if v is None else (-v if neg else v)
+    s = s.replace(",", "").strip()
     try:
         v = float(s)
     except ValueError:
         return None
     return -v if neg else v
+
+
+def _num_repair(s: str) -> float | None:
+    """Decimal-safe parse for a filing with a corrupted text layer. Indian
+    statement amounts are 2 dp and a real thousands group is always 3 digits, so
+    a separator followed by EXACTLY 2 trailing digits is the decimal point; any
+    other separators are thousands. Clean/standard numbers are returned as-is."""
+    s = s.strip()
+    if not s:
+        return None
+    # 1) already a clean standard number (incl. plain integers and 1+ dp) — untouched
+    if re.fullmatch(r"\d{1,3}(,\d{3})*(\.\d+)?", s) or re.fullmatch(r"\d+(\.\d+)?", s):
+        try:
+            return float(s.replace(",", ""))
+        except ValueError:
+            return None
+    # 2) corrupted decimal: final separator + exactly 2 digits is the fraction
+    m = re.search(r"[.,\s](\d{2})$", s)
+    if m:
+        head = re.sub(r"[.,\s]", "", s[:m.start()]) or "0"
+        try:
+            return float(f"{head}.{m.group(1)}")
+        except ValueError:
+            return None
+    # 3) no 2-digit fraction → integer with thousands/space separators (or noise)
+    digits = re.sub(r"[.,\s]", "", s)
+    return float(digits) if re.fullmatch(r"\d+", digits) else None
+
+
+def detect_number_format(grid) -> str:
+    """Classify a statement grid's number format from its own cells. Returns
+    'repair' when the text layer shows the corrupted-decimal signature (a comma
+    or space followed by exactly 2 trailing digits with no proper '.'-decimal,
+    or a multi-dot token like '3.485.21'); otherwise 'clean'. Clean and
+    integer-only filings (e.g. '12,651') never trip the signature, so they stay
+    on the untouched clean path."""
+    def is_numeric(cell):
+        s = str(cell or "").strip()
+        return bool(re.search(r"\d", s)) and bool(re.fullmatch(r"[()\d.,\s₹%+\-]+", s))
+
+    def corrupted(cell):
+        s = str(cell or "").strip().strip("()").replace("₹", "").strip()
+        if not re.search(r"\d", s):
+            return False
+        if re.search(r"\.\d", s):                       # has a normal .decimal …
+            return len(re.findall(r"\.", s)) >= 2       # … unless it's 3.485.21 style
+        return bool(re.search(r"[,\s]\d{2}$", s))       # ',dd' or ' dd' trailing → corrupted
+
+    total = corrupt = 0
+    for row in grid:
+        for cell in list(row)[1:]:
+            if is_numeric(cell):
+                total += 1
+                corrupt += corrupted(cell)
+    return "repair" if corrupt >= 2 else "clean"
 
 
 _UNITS = [("crore", 1e7), ("lakh", 1e5), ("million", 1e6), ("mn", 1e6),
@@ -413,14 +499,14 @@ class MappedStatement:
     currency: str = "INR"
 
 
-def _label_and_vals(row):
+def _label_and_vals(row, mode: str = "clean"):
     """Label = first SUBSTANTIVE text cell (grids may lead with Sl-No or
     enumerator cells like 'B' / 'iv.' / '(A)'); values = numeric cells after
     the label cell. Enumerator cells are kept as a prefix."""
     cand = []
     for j, c in enumerate(row):
         s = str(c or "").strip()
-        if s and any(ch.isalpha() for ch in s) and _num(s) is None:
+        if s and any(ch.isalpha() for ch in s) and _num(s, mode) is None:
             cand.append((j, s))
     if not cand:
         return "", {}
@@ -428,7 +514,8 @@ def _label_and_vals(row):
     pres = [s for j, s in cand if j < li and len(s) <= 6]
     if pres:
         label = " ".join(pres) + " " + label
-    vals = {j: _num(row[j]) for j in range(li + 1, len(row)) if _num(row[j]) is not None}
+    vals = {j: _num(row[j], mode) for j in range(li + 1, len(row))
+            if _num(row[j], mode) is not None}
     return label, vals
 
 
@@ -453,10 +540,10 @@ def parse_periods(grid, header=None) -> list[Period]:
     return infer_spans(periods)
 
 
-def _header_and_data(grid):
+def _header_and_data(grid, mode: str = "clean"):
     first = None
     for i, row in enumerate(grid):
-        label, vals = _label_and_vals(row)
+        label, vals = _label_and_vals(row, mode)
         if label and vals:
             first = i
             break
@@ -470,7 +557,12 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     """Definition-driven mapping of one raw statement grid + formula verification."""
     from src.llm import extract_json
 
-    header, data = _header_and_data(grid)
+    # Detect the grid's number format up front. 'repair' is used only when the
+    # text layer shows the corrupted-decimal signature; clean/integer filings
+    # stay on the original parse path (mode='clean'), so nothing that works today
+    # is affected.
+    num_mode = detect_number_format(grid)
+    header, data = _header_and_data(grid, num_mode)
     periods = parse_periods(grid, header)
     unit, mult, cur = detect_units(grid)
 
@@ -483,7 +575,7 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
                 section = name
                 break
     for row in data:
-        label, vals = _label_and_vals(row)
+        label, vals = _label_and_vals(row, num_mode)
         if label and any(c.isalpha() for c in label):
             ll = re.sub(r"^\s*\d+[.)]\s*", "", label.lower())   # '2. Segment results'
             if re.search(r"comprehensive income.*attributable", ll):
@@ -737,9 +829,10 @@ def attach_provenance(ms: "MappedStatement", grid) -> None:
     """Rebuild per-period (report line, value) provenance for every mapped fid
     and every unmapped line from the raw grid — deterministic."""
     from collections import defaultdict
+    num_mode = detect_number_format(grid)
     rows_by_label = defaultdict(list)
     for row in grid:
-        label, vals = _label_and_vals(row)
+        label, vals = _label_and_vals(row, num_mode)
         if label and any(c.isalpha() for c in label):
             rows_by_label[norm_label(label)].append((label, vals))
     if not getattr(ms, "unmapped_vals", None):
@@ -1289,6 +1382,27 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
         row2fid = {f.row: f.fid for f in fields}
         byfid = {f.fid: f for f in fields}
         prov = getattr(ms, "sources_vals", None) or {}
+
+        def _resolve(fid, col):
+            """Value of a field at a column for use inside a ratio: a reported
+            fact if present, else a one-level additive-formula sum over reported
+            facts (covers EBIT/EBITDA numerators). None if not resolvable."""
+            if not fid:
+                return None
+            if fid in ms.facts and col in ms.facts[fid]:
+                return ms.facts[fid][col]
+            g = byfid.get(fid)
+            if g and g.formula:
+                tot, have = 0.0, 0
+                for sg, rr in g.formula:
+                    c2 = row2fid.get(rr)
+                    if c2 and c2 in ms.facts and col in ms.facts[c2]:
+                        tot += sg * ms.facts[c2][col]
+                        have += 1
+                if have >= 2:
+                    return round(tot, 2)
+            return None
+
         for f in sorted(fields, key=lambda x: x.order):
             per_vals = {}
             per_sub = {}
@@ -1318,6 +1432,20 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                     if have >= 2:
                         per_vals[p.col] = round(total, 2)
                         per_sub[p.col] = "  ".join(parts)
+                        method = "computed"
+            elif f.ratio:
+                num_r, den_r, scale = f.ratio
+                nfid, dfid = row2fid.get(num_r), row2fid.get(den_r)
+                for p in ms.periods:
+                    nv = _resolve(nfid, p.col)
+                    dv = _resolve(dfid, p.col)
+                    if nv is not None and dv not in (None, 0):
+                        per_vals[p.col] = round(nv / dv * scale, 2)
+                        nnm = byfid[nfid].name if nfid in byfid else f"C{num_r}"
+                        dnm = byfid[dfid].name if dfid in byfid else f"C{den_r}"
+                        per_sub[p.col] = (f"{nnm} [{nfid}] = {nv:,.2f}".rstrip("0").rstrip(".")
+                                          + f"  ÷  {dnm} [{dfid}] = {dv:,.2f}".rstrip("0").rstrip(".")
+                                          + f"  × {scale:g}")
                         method = "computed"
             if not per_vals:
                 continue
@@ -1423,6 +1551,25 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
         for c in ws[1]:
             c.font = Font(bold=True)
         row2fid = {f.row: f.fid for f in fields}
+        byfid = {f.fid: f for f in fields}
+
+        def _resolve(fid, col):
+            if not fid:
+                return None
+            if fid in ms.facts and col in ms.facts[fid]:
+                return ms.facts[fid][col]
+            g = byfid.get(fid)
+            if g and g.formula:
+                tot, have = 0.0, 0
+                for sg, rr in g.formula:
+                    c2 = row2fid.get(rr)
+                    if c2 and c2 in ms.facts and col in ms.facts[c2]:
+                        tot += sg * ms.facts[c2][col]
+                        have += 1
+                if have >= 2:
+                    return round(tot, 2)
+            return None
+
         for f in sorted(fields, key=lambda x: x.order):
             vals = []
             method = ""
@@ -1444,6 +1591,18 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
                             have += 1
                     vals.append(round(total, 2) if have >= 2 else None)
                     got_any = got_any or have >= 2
+                method = "computed" if got_any else ""
+            elif f.ratio:
+                num_r, den_r, scale = f.ratio
+                nfid, dfid = row2fid.get(num_r), row2fid.get(den_r)
+                got_any = False
+                for p in ms.periods:
+                    nv, dv = _resolve(nfid, p.col), _resolve(dfid, p.col)
+                    if nv is not None and dv not in (None, 0):
+                        vals.append(round(nv / dv * scale, 2))
+                        got_any = True
+                    else:
+                        vals.append(None)
                 method = "computed" if got_any else ""
             else:
                 vals = [None] * len(ms.periods)
