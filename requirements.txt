@@ -7,4 +7,8 @@ python-dotenv>=1.0.0    # Load OPENAI_API_KEY etc. from .env
 requests>=2.31.0        # Direct /v1/responses calls + response-id deletion
 PyYAML>=6.0             # taxonomy / company-profile YAML
 PyMuPDF>=1.24           # PDF render (vision) + per-page text
+Flask>=3.0              # webapp
+Werkzeug>=3.0           # password hashing / uploads
+openpyxl>=3.1           # client workbooks (long/wide, review flags)
+gunicorn>=21.2          # production WSGI server (Elastic Beanstalk)
 # System dependency (not pip): poppler's `pdftotext` for layout-preserved text.
