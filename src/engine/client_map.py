@@ -1074,6 +1074,18 @@ def unit_from_pixels(pdf_path: str, pages: list[int] | None = None) -> str:
         return ""
 
 
+def _sized_comment(text: str, author: str):
+    """An Excel hover note SIZED TO ITS TEXT — the default 2x1cm box truncates
+    anything longer than a few words."""
+    import math
+
+    from openpyxl.comments import Comment
+    width = 460                                   # px; ~62 chars/line at 9pt
+    lines = sum(max(1, math.ceil(len(ln) / 62)) for ln in text.splitlines() or [""])
+    height = min(560, max(70, 20 + lines * 16))
+    return Comment(text, author, height=height, width=width)
+
+
 def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -> None:
     """Surface manual-verification items IN the deliverable. Offline.
 
@@ -1085,7 +1097,6 @@ def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -
       totals of that statement could not be reconciled automatically.
     """
     import openpyxl
-    from openpyxl.comments import Comment
     from openpyxl.styles import Font, PatternFill
     if not suspects and not failing:
         return
@@ -1131,7 +1142,8 @@ def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -
                 note = (f"Scanned source is unclear here — please verify against "
                         f"the filing (page {s['page']}). Independent reads: "
                         f"{s['v1']} / {s['v2']}.")
-                cell.comment = Comment((cmt + "\n\n" if cmt else "") + note, "Reports Radar")
+                cell.comment = _sized_comment((cmt + "\n\n" if cmt else "") + note,
+                                              "Reports Radar")
     rv = wb.create_sheet("Review", 0)
     rv.sheet_properties.tabColor = "ED8B00"
     rv.append(["This report was produced from a scanned document. The items below "
@@ -1222,12 +1234,11 @@ def to_wide(long_path: str, wide_path: str) -> None:
             ws.append(row)
             if sn != "Unmapped":
                 # every period cell carries ITS OWN calculation as a hover note
-                from openpyxl.comments import Comment
                 ri = ws.max_row
                 for j, p in enumerate(pers, len(lead) + 1):
                     sub = data[k]["_subp"].get(p)
                     if sub:
-                        c = Comment(f"{p}:\n{sub}", "engine", height=140, width=420)
+                        c = _sized_comment(f"{p}:\n{sub}", "engine")
                         ws.cell(row=ri, column=j).comment = c
         widths = [10, 48] if sn != "Unmapped" else [16, 12, 52]
         widths += [15] * len(pers) + ([13, 9, 10, 80] if sn != "Unmapped" else [13, 72])
