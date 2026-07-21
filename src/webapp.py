@@ -384,7 +384,7 @@ f.onsubmit=async e=>{e.preventDefault();
 };
 async function poll(job){
  let r=await fetch('/tables/status/'+job); let j=await r.json();
- if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),20000);}
+ if(j.state==='running'){st.className='run';st.innerHTML='<span class=spin></span>'+j.message;setTimeout(()=>poll(job),30000);}
  else if(j.state==='done'){st.className='ok';st.innerHTML='✓ '+j.message;go.disabled=false;await loadList();await loadMdna();if(j.kind==='mdna'&&j.doc){viewMdna(j.doc);}}
  else{st.className='err';st.textContent='✗ '+j.message;go.disabled=false;}
 }
