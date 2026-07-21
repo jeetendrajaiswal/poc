@@ -782,6 +782,8 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     verification = []
     n_checks = n_ok = 0
     row2fid = {f.row: f.fid for f in template_fields}
+    fidname = {tf.fid: tf.name for tf in template_fields}
+    col2per = {p.col: p for p in periods}
     for f in template_fields:
         if not f.formula or f.fid not in facts:
             continue
@@ -802,8 +804,20 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
             n_checks += 1
             n_ok += ok
             if not ok:
-                verification.append(f"⚠ {f.name} [{f.fid}] col{j}: printed {printed:,.2f} "
-                                    f"vs sum-of-mapped {total:,.2f}")
+                per = col2per.get(j)
+                plabel = _period_label(per) if per else f"column {j}"
+                comps = []
+                for sign, r in f.formula:
+                    cf = row2fid.get(r)
+                    if cf and cf in facts and j in facts[cf]:
+                        comps.append(f"{'+' if sign > 0 else '-'} {fidname.get(cf, cf)} "
+                                     f"({cf}) = {facts[cf][j]:,.2f}")
+                verification.append(
+                    f"⚠ {f.name} [{f.fid}] — {plabel}: reported {printed:,.2f}, but its "
+                    f"mapped components add up to {total:,.2f} (off by {total - printed:+,.2f}). "
+                    f"Components summed: {'  '.join(comps)}. "
+                    f"A source line is likely mis-mapped, missing, or double-counted — "
+                    f"verify these against the filing.")
     ms = MappedStatement(periods=periods, facts=facts, sources=sources,
                          unmapped=unmapped, verification=verification,
                          n_checks=n_checks, n_ok=n_ok,
@@ -1288,6 +1302,13 @@ def to_wide(long_path: str, wide_path: str) -> None:
                 ws.append(list(r))
             for c in ws[1]:
                 c.font = Font(bold=True)
+            if sn == "Audit":
+                from openpyxl.styles import Alignment
+                for j, w in zip(range(1, 10), (12, 12, 10, 44, 10, 70, 12, 8, 110)):
+                    ws.column_dimensions[get_column_letter(j)].width = w
+                for r_ in ws.iter_rows(min_row=2, min_col=9, max_col=9):   # wrap Verification
+                    for c in r_:
+                        c.alignment = Alignment(wrap_text=True, vertical="top")
             ws.freeze_panes = "A2"
             continue
         if sn == "Unmapped":
@@ -1488,7 +1509,7 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
             _ws_append(audit, [stmt, scope, f.fid, f.name, method,
                                "; ".join(ms.sources.get(f.fid, [])),
                                denom, ms.currency,
-                               "; ".join(v for v in ms.verification if f"[{f.fid}]" in v)[:180]])
+                               "\n".join(v for v in ms.verification if f"[{f.fid}]" in v)[:4000]])
         if ms.unmapped:
             _ws_append(audit, [stmt, scope, "", "UNMAPPED LINES", "",
                                "; ".join(ms.unmapped)[:300], "", "", ""])
@@ -1537,8 +1558,12 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
     un.freeze_panes = "A2"
     un.auto_filter.ref = un.dimensions
 
-    for j, w in zip(range(1, 10), (12, 12, 10, 44, 10, 70, 12, 8, 60)):
+    from openpyxl.styles import Alignment
+    for j, w in zip(range(1, 10), (12, 12, 10, 44, 10, 70, 12, 8, 110)):
         audit.column_dimensions[get_column_letter(j)].width = w
+    for row in audit.iter_rows(min_row=2, min_col=9, max_col=9):   # wrap the Verification column
+        for c in row:
+            c.alignment = Alignment(wrap_text=True, vertical="top")
     audit.freeze_panes = "A2"
     wb.save(out_path)
 
