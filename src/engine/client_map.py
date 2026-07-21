@@ -1383,25 +1383,40 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
         byfid = {f.fid: f for f in fields}
         prov = getattr(ms, "sources_vals", None) or {}
 
-        def _resolve(fid, col):
-            """Value of a field at a column for use inside a ratio: a reported
-            fact if present, else a one-level additive-formula sum over reported
-            facts (covers EBIT/EBITDA numerators). None if not resolvable."""
-            if not fid:
+        _val_cache: dict = {}
+
+        def field_value(fid, col, stack=()):
+            """Resolve a field's value at a column: a reported fact if present,
+            else its formula/ratio evaluated RECURSIVELY over the same resolver
+            (so nested subtotals like Total Income from Operations → Net Sales →
+            Gross Sales resolve). Memoised per (fid, col); cycle-safe. An additive
+            formula emits when at least one term resolves (missing terms = 0), so
+            single-child rollups (e.g. Total Other Income) are not suppressed."""
+            if not fid or fid in stack:
                 return None
-            if fid in ms.facts and col in ms.facts[fid]:
-                return ms.facts[fid][col]
+            key = (fid, col)
+            if key in _val_cache:
+                return _val_cache[key]
             g = byfid.get(fid)
-            if g and g.formula:
+            if fid in ms.facts and col in ms.facts[fid]:
+                v = ms.facts[fid][col]
+            elif g and g.formula:
                 tot, have = 0.0, 0
                 for sg, rr in g.formula:
-                    c2 = row2fid.get(rr)
-                    if c2 and c2 in ms.facts and col in ms.facts[c2]:
-                        tot += sg * ms.facts[c2][col]
+                    cv = field_value(row2fid.get(rr), col, stack + (fid,))
+                    if cv is not None:
+                        tot += sg * cv
                         have += 1
-                if have >= 2:
-                    return round(tot, 2)
-            return None
+                v = round(tot, 2) if have >= 1 else None
+            elif g and g.ratio:
+                nr, dr, sc = g.ratio
+                nv = field_value(row2fid.get(nr), col, stack + (fid,))
+                dv = field_value(row2fid.get(dr), col, stack + (fid,))
+                v = round(nv / dv * sc, 2) if (nv is not None and dv not in (None, 0)) else None
+            else:
+                v = None
+            _val_cache[key] = v
+            return v
 
         for f in sorted(fields, key=lambda x: x.order):
             per_vals = {}
@@ -1424,12 +1439,13 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                     parts = []
                     for sign, r in f.formula:
                         cf = row2fid.get(r)
-                        if cf and cf in ms.facts and p.col in ms.facts[cf]:
-                            total += sign * ms.facts[cf][p.col]
+                        cv = field_value(cf, p.col, (f.fid,))
+                        if cv is not None:
+                            total += sign * cv
                             have += 1
                             parts.append(f"{'+' if sign > 0 else '-'} {byfid[cf].name} "
-                                         f"[{cf}] = {ms.facts[cf][p.col]:,.2f}".rstrip("0").rstrip("."))
-                    if have >= 2:
+                                         f"[{cf}] = {cv:,.2f}".rstrip("0").rstrip("."))
+                    if have >= 1:
                         per_vals[p.col] = round(total, 2)
                         per_sub[p.col] = "  ".join(parts)
                         method = "computed"
@@ -1437,8 +1453,8 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
                 num_r, den_r, scale = f.ratio
                 nfid, dfid = row2fid.get(num_r), row2fid.get(den_r)
                 for p in ms.periods:
-                    nv = _resolve(nfid, p.col)
-                    dv = _resolve(dfid, p.col)
+                    nv = field_value(nfid, p.col, (f.fid,))
+                    dv = field_value(dfid, p.col, (f.fid,))
                     if nv is not None and dv not in (None, 0):
                         per_vals[p.col] = round(nv / dv * scale, 2)
                         nnm = byfid[nfid].name if nfid in byfid else f"C{num_r}"
@@ -1553,22 +1569,37 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
         row2fid = {f.row: f.fid for f in fields}
         byfid = {f.fid: f for f in fields}
 
-        def _resolve(fid, col):
-            if not fid:
+        _val_cache: dict = {}
+
+        def field_value(fid, col, stack=()):
+            """Recursive, memoised, cycle-safe field resolver (see the long-form
+            writer for the rationale): reported fact, else formula/ratio evaluated
+            over the same resolver; additive emits when ≥1 term resolves."""
+            if not fid or fid in stack:
                 return None
-            if fid in ms.facts and col in ms.facts[fid]:
-                return ms.facts[fid][col]
+            key = (fid, col)
+            if key in _val_cache:
+                return _val_cache[key]
             g = byfid.get(fid)
-            if g and g.formula:
+            if fid in ms.facts and col in ms.facts[fid]:
+                v = ms.facts[fid][col]
+            elif g and g.formula:
                 tot, have = 0.0, 0
                 for sg, rr in g.formula:
-                    c2 = row2fid.get(rr)
-                    if c2 and c2 in ms.facts and col in ms.facts[c2]:
-                        tot += sg * ms.facts[c2][col]
+                    cv = field_value(row2fid.get(rr), col, stack + (fid,))
+                    if cv is not None:
+                        tot += sg * cv
                         have += 1
-                if have >= 2:
-                    return round(tot, 2)
-            return None
+                v = round(tot, 2) if have >= 1 else None
+            elif g and g.ratio:
+                nr, dr, sc = g.ratio
+                nv = field_value(row2fid.get(nr), col, stack + (fid,))
+                dv = field_value(row2fid.get(dr), col, stack + (fid,))
+                v = round(nv / dv * sc, 2) if (nv is not None and dv not in (None, 0)) else None
+            else:
+                v = None
+            _val_cache[key] = v
+            return v
 
         for f in sorted(fields, key=lambda x: x.order):
             vals = []
@@ -1580,30 +1611,10 @@ def write_client_workbook(company: str, mapped: dict[tuple[str, str], "MappedSta
                     method = "adjusted"
                 for p in ms.periods:
                     vals.append(ms.facts[f.fid].get(p.col))
-            elif f.formula:
-                got_any = False
+            elif f.formula or f.ratio:
                 for p in ms.periods:
-                    total, have = 0.0, 0
-                    for sign, r in f.formula:
-                        cf = row2fid.get(r)
-                        if cf and cf in ms.facts and p.col in ms.facts[cf]:
-                            total += sign * ms.facts[cf][p.col]
-                            have += 1
-                    vals.append(round(total, 2) if have >= 2 else None)
-                    got_any = got_any or have >= 2
-                method = "computed" if got_any else ""
-            elif f.ratio:
-                num_r, den_r, scale = f.ratio
-                nfid, dfid = row2fid.get(num_r), row2fid.get(den_r)
-                got_any = False
-                for p in ms.periods:
-                    nv, dv = _resolve(nfid, p.col), _resolve(dfid, p.col)
-                    if nv is not None and dv not in (None, 0):
-                        vals.append(round(nv / dv * scale, 2))
-                        got_any = True
-                    else:
-                        vals.append(None)
-                method = "computed" if got_any else ""
+                    vals.append(field_value(f.fid, p.col, ()))
+                method = "computed" if any(v is not None for v in vals) else ""
             else:
                 vals = [None] * len(ms.periods)
             if not any(v is not None for v in vals):

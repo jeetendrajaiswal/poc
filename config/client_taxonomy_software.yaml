@@ -177,12 +177,16 @@ items:
   statement: income
   order: 22
   concept: Purchases of goods held for resale, including stock-in-trade bought by trading businesses.
-    May also absorb other operating purchase-type charges when presented as a combined line. Excludes
+    May also absorb other operating purchase-type charges when presented as a combined line. Purchases
+    of technology solutions / products or third-party software and hardware bought for resale or for
+    embedding in delivery map HERE (a purchase-of-goods line), NOT to Operating Expenses (276). Excludes
     raw-material consumption and inventory change adjustments.
   aliases:
   - Purchase of stock-in-trade
   - Purchases and other operating expenditure
   - Purchases of stock-in-trade
+  - Purchases of technology solutions
+  - Purchase of technology solutions
   evidence: mapped
 - fid: '227'
   name: Changes in Inventories of Finished Goods, Work-In-Progress and Stock-In-Trade
@@ -199,14 +203,17 @@ items:
   name: Operating Expenses
   statement: income
   order: 24
-  concept: External operating service costs incurred in running the business, such as subcontracting,
-    outsourcing, facility services, technical fees, processing charges, and similar third-party operating
-    expenses. Often used as a broad catch-all for service-based operating costs. Excludes employee costs,
-    depreciation, finance costs, advertising, freight, and administration items classified separately.
+  concept: External operating SERVICE costs incurred in running the business, such as subcontracting,
+    outsourcing, consultancy, facility services, technical fees, processing charges, and similar third-party
+    operating expenses. Often used as a broad catch-all for service-based operating costs. Excludes employee
+    costs, depreciation, finance costs, advertising, freight, and administration items classified separately.
+    Excludes purchases of GOODS / technology products / software or hardware bought for resale or delivery
+    — those are Purchase of Stock-in-Trade (307), not an operating service cost.
   aliases:
   - Facility expenses
   - Outsourcing costs
   - Sub-contracting and technical fees
+  - Outsourcing and consultancy charges
   evidence: mapped
 - fid: '315'
   name: Software Development Expenses
