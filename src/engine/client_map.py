@@ -941,8 +941,9 @@ def classify_unmapped(ms: "MappedStatement",
 
 # --------------------------------------------------------------------------- shared output helpers
 
-_UNIT_WORDS = {"lac": "lakhs", "lakh": "lakhs", "crore": "crores",
-          "million": "millions", "billion": "billions", "thousand": "thousands"}
+_UNIT_WORDS = {"lac": "lakhs", "lakh": "lakhs", "crore": "crores", "cr": "crores",
+          "million": "millions", "mn": "millions", "mio": "millions",
+          "billion": "billions", "bn": "billions", "thousand": "thousands"}
 
 
 def filing_unit(pdf_path: str) -> str:
@@ -962,7 +963,7 @@ def filing_unit(pdf_path: str) -> str:
             span = m.group(1).lower()
             if "$" in span or "usd" in span:
                 continue                          # foreign-currency note, not the denomination
-            w = re.search(r"\b(lakh|lac|crore|million|billion|thousand)s?\b", span)
+            w = re.search(r"\b(lakh|lac|crore|cr|million|mn|mio|billion|bn|thousand)s?\b", span)
             if w is None:
                 continue
             pre = span[:w.start()]
@@ -976,6 +977,13 @@ def filing_unit(pdf_path: str) -> str:
             if re.search(r"[a-z]{3,}", pre) and not re.search(r"\b(in|rs|inr|rupee|rupees|amount|amounts|figures|values)\b", pre):
                 continue                          # words before the unit, none of them a currency marker
             votes[_UNIT_WORDS[w.group(1)]] += 1
+        # unparenthesised header form '₹ in million' — custom fonts extract the
+        # ₹ glyph as junk ('~in million', 'tin million'), so anchor on a currency
+        # marker OR a single mangled glyph directly before 'in <unit>'
+        for m in re.finditer(r"(?:\b(?:rs\.?|inr|rupees)\s*|[~t§`¹])in\s+"
+                             r"(lakh|lac|crore|cr|million|mn|mio|billion|bn|thousand)s?\b",
+                             t, re.I):
+            votes[_UNIT_WORDS[m.group(1).lower()]] += 1
     doc.close()
     return votes.most_common(1)[0][0] if votes else ""
 
@@ -985,7 +993,7 @@ def filing_unit(pdf_path: str) -> str:
 
 
 
-def company_unit(pdf_path: str) -> str:
+def company_unit(pdf_path: str, pages: list[int] | None = None) -> str:
     """filing_unit, with a sibling fallback: scanned filings may carry the
     denomination only as pixels ('In ₹ Million' on an image page). A company
     reports in ONE unit, so the same company's other filings in the folder
@@ -1007,7 +1015,145 @@ def company_unit(pdf_path: str) -> str:
         u2 = filing_unit(f)
         if u2:
             votes[u2] += 1
-    return votes.most_common(1)[0][0] if votes else ""
+    if votes:
+        return votes.most_common(1)[0][0]
+    # every sibling is a scan too (no text layer anywhere): read the printed
+    # denomination from the page pixels
+    return unit_from_pixels(pdf_path, pages)
+
+
+def unit_from_pixels(pdf_path: str, pages: list[int] | None = None) -> str:
+    """Last-resort denomination read for fully scanned filings: the header
+    strip ('Rs. in Mn') exists only as pixels, so ask for it optically.
+    One tiny call (~$0.01), top strips of a few pages. `pages` (1-based)
+    should be the known statement pages when the caller has them."""
+    import base64
+
+    import pymupdf
+
+    from src import llm
+    doc = pymupdf.open(pdf_path)
+    if pages:
+        cand = [p - 1 for p in pages if 0 < p <= len(doc)]
+    else:
+        # scanned pages first (the denomination lives in the image); else the
+        # unit is a graphic on an otherwise-text page — use number-heavy pages
+        cand = [i for i in range(min(10, len(doc)))
+                if len(doc[i].get_text().strip()) < 100]
+        if not cand:
+            cand = [i for i in range(min(10, len(doc)))
+                    if len(re.findall(r"\d[\d,]{2,}", doc[i].get_text())) >= 15]
+    imgs = []
+    for i in cand[:6]:
+        r = doc[i].rect
+        pix = doc[i].get_pixmap(dpi=150, clip=pymupdf.Rect(r.x0, r.y0, r.x1,
+                                                           r.y0 + r.height * 0.25))
+        imgs.append(base64.b64encode(pix.tobytes("png")).decode())
+    doc.close()
+    if not imgs:
+        return ""
+    try:
+        out = llm.extract_json(
+            instructions=("Each image is the top strip of a financial-results page. "
+                          "Some strips may be cover/auditor pages — look for the one "
+                          "with a results-table heading. Find the money denomination "
+                          "printed near the table "
+                          "(e.g. 'Rs. in Mn' means millions, '₹ in lakhs', "
+                          "'Rs. crores'). Answer with the unit word only."),
+            user_input="What denomination are the amounts stated in?",
+            schema_name="denomination",
+            schema={"type": "object",
+                    "properties": {"unit": {"type": "string",
+                                            "enum": ["lakhs", "crores", "millions",
+                                                     "billions", "thousands", "unknown"]}},
+                    "required": ["unit"], "additionalProperties": False},
+            images_b64=imgs, max_output_tokens=200)
+        u = out.get("unit", "")
+        return "" if u == "unknown" else u
+    except Exception:
+        return ""
+
+
+def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -> None:
+    """Surface manual-verification items IN the deliverable. Offline.
+
+    suspects: cell-level items {stmt, scope, label, col, v1, v2, page} —
+      two independent reads of a scanned page disagreed and no printed total
+      settles it. Matching workbook cells get an orange fill + a comment; all
+      items are listed on a 'Review' sheet with page references.
+    failing: statement-level items {stmt, scope, title, page} — the printed
+      totals of that statement could not be reconciled automatically.
+    """
+    import openpyxl
+    from openpyxl.comments import Comment
+    from openpyxl.styles import Font, PatternFill
+    if not suspects and not failing:
+        return
+    STMT_NAME = {"income": "Income Statement", "balance": "Balance Sheet",
+                 "cashflow": "Cash Flow", "segment": "Segment Finance"}
+    _n = lambda s: " ".join(re.sub(r"[^a-z0-9 ]", " ", str(s).lower()).split())
+    fill = PatternFill("solid", start_color="FFE0B2")
+    wb = openpyxl.load_workbook(wide_path)
+    for s in suspects:
+        sn = f"{STMT_NAME.get(s['stmt'], s['stmt'])} - {str(s['scope']).title()}"[:31]
+        if sn not in wb.sheetnames:
+            continue
+        ws = wb[sn]
+        p = _parse_period(s["col"], 0)
+        span = "12M" if p.span == "FY" else p.span   # wide headers print months
+        heads = [(j, str(c.value or "")) for j, c in enumerate(ws[1], 1)]
+        cols = [j for j, h in heads
+                if p.end and p.end in h and (span == "?" or f"({span})" in h)]
+        if len(cols) != 1:
+            continue                              # only mark what we can place exactly
+        lab = _n(s["label"])
+
+        def _line_match(text):
+            # sub-items read 'I Revenue from operations = 17,721' per line —
+            # compare LINE LABELS, not substrings ('Total' must not light up
+            # every row that contains the word 'total')
+            for line in str(text or "").splitlines():
+                ll = _n(line.rsplit("=", 1)[0] if "=" in line else line)
+                if not ll:
+                    continue
+                if ll == lab:
+                    return True
+                lo, hi = sorted((ll, lab), key=len)
+                if lo and lo in hi and len(lo) >= 0.6 * len(hi):
+                    return True
+            return False
+
+        for row in ws.iter_rows(min_row=2):
+            cell = row[cols[0] - 1]
+            cmt = cell.comment.text if cell.comment else ""
+            if lab and (_line_match(row[-1].value) or _line_match(cmt)):
+                cell.fill = fill
+                note = (f"Scanned source is unclear here — please verify against "
+                        f"the filing (page {s['page']}). Independent reads: "
+                        f"{s['v1']} / {s['v2']}.")
+                cell.comment = Comment((cmt + "\n\n" if cmt else "") + note, "Reports Radar")
+    rv = wb.create_sheet("Review", 0)
+    rv.sheet_properties.tabColor = "ED8B00"
+    rv.append(["This report was produced from a scanned document. The items below "
+               "could not be fully verified automatically — please check them "
+               "against the source PDF."])
+    rv["A1"].font = Font(bold=True)
+    rv.append([])
+    rv.append(["Statement", "Scope", "Report line", "Period column",
+               "Read 1", "Read 2", "Source page"])
+    for c in rv[3]:
+        c.font = Font(bold=True)
+    for s in suspects:
+        rv.append([STMT_NAME.get(s["stmt"], s["stmt"]), str(s["scope"]).title(),
+                   s["label"], s["col"], s["v1"], s["v2"], s["page"]])
+    for f in failing:
+        rv.append([STMT_NAME.get(f["stmt"], f["stmt"]), str(f["scope"]).title(),
+                   "(whole statement) — values could not be fully verified; "
+                   "please check this statement against the source",
+                   "", "", "", f["page"]])
+    for col, w in zip("ABCDEFG", (22, 14, 52, 40, 12, 12, 11)):
+        rv.column_dimensions[col].width = w
+    wb.save(wide_path)
 
 
 def to_wide(long_path: str, wide_path: str) -> None:

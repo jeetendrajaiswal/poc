@@ -541,41 +541,10 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
 
         _sys.path.insert(0, os.path.join(ROOT, "scripts"))
         import repair_raw as _rr
-        # scan-heavy filing -> read every statement TWICE independently:
-        # optical misreads are random, so rows where two scope-labelled reads
-        # disagree are flagged by name (the scan equivalent of grounding)
         import pymupdf as _pm
         _doc = _pm.open(pdf_path)
         _nscan = sum(1 for _i2 in range(len(_doc)) if len(_doc[_i2].get_text().strip()) < 100)
         _doc.close()
-        xread_notes = []
-        if _nscan >= 3 and os.getenv("DOUBLE_READ", "0") == "1":
-            jobs[job_id]["message"] = "Processing…"
-            try:
-                _t2 = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
-                from src.engine.client_map import statement_of as _sof
-                _bykey = {}
-                for _t in _t2:
-                    _bykey.setdefault((_t.scope, _sof(_t.section, _t.title)), _t.grid)
-                for _pg, _n, _tt, _sc, _sec, _g in rows:
-                    _g2 = _bykey.get((_sc, _sof(_sec, _tt)))
-                    if not _g2:
-                        continue
-                    _lab2 = {}
-                    for _r in _g2:
-                        _k = str(_r[0]).strip().lower()
-                        if _k and _k not in _lab2:
-                            _lab2[_k] = [str(_c).strip() for _c in _r[1:]]
-                    _bad = [str(_r[0]).strip()[:40] for _r in _g
-                            if str(_r[0]).strip().lower() in _lab2
-                            and any(_a and _b and _a != _b for _a, _b in
-                                    zip([str(_c).strip() for _c in _r[1:]],
-                                        _lab2[str(_r[0]).strip().lower()]))]
-                    if _bad:
-                        xread_notes.append(f"[{_sc[:4]}] {_tt[:40]}: two reads disagree on "
-                                           f"{len(_bad)} row(s): {', '.join(_bad[:4])}")
-            except Exception:
-                pass
 
         jobs[job_id]["message"] = "Processing…"
         note = ""
@@ -596,6 +565,76 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
             except Exception:
                 pass
             failing = _rr._failing_statements(rows)
+
+        # scanned filing -> read every statement TWICE independently (default
+        # on for scans; DOUBLE_READ=0 disables). Optical misreads are random,
+        # so a CELL where the two scope-labelled reads disagree — after repair,
+        # with no printed total to settle it — is flagged by name and marked
+        # in the deliverable for manual verification.
+        suspects, xread_notes, broad = [], [], []
+        if _nscan >= 3 and os.getenv("DOUBLE_READ", "1") != "0":
+            jobs[job_id]["message"] = "Processing…"
+            try:
+                from src.engine.client_map import _label_and_vals as _lv
+                from src.engine.client_map import statement_of as _sof
+                _t2 = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
+                _bykey = {}
+                for _t in _t2:
+                    _bykey.setdefault((_t.scope, _sof(_t.section, _t.title)), _t.grid)
+                _still_bad = {(_sc2, _sof(_sec2, _t3)) for _pg2, _t3, _sc2, _sec2, _b2 in failing}
+                for _pg, _n, _tt, _sc, _sec, _g in rows:
+                    _st = _sof(_sec, _tt)
+                    _g2 = _bykey.get((_sc, _st))
+                    if not _g2 or (_sc, _st) in _still_bad:
+                        continue                    # failing stmts are flagged whole
+                    if max(len(_r) for _r in _g) != max(len(_r) for _r in _g2):
+                        continue                    # layouts differ: cells can't be paired
+                    _occ, _rows2 = {}, {}
+                    for _r in _g2:
+                        _l2, _v2 = _lv(_r)
+                        _k2 = " ".join(_l2.lower().split())
+                        if _k2 and _v2:
+                            _rows2[(_k2, _occ.get(_k2, 0))] = _v2
+                            _occ[_k2] = _occ.get(_k2, 0) + 1
+                    _hdr = next((_r for _r in _g if sum(1 for _c in _r if str(_c).strip()) > 2), _g[0])
+                    _occ1, _cells = {}, []
+                    for _ri, _r in enumerate(_g):
+                        _l1, _v1 = _lv(_r)
+                        _k1 = " ".join(_l1.lower().split())
+                        if not (_k1 and _v1):
+                            continue
+                        _v2m = _rows2.get((_k1, _occ1.get(_k1, 0)))
+                        _occ1[_k1] = _occ1.get(_k1, 0) + 1
+                        if not _v2m:
+                            continue
+                        for _j, _a in _v1.items():
+                            _b = _v2m.get(_j)
+                            if _b is not None and abs(_a - _b) > 0.02:
+                                _cells.append({"stmt": _st, "scope": _sc, "label": _l1,
+                                               "col": str(_hdr[_j] if _j < len(_hdr) else ""),
+                                               "v1": _a, "v2": _b, "page": _pg,
+                                               "_ri": _ri, "_j": _j})
+                    # a cell is PROVEN when swapping in the other read breaks a
+                    # printed total that currently ties — no flag needed there
+                    _unproven = []
+                    for _c3 in _cells:
+                        _gc = [list(_r) for _r in _g]
+                        _gc[_c3["_ri"]][_c3["_j"]] = f"{_c3['v2']:g}"
+                        if _rr._failing_statements([(_pg, _n, _tt, _sc, _sec, _gc)]):
+                            continue
+                        _unproven.append(_c3)
+                    if len(_unproven) > 8:          # wholesale disagreement = layout
+                        xread_notes.append(f"[{_sc[:4]}] {_tt[:40]}: two reads disagree "
+                                           f"broadly ({len(_unproven)} cells) — verify statement")
+                        broad.append({"stmt": _st, "scope": _sc, "title": _tt, "page": _pg})
+                    else:
+                        suspects.extend(_unproven)
+                xread_notes += [f"[{s['scope'][:4]}] {s['stmt']}: reads disagree on "
+                                f"'{s['label'][:40]}' [{s['col'][:30]}]: {s['v1']} vs {s['v2']}"
+                                for s in suspects]
+            except Exception:
+                pass
+
         review_items = [f"[{sc}] {t}: {'; '.join(bad)}"
                         for _pg, t, sc, _sec, bad in failing] + xread_notes
         if review_items:
@@ -607,7 +646,7 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
             note = ""
 
         jobs[job_id]["message"] = "Processing…"
-        unit = company_unit(pdf_path)
+        unit = company_unit(pdf_path, pages=sorted({r_[0] for r_ in rows}))
         template = load_template(TEMPLATE)
         taxonomy = load_taxonomy(TAXONOMY)
         mapped = map_quarter(rows, template, taxonomy, default_unit=unit)
@@ -620,6 +659,11 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         write_client_workbook_long(name.split("_")[0], mapped, template, long_out)
         out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
         to_wide(long_out, out)
+        from src.engine.client_map import annotate_review
+        from src.engine.client_map import statement_of as _sof3
+        annotate_review(out, suspects,
+                        [{"stmt": _sof3(sec_, t_), "scope": sc_, "title": t_, "page": pg_}
+                         for pg_, t_, sc_, sec_, _bad in failing] + broad)
         jobs[job_id] = {"state": "done", "company": name,
                         "message": f"<b>{os.path.basename(out)}</b> is ready.{note}"}
     except Exception as e:
