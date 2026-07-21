@@ -34,7 +34,80 @@ TAXONOMY = os.path.join(ROOT, "config", "client_taxonomy_software.yaml")
 for _d in (TABLES_DIR, MDNA_DIR, CLIENT_DIR, QTR_RAW_DIR):
     os.makedirs(_d, exist_ok=True)
 
+# ---------------------------------------------------------------------------
+# Persistence — generated outputs and job state survive app-server restarts,
+# redeploys and instance replacement. The S3 mirror is active when S3_BUCKET
+# is set (it is on Elastic Beanstalk); local development runs disk-only.
+# Best-effort by design: a persistence hiccup must never fail a job.
+# ---------------------------------------------------------------------------
+S3_BUCKET = os.getenv("S3_BUCKET", "")
+S3_PREFIX = os.getenv("S3_PREFIX", "data-extraction/output")
+JOBS_FILE = os.path.join(OUT_DIR, ".jobs.json")
+
+
+def _s3():
+    import boto3
+    return boto3.client("s3", region_name=os.getenv("AWS_REGION", "ap-south-1"))
+
+
+def s3_upload(*paths):
+    if not S3_BUCKET:
+        return
+    try:
+        c = _s3()
+        for p in paths:
+            if p and os.path.exists(p):
+                rel = os.path.relpath(p, OUT_DIR)
+                c.upload_file(p, S3_BUCKET, f"{S3_PREFIX}/{rel}")
+    except Exception:
+        pass
+
+
+def s3_restore():
+    """On boot, pull anything the mirror has that the local disk doesn't."""
+    if not S3_BUCKET:
+        return
+    try:
+        c = _s3()
+        for page in c.get_paginator("list_objects_v2").paginate(
+                Bucket=S3_BUCKET, Prefix=S3_PREFIX + "/"):
+            for o in page.get("Contents", []):
+                rel = o["Key"][len(S3_PREFIX) + 1:]
+                if not rel or rel.endswith("/"):
+                    continue
+                dst = os.path.join(OUT_DIR, rel)
+                if os.path.exists(dst) and os.path.getsize(dst) == o["Size"]:
+                    continue
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                c.download_file(S3_BUCKET, o["Key"], dst)
+    except Exception:
+        pass
+
+
+def _save_jobs():
+    try:
+        import json
+        with open(JOBS_FILE, "w") as fh:
+            json.dump(jobs, fh)
+        s3_upload(JOBS_FILE)
+    except Exception:
+        pass
+
+
+s3_restore()
 jobs: dict = {}   # job_id -> {state, company, message}
+try:
+    import json as _json
+    jobs = _json.load(open(JOBS_FILE))
+    for _j in jobs.values():
+        # a job that was 'running' when the server went down is gone — say so
+        # instead of the confusing 'unknown job'
+        if _j.get("state") == "running":
+            _j["state"] = "error"
+            _j["message"] = ("Processing was interrupted by a system restart — "
+                             "please run this report again.")
+except Exception:
+    jobs = {}
 
 
 app = Flask(__name__)
@@ -502,6 +575,7 @@ setMode('quarterly');
 def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, vision: bool,
                     mode: str = "auto"):
     jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
+    _save_jobs()
     try:
         if mode == "mdna":
             from src.engine.mdna import summarize_mdna
@@ -511,6 +585,8 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
             jobs[job_id] = {"state": "done", "company": name, "kind": "mdna",
                             "doc": f"{name}_MDNA.md",
                             "message": "Done — MD&A summary generated"}
+            _save_jobs()
+            s3_upload(os.path.join(MDNA_DIR, f"{name}_MDNA.md"))
             return
         # quarterly filing -> FULL client pipeline:
         # extract raw statements -> verify identities -> map to the client
@@ -659,8 +735,12 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                          for pg_, t_, sc_, sec_, _bad in failing] + broad)
         jobs[job_id] = {"state": "done", "company": name,
                         "message": f"<b>{os.path.basename(out)}</b> is ready.{note}"}
+        _save_jobs()
+        s3_upload(out, long_out, cache,
+                  os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review)
     except Exception as e:
         jobs[job_id] = {"state": "error", "company": name, "message": f"{type(e).__name__}: {e}"}
+        _save_jobs()
     finally:
         # Privacy: the uploaded report is deleted as soon as processing ends.
         try:
@@ -732,6 +812,7 @@ def tables_process():
     vision = True     # scanned pages are handled automatically in both modes
     job_id = uuid.uuid4().hex[:8]
     jobs[job_id] = {"state": "running", "company": name, "message": "Queued…"}
+    _save_jobs()
     threading.Thread(target=_run_tables_job,
                      args=(job_id, name, pdf_path, fin_only, vision, mode),
                      daemon=True).start()

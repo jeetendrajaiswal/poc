@@ -11,4 +11,5 @@ Flask>=3.0              # webapp
 Werkzeug>=3.0           # password hashing / uploads
 openpyxl>=3.1           # client workbooks (long/wide, review flags)
 gunicorn>=21.2          # production WSGI server (Elastic Beanstalk)
+boto3>=1.34             # S3 mirror of outputs/job state (survives restarts)
 # System dependency (not pip): poppler's `pdftotext` for layout-preserved text.
