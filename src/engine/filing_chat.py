@@ -8,6 +8,8 @@ persists at OpenAI), then free-form questions answered in markdown:
 """
 from __future__ import annotations
 
+import re
+
 # frp's proven file-upload analysis prompt (core/utils/prompts.py), unchanged
 # in every rule that matters: parentheses-negative, exact numbers, no guessing.
 SYSTEM_PROMPT = """You are a senior financial analyst specializing in Indian equity markets. Answer questions about the uploaded document.
@@ -202,6 +204,134 @@ def _md_tables(answer: str) -> list[tuple[str, list[list[str]]]]:
     return [(h, g) for h, g in tables if len(g) >= 2 and len(g[0]) >= 2]
 
 
+_NUM_TOK = re.compile(r"\d[\d,.]*\d|\d")
+
+
+def _digits_only(s) -> str:
+    return re.sub(r"\D", "", str(s or ""))
+
+
+def _is_2dp(form) -> bool:
+    """A canonically-printed amount: dot decimal + exactly 2 fractional digits
+    (thousands separators removed). '48.20' / '1,323.33' -> True; '4,820' /
+    '296,99' / '29699' -> False."""
+    s = str(form).strip().strip("()").replace(",", "").replace(" ", "")
+    return bool(re.fullmatch(r"\d+\.\d{2}", s))
+
+
+def _page_number_forms(pdf_path: str) -> list:
+    """Per page: {digit-sequence -> set of distinct printed numeric forms} from
+    the text layer. The authority for reconciling LLM-vision misreads."""
+    import pymupdf
+    doc = pymupdf.open(pdf_path)
+    forms = []
+    for pg in doc:
+        d: dict = {}
+        for tok in _NUM_TOK.findall(pg.get_text()):
+            dig = _digits_only(tok)
+            if dig:
+                d.setdefault(dig, set()).add(tok)
+        forms.append(d)
+    doc.close()
+    return forms
+
+
+def _best_page(grid, forms) -> int:
+    """Index of the text page whose tokens best cover this grid's numbers."""
+    gd = [_digits_only(c) for row in grid for c in row if re.search(r"\d", str(c))]
+    gd = [d for d in gd if len(d) >= 3]
+    best, best_hits = -1, 0
+    for i, d in enumerate(forms):
+        hits = sum(1 for x in gd if x in d)
+        if hits > best_hits:
+            best, best_hits = i, hits
+    return best if best_hits >= 3 else -1
+
+
+def _reconcile_grid(grid, page_forms):
+    """Fix LLM decimal/grouping misreads against the page's text layer. For each
+    numeric cell, among {its own form} ∪ {text tokens sharing its digits}, if
+    exactly one form is canonically 2-decimal, adopt it. This corrects
+    '4,820'->'48.20' on clean pages AND keeps a correct model read ('296.99')
+    when the text layer itself is the corrupted one ('296,99'). Never touches
+    year-like integers, non-numeric cells, or ambiguous ones."""
+    out = []
+    for row in grid:
+        newrow = []
+        for c in row:
+            s = str(c or "").strip()
+            core = s.strip("()").strip()
+            bare = core.replace(",", "").replace(" ", "")
+            if (not re.search(r"\d", core) or not re.fullmatch(r"[\d,. ]+", core)
+                    or re.fullmatch(r"(19|20)\d{2}", bare)):     # letters / year -> leave
+                newrow.append(c); continue
+            D = _digits_only(core)
+            if len(D) < 3:
+                newrow.append(c); continue
+            cands = set(page_forms.get(D, set())); cands.add(core)
+            valid = {v.strip().strip("()").strip() for v in cands if _is_2dp(v)}
+            if len(valid) == 1:
+                chosen = next(iter(valid))
+                if _digits_only(chosen) == D and chosen != core:
+                    neg = s.startswith("(") and s.endswith(")")
+                    newrow.append(f"({chosen})" if neg else chosen); continue
+            newrow.append(c)
+        out.append(newrow)
+    return out
+
+
+def _cell_value(form):
+    """(value, is_negative) for a numeric cell, else (None, False)."""
+    s = str(form or "").strip()
+    if not re.fullmatch(r"[()\d,.\s₹-]+", s) or not re.search(r"\d", s):
+        return None, False
+    neg = s.startswith("(") and s.endswith(")")
+    s2 = s.strip("()").replace(",", "").replace(" ", "").replace("₹", "")
+    try:
+        v = float(s2)
+    except ValueError:
+        return None, False
+    return (-v if neg else v), neg
+
+
+def _is_bare_int(form):
+    """A dropped-decimal candidate: 3+ digit integer with NO decimal point
+    (thousands separators allowed) — e.g. '4,820' or '406'."""
+    s = str(form).strip().strip("()").replace(",", "").replace(" ", "").replace("₹", "")
+    return bool(re.fullmatch(r"\d{3,}", s))
+
+
+def _repair_dropped_decimals(grid):
+    """Recover decimals that are ABSENT from the source text (e.g. '4820' for
+    48.20 — no comma/dot to signal it). Uses cross-period magnitude: Indian
+    statement amounts are 2 dp, and one line item's value never varies ~100x
+    across quarter/half-year/full-year columns (FY is ~4x a quarter at most). So
+    a bare integer that is ≥20x the row's decimal-bearing peers, and whose ÷100
+    lands back in their range, is a dropped decimal → correct it. Requires ≥2
+    clean 2-dp peers in the row, so headers/year rows and all-integer rows are
+    never touched."""
+    import statistics
+    out = [list(r) for r in grid]
+    for ri, row in enumerate(out):
+        cells = []
+        for ci, c in enumerate(row):
+            v, neg = _cell_value(c)
+            if v is not None:
+                cells.append((ci, v, str(c).strip(), neg))
+        peers = [abs(v) for _ci, v, form, _neg in cells if _is_2dp(form) and abs(v) > 0]
+        if len(peers) < 2:
+            continue
+        med = statistics.median(peers)
+        if med <= 0:
+            continue
+        for ci, v, form, neg in cells:
+            if _is_bare_int(form) and abs(v) >= 20 * med:
+                corr = v / 100.0
+                if med / 5 <= abs(corr) <= med * 5:
+                    out[ri][ci] = f"({abs(corr):.2f})" if neg else f"{corr:.2f}"
+    return out
+
+
 def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                                log=print) -> list:
     """Upload the filing ONCE; internally ask for each detailed statement
@@ -238,6 +368,9 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
             return scope, label, answer
         with ThreadPoolExecutor(max_workers=5) as ex:
             results = list(ex.map(one, _QUESTIONS))
+    # Text layer = the authority for reconciling decimal/grouping misreads the
+    # LLM made while visually transcribing (e.g. '48.20' read as '4,820').
+    page_forms = _page_number_forms(pdf_path)
     for i, (scope, label, answer) in enumerate(results, 1):
         if "NOT PRESENT" in answer[:400] and answer.count("|") < 10:
             log(f"  {label}: not present in filing")
@@ -249,6 +382,11 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
         for k, (heading, grid) in enumerate(parsed, 1):
             width = max(len(r) for r in grid)
             grid = [r + [""] * (width - len(r)) for r in grid]
+            _pg = _best_page(grid, page_forms)
+            if _pg >= 0:
+                grid = _reconcile_grid(grid, page_forms[_pg])
+            # recover decimals that are absent from the source text entirely
+            grid = _repair_dropped_decimals(grid)
             sc = scope
             head = (heading or label).lower()
             if "consolidated" in head:

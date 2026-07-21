@@ -388,7 +388,7 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
   <div class=panelhead>
    <div class=pt><span id=panel_icon>📊</span><span id=panel_title>Generated reports</span><span class=cnt id=panel_cnt>0</span></div>
    <div class=search>
-    <svg viewBox="0 0 24 24"><circle cx=11 cy=11 r=7/><line x1=21 y1=21 x2=16.65 y2=16.65/></svg>
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type=text id=filter placeholder="Filter by company…" oninput="renderReports()">
    </div>
   </div>
