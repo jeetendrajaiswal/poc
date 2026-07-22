@@ -234,6 +234,39 @@ def check_cashflow(grid):
                 ok = False
                 break
         checks.append(("opening + net(+fx+adj) = closing", ok))
+
+    # PBT + Σ(adjustments) = operating profit before working-capital changes.
+    # Section subtotals (op/inv/fin = net change) stay intact even when a
+    # scanned-page misread scrambles the individual add-back rows, so this
+    # finer identity is what catches value/label misalignment in the operating
+    # adjustments block. Runs ONLY when the statement prints that subtotal.
+    def _row_idx(must, must_not=()):
+        for i, row in enumerate(grid):
+            label = " ".join(c for c in row if c and _num(c) is None).lower()
+            if all(m in label for m in must) and not any(m in label for m in must_not):
+                return i
+        return None
+
+    opbwc = aligned(["before working capital"])
+    i_pbt = _row_idx(["profit before tax"])
+    i_sub = _row_idx(["before working capital"])
+    if opbwc and i_pbt is not None and i_sub is not None and i_pbt < i_sub:
+        ok = True
+        for j in range(ncol - 1):
+            if opbwc[j] is None:
+                continue
+            tot, seen = 0.0, False
+            for r in grid[i_pbt:i_sub]:          # PBT row + all adjustment rows
+                v = _num(r[j + 1]) if j + 1 < len(r) else None
+                if v is not None:
+                    tot += v
+                    seen = True
+            if not seen:
+                continue
+            if abs(tot - opbwc[j]) > max(0.05, 0.005 * abs(opbwc[j])):
+                ok = False
+                break
+        checks.append(("PBT + adjustments = op profit before WC", ok))
     return checks
 
 
