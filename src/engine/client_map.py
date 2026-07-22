@@ -1290,9 +1290,12 @@ def _sized_comment(text: str, author: str):
     import math
 
     from openpyxl.comments import Comment
-    width = 460                                   # px; ~62 chars/line at 9pt
-    lines = sum(max(1, math.ceil(len(ln) / 62)) for ln in text.splitlines() or [""])
-    height = min(560, max(70, 20 + lines * 16))
+    width = 520                                   # px
+    # Estimate wrapped lines conservatively (~44 chars/line — Excel wraps tighter
+    # than the raw char count) and give the box plenty of height so long
+    # calculation notes are shown in full rather than clipped.
+    lines = sum(max(1, math.ceil(len(ln) / 44)) for ln in text.splitlines() or [""])
+    height = max(110, 26 + lines * 18)
     return Comment(text, author, height=height, width=width)
 
 
