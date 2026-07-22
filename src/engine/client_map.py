@@ -833,6 +833,36 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
             _drop.add(_a if _keep == _b else _b)
         for _i in _drop:
             assign.pop(_i, None)
+
+    # A field that is a COMPUTED SUBTOTAL (has a template formula) corresponds to
+    # exactly ONE printed total line — it must never SUM two different printed
+    # totals. The LLM occasionally assigns a broader total to a narrower field
+    # (e.g. both 'Total current liabilities' AND the grand 'TOTAL LIABILITIES'
+    # land on fid 13775, summing to a doubled value). When ≥2 total-labelled
+    # lines survive for such a field, keep only the one whose label best matches
+    # the field name and drop the rest (they fall to Unmapped, their true home).
+    _has_formula = {f.fid for f in template_fields if f.formula}
+    _byfid3: dict[str, list[int]] = {}
+    for _i in range(len(rows)):
+        _fd = assign.get(_i)
+        if _fd and _fd in valid_fids and rows[_i][2]:
+            _byfid3.setdefault(_fd, []).append(_i)
+    for _fd, _idxs in _byfid3.items():
+        if _fd not in _has_formula:
+            continue
+        _tot = [i for i in _idxs
+                if norm_label(rows[i][0]).startswith(("total", "grand"))]
+        if len(_tot) < 2:
+            continue
+        _fn = set(_fname.get(_fd, "").split())
+        def _match(i, _fn=_fn):
+            _lt = set(norm_label(rows[i][0]).split())
+            return (len(_lt & _fn) / max(1, len(_lt | _fn)), -i)
+        _keep = max(_tot, key=_match)
+        for _i in _tot:
+            if _i != _keep:
+                assign.pop(_i, None)
+
     facts: dict[str, dict[int, float]] = {}
     sources: dict[str, list[str]] = {}
     sources_vals: dict[str, dict[int, list]] = {}
