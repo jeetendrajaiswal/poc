@@ -188,6 +188,23 @@ def statement_of(section: str, title: str) -> str | None:
     return None
 
 
+def _infer_scope(*texts) -> str:
+    """Recover scope when extraction left it 'unknown' — scanned/OCR'd headings
+    like 'Standelone' (Standalone) or 'Consolldated' fail exact keyword matching.
+    Returns a scope ONLY on a confident fuzzy match to exactly one of the two;
+    genuinely ambiguous tables stay 'unknown' and are skipped as before."""
+    from difflib import SequenceMatcher
+    words = re.findall(r"[a-z]+", " ".join(str(t) for t in texts).lower())
+    near = lambda w, t: SequenceMatcher(None, w, t).ratio() >= 0.8
+    con = any(near(w, "consolidated") for w in words)
+    std = any(near(w, "standalone") for w in words)
+    if con and not std:
+        return "consolidated"
+    if std and not con:
+        return "standalone"
+    return "unknown"
+
+
 def map_quarter(tables, template, taxonomy, model: str | None = None,
                 default_unit: str = ""):
     """Map one filing's raw tables to the client taxonomy.
@@ -201,6 +218,8 @@ def map_quarter(tables, template, taxonomy, model: str | None = None,
     for _page, _n, title, scope, section, grid in tables:
         s = f"{section} {title}".lower()
         stmt = statement_of(section, title)
+        if scope not in ("standalone", "consolidated"):    # recover OCR/vision
+            scope = _infer_scope(title, section)            # 'unknown' scope
         if (stmt is None or "ifrs" in s or len(grid) < 3
                 or scope not in ("standalone", "consolidated")):
             continue
@@ -540,6 +559,49 @@ def parse_periods(grid, header=None) -> list[Period]:
     return infer_spans(periods)
 
 
+def _periods_fallback(grid, data, mode: str = "clean") -> list[Period]:
+    """Rebuild periods when parse_periods() found none. Vision/OCR transcriptions
+    of cash-flow statements often collapse the period header into the data region
+    (the banner 'For the six months ended September 30, 2025' and bare years
+    '2024' land on the first row alongside a label), so _header_and_data() eats
+    the header and parse_periods() returns []. Here we recover the period banner +
+    year tokens from the grid's top rows and align one period to each column that
+    actually carries data. Fires ONLY on the empty-periods failure, so statements
+    that already parse periods are never touched."""
+    from collections import Counter
+    colcnt: Counter = Counter()
+    for r in data:
+        _, vals = _label_and_vals(r, mode)
+        for c, v in vals.items():                       # ignore bare years (period
+            if not (v == int(v) and 1900 <= v <= 2099): # markers), count real data
+                colcnt[c] += 1
+    cols = sorted(c for c, n in colcnt.items() if n >= 2)
+    if not cols:
+        return []
+    src = " ".join(str(c) for row in grid[:5] for c in row if str(c).strip())
+    banners = re.findall(r"(?:three|six|nine|twelve)\s+months?\s+ended|quarter\s+ended|"
+                         r"year\s+ended", src, re.I)
+    m = re.search(r"((?:three|six|nine|twelve)\s+months?|quarter|year)\s+ended\s+"
+                  r"([A-Za-z]+\.?\s+\d{1,2})", src, re.I)
+    yrs_raw = re.findall(r"\b(?:19|20)\d{2}\b", src)
+    seen: set = set()
+    years = [y for y in yrs_raw if not (y in seen or seen.add(y))]
+    # SAFE-ONLY: recover only the unambiguous case — ONE banner phrasing that
+    # maps 1:1 to every data column (e.g. a two-column half-year cash flow).
+    # Mixed banners (Quarter + Year in one segment header) or a year/column
+    # count mismatch means we cannot place columns confidently, so decline and
+    # leave the sheet untouched (empty) rather than emit WRONG periods.
+    if not (m and years) or len(years) != len(cols):
+        return []
+    if len({b.lower().replace("quarter ended", "3m").split(" ended")[0] for b in banners}) > 1:
+        return []
+    base = f"{m.group(1)} ended {m.group(2)}"
+    periods = [_parse_period(f"{base} {yr}", col) for col, yr in zip(cols, years)]
+    if not all(p.end for p in periods):
+        return []
+    return infer_spans(periods)
+
+
 def _header_and_data(grid, mode: str = "clean"):
     first = None
     for i, row in enumerate(grid):
@@ -564,6 +626,17 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     num_mode = detect_number_format(grid)
     header, data = _header_and_data(grid, num_mode)
     periods = parse_periods(grid, header)
+    # parse_periods returns [] when a mangled/vision header row got eaten, but it
+    # can also return UNUSABLE periods when a consensus vision re-read leaves
+    # '⚠ a | b' disagreement markers or no dates in the header. Treat both as
+    # failures and rebuild from the banner + year tokens — but only ADOPT the
+    # rebuild when it actually recovers dated periods, so clean statements (which
+    # have real dates and no ⚠) are never altered.
+    if (not periods or all(not p.end for p in periods)
+            or any("⚠" in (p.raw or "") for p in periods)):
+        fb = _periods_fallback(grid, data, num_mode)
+        if fb:
+            periods = fb
     unit, mult, cur = detect_units(grid)
 
     rows = []
