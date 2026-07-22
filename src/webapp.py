@@ -63,6 +63,20 @@ def s3_upload(*paths):
         pass
 
 
+def s3_delete(*paths):
+    if not S3_BUCKET:
+        return
+    try:
+        c = _s3()
+        for p in paths:
+            if not p:
+                continue
+            rel = os.path.relpath(p, OUT_DIR)
+            c.delete_object(Bucket=S3_BUCKET, Key=f"{S3_PREFIX}/{rel}")
+    except Exception:
+        pass
+
+
 def s3_restore():
     """On boot, pull anything the mirror has that the local disk doesn't."""
     if not S3_BUCKET:
@@ -306,6 +320,8 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
  .empty{color:var(--muted);font-size:13.5px;padding:30px 10px;text-align:center}
  a.dl{color:var(--brand);font-weight:600;text-decoration:none}
  a.dl:hover{text-decoration:underline}
+ .del{color:var(--muted);background:none;border:none;cursor:pointer;font-size:13px;line-height:1;padding:0;font-family:inherit}
+ .del:hover{color:#dc2626}
  /* MD&A modal */
  #mdoverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50}
  #mdmodal{position:fixed;top:3vh;left:50%;transform:translateX(-50%);width:min(1420px,96vw);height:94vh;background:#fff;border-radius:14px;z-index:51;display:none;flex-direction:column;box-shadow:0 18px 60px rgba(15,23,42,.35)}
@@ -490,7 +506,8 @@ function renderReports(){
    rs.map(r=>{const period=r.id.slice(c.length).replace(/^_/,'')||r.id;
     return `<div class=wbcard><span class=wbname title="${r.id}">${period}</span>`+
      `<span class=wbright>`+`<span class=wbbadge>${r.tables??'?'} sheets</span>`+
-     `<a class=dl href="/tables/download/${encodeURIComponent(r.file)}" title="download">⬇</a></span></div>`;}).join('')+
+     `<a class=dl href="/tables/download/${encodeURIComponent(r.file)}" title="download">⬇</a>`+
+     `<button class=del onclick="deleteReport('${r.file}')" title="delete">✕</button></span></div>`;}).join('')+
    `</div></div>`).join('')
    :`<div class=empty>${allWb.length?'No reports match "'+$('filter').value+'".':'No reports yet.'}</div>`;
  }
@@ -498,6 +515,12 @@ function renderReports(){
 async function loadList(){
  let r=await fetch('/tables/list'); allWb=await r.json();
  renderReports();
+}
+async function deleteReport(file){
+ if(!confirm('Delete '+file+'? This removes it from S3 and the server, and cannot be undone.'))return;
+ let r=await fetch('/tables/delete/'+encodeURIComponent(file),{method:'POST'});
+ if(!r.ok){alert('Delete failed.');return;}
+ loadList();
 }
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*]+)\*/g,'$1<i>$2</i>');}
@@ -852,6 +875,34 @@ def tables_download(name):
     if not name.endswith(".xlsx") or not os.path.exists(path):
         return "not found", 404
     return send_file(path, as_attachment=True, download_name=name)
+
+
+@app.route("/tables/delete/<path:name>", methods=["POST"])
+def tables_delete(name):
+    name = os.path.basename(name)                  # no path traversal
+    if not name.endswith(".xlsx"):
+        return jsonify(error="bad name"), 400
+    stem = name[:-len(".xlsx")]                     # e.g. WIPRO_Q1FY2026
+    m = re.match(r"(.+)_(Q[1-4])(FY\d+)$", stem)
+    raw = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else stem.lower()
+
+    # Every local artifact produced for this report (see _run_tables_job).
+    targets = [
+        os.path.join(CLIENT_DIR, name),                              # wide deliverable
+        os.path.join(CLIENT_DIR, "long", f"{stem}_long.xlsx"),       # long companion
+        os.path.join(CLIENT_DIR, ".cache", f"{raw}.pkl"),            # mapped-data cache
+        os.path.join(QTR_RAW_DIR, f"{raw}.pkl"),                     # raw extracted tables
+        os.path.join(QTR_RAW_DIR, f"{raw}.review"),                  # review sidecar
+    ]
+    if not os.path.exists(targets[0]):
+        return jsonify(error="not found"), 404
+    for p in targets:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+    s3_delete(*targets)
+    return jsonify(ok=True, name=name)
 
 
 @app.route("/mdna/list")
