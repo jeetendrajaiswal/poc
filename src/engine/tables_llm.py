@@ -524,13 +524,22 @@ def extract_tables_smart(pdf_path: str, financial_only: bool = True,
     mode='annual': deterministic pipeline (TEXT pages, 100% faithful by
     construction) + digit-grounded gap-fill + consensus vision for scanned
     pages. mode='quarterly': whole-file upload + internal statement questions
-    with arithmetic tie-out. mode='auto': quarterly when <=35 pages."""
+    with arithmetic tie-out. mode='auto': quarterly when <=35 pages.
+
+    The whole-file-question path is reliable only for compact quarterly filings.
+    A large filing (>35 pages) — e.g. a Q4/annual-bundled results filing with
+    standalone + consolidated + IFRS statements and extensive notes — is routed
+    to the deterministic annual/hybrid path even when mode='quarterly', because
+    the whole-file path mis-titles/omits deep statements (e.g. cash flow) there."""
     from src.engine.tables import extract_tables
 
     doc = pymupdf.open(pdf_path)
     n_pages = len(doc)
     doc.close()
-    small = n_pages <= 35 if mode == "auto" else (mode == "quarterly")
+    # 'quarterly' uses the whole-file-question path ONLY for compact filings;
+    # large filings fall back to the robust deterministic path (which reliably
+    # extracts every statement, including cash flow).
+    small = n_pages <= 35 if mode in ("auto", "quarterly") else False
     if small and vision:
         # quarterly filing: upload once, internally ask for each detailed
         # statement (standalone + consolidated results, segments, BS, CF)
