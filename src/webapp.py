@@ -322,6 +322,15 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
  a.dl:hover{text-decoration:underline}
  .del{color:var(--muted);background:none;border:none;cursor:pointer;font-size:13px;line-height:1;padding:0;font-family:inherit}
  .del:hover{color:#dc2626}
+ /* confirm dialog */
+ #confoverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:60;align-items:center;justify-content:center}
+ #confbox{background:#fff;border-radius:14px;width:min(380px,92vw);padding:24px 24px 20px;box-shadow:0 18px 60px rgba(15,23,42,.35);text-align:center}
+ #confbox h3{margin:0 0 8px;font-size:17px;color:var(--ink)}
+ #confbox p{margin:0 0 20px;font-size:13.5px;color:var(--muted);word-break:break-word}
+ #confbox .row{display:flex;gap:10px}
+ #confbox button{width:100%;box-shadow:none;margin:0}
+ #confbox .cancel{background:var(--brand-subtle);color:var(--brand)}
+ #confbox .danger{background:#dc2626}
  /* MD&A modal */
  #mdoverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50}
  #mdmodal{position:fixed;top:3vh;left:50%;transform:translateX(-50%);width:min(1420px,96vw);height:94vh;background:#fff;border-radius:14px;z-index:51;display:none;flex-direction:column;box-shadow:0 18px 60px rgba(15,23,42,.35)}
@@ -420,6 +429,14 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
  <div id=mdbody><nav id=mdnav></nav>
 <div id=mdview></div></div>
 </div>
+<div id=confoverlay onclick="if(event.target===this)closeConfirm()"><div id=confbox>
+ <h3>Delete report?</h3>
+ <p id=confname></p>
+ <div class=row>
+  <button type=button class=cancel onclick="closeConfirm()">Cancel</button>
+  <button type=button class=danger id=confok>Delete</button>
+ </div>
+</div></div>
 <script>
 const f=document.getElementById('f'),st=document.getElementById('status'),go=document.getElementById('go');
 const $=id=>document.getElementById(id);
@@ -516,12 +533,17 @@ async function loadList(){
  let r=await fetch('/tables/list'); allWb=await r.json();
  renderReports();
 }
-async function deleteReport(file){
- if(!confirm('Delete '+file+'? This removes it from S3 and the server, and cannot be undone.'))return;
- let r=await fetch('/tables/delete/'+encodeURIComponent(file),{method:'POST'});
- if(!r.ok){alert('Delete failed.');return;}
- loadList();
+function deleteReport(file){
+ $('confname').textContent=file.replace('.xlsx','');
+ $('confoverlay').style.display='flex';
+ $('confok').onclick=async()=>{
+  closeConfirm();
+  let r=await fetch('/tables/delete/'+encodeURIComponent(file),{method:'POST'});
+  if(!r.ok){alert('Delete failed.');return;}
+  loadList();
+ };
 }
+function closeConfirm(){$('confoverlay').style.display='none';}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function inline(s){return s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*]+)\*/g,'$1<i>$2</i>');}
 function mdToHtml(md){
