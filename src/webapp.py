@@ -784,7 +784,10 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         s3_upload(out, long_out, cache,
                   os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review)
     except Exception as e:
-        jobs[job_id] = {"state": "error", "company": name, "message": f"{type(e).__name__}: {e}"}
+        import traceback
+        traceback.print_exc()          # full detail stays in server logs only
+        jobs[job_id] = {"state": "error", "company": name,
+                        "message": "Processing failed. Please try again."}
         _save_jobs()
     finally:
         # Privacy: the uploaded report is deleted as soon as processing ends.
