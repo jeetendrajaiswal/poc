@@ -213,7 +213,7 @@ def quarterly_tables(pdf_path: str, model: str | None = None,
                 instructions=instructions, user_input=user,
                 schema_name="quarterly_tables", schema=_QTR_SCHEMA,
                 model=model, file_ids=[fid], max_output_tokens=8000,
-                temperature=0.1)
+                temperature=0)
             if res.get("_empty") and res.get("_status") == "incomplete" and b > a:
                 mid = (a + b) // 2
                 log(f"  {want} p{a}-{b}: response overflowed -> splitting")

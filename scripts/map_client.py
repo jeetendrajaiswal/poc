@@ -13,21 +13,15 @@ import pickle
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.engine.client_map import (company_unit, load_template, load_taxonomy,
-                                   map_quarter, to_wide,
+from src.engine.client_map import (company_unit, map_quarter, to_wide,
                                    write_client_workbook_long)
+from src.engine.sector_config import load_sector_assets
 from src.llm import usage_cost, reset_usage
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKL_DIR = os.path.join(ROOT, "output", "qtr_raw")
 OUT_DIR = os.path.join(ROOT, "output", "client")
 PDF_DIR = os.path.expanduser("~/Downloads/qtr_reports")
-TEMPLATE = os.getenv("CLIENT_TEMPLATE",
-                     os.path.join(ROOT, "config", "client_template_software.xlsx"))
-
-TAXONOMY = os.path.join(ROOT, "config", "client_taxonomy_software.yaml")
-
-
 def run(name: str, template, taxonomy) -> str:
     cache = os.path.join(OUT_DIR, ".cache", f"{name}.pkl")
     rows = pickle.load(open(os.path.join(PKL_DIR, f"{name}.pkl"), "rb"))
@@ -52,8 +46,7 @@ if __name__ == "__main__":
                       if fn.endswith(".pkl") and not fn.startswith("_"))
     if not args:
         sys.exit(__doc__)
-    template = load_template(TEMPLATE)
-    taxonomy = load_taxonomy(TAXONOMY)
+    _sector, template, taxonomy = load_sector_assets()
     for name in args:
         reset_usage()
         out = run(name, template, taxonomy)

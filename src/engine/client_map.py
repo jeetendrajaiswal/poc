@@ -3,7 +3,7 @@ field taxonomy BY MEANING, not by label (the proven taxonomy/definitions.yaml
 approach from the datapoint engine, applied to client fields).
 
 Pieces:
-  * config/client_taxonomy_software.yaml — per client field: fid, name,
+  * config/<sector>/taxonomy.yaml — per client field: fid, name,
     concept (economic DEFINITION with inclusion/exclusion/total-vs-component
     guards), illustrative aliases. Generated from evidence (client template +
     human mapping files + filing corpus), human-reviewable, versioned.
@@ -21,10 +21,6 @@ from dataclasses import dataclass
 
 # --------------------------------------------------------------------------- template (structure + verification formulas)
 
-_SHEET_KEYS = {"income statement": "income", "balance sheet": "balance",
-               "cash flow": "cashflow", "segment finance": "segment"}
-
-
 @dataclass
 class ClientField:
     fid: str
@@ -34,6 +30,20 @@ class ClientField:
     formula: list[tuple[int, int]] | None    # [(sign, template_row), ...]  additive only
     group: str = ""                          # parent aggregate name(s), derived from formulas
     ratio: tuple[int, int, float] | None = None   # (num_row, den_row, scale) for =Cn/Cd*scale
+
+
+class Taxonomy(dict):
+    """Statement fields plus declarative sector-level mapping policy."""
+
+    def __init__(self, *args, location_vocabulary=None,
+                 statement_sections=None, section_locations=None,
+                 implicit_initial_sections=None, identities=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.location_vocabulary = set(location_vocabulary or [])
+        self.statement_sections = statement_sections or {}
+        self.section_locations = section_locations or {}
+        self.implicit_initial_sections = implicit_initial_sections or {}
+        self.identities = identities or {}
 
 
 def _parse_formula(expr) -> list[tuple[int, int]] | None:
@@ -62,28 +72,10 @@ def _parse_ratio(expr) -> tuple[int, int, float] | None:
     return (int(m.group(1)), int(m.group(2)), float(m.group(3)) if m.group(3) else 1.0)
 
 
-def load_template(path: str) -> dict[tuple[str, str], list[ClientField]]:
-    from openpyxl import load_workbook
-    wb = load_workbook(path, read_only=True)
-    out: dict[tuple[str, str], list[ClientField]] = {}
-    for sn in wb.sheetnames:
-        snl = sn.lower()
-        stmt = next((v for k, v in _SHEET_KEYS.items() if k in snl), None)
-        if stmt is None:
-            continue
-        scope = "consolidated" if "consolidated" in snl else "standalone"
-        fields = []
-        for i, r in enumerate(wb[sn].iter_rows(values_only=True), 1):
-            if i == 1 or not r or r[3] is None:
-                continue
-            raw_formula = r[6] if len(r) > 6 else None
-            fields.append(ClientField(str(r[3]).strip(), str(r[2] or "").strip(),
-                                      int(r[5] or 0), i,
-                                      _parse_formula(raw_formula),
-                                      ratio=_parse_ratio(raw_formula)))
-        # derive each field's GROUP (parent aggregate chain) from the formulas —
-        # this is what disambiguates duplicate display names (two 'Basic EPS',
-        # two 'Interest Received') without any hand-written conventions
+def _derive_template_groups(
+        template: dict[tuple[str, str], list[ClientField]]) -> None:
+    """Populate formula-derived parent chains used for location resolution."""
+    for fields in template.values():
         byrow = {f.row: f for f in fields}
         parent: dict[int, int] = {}
         for f in fields:
@@ -101,8 +93,54 @@ def load_template(path: str) -> dict[tuple[str, str], list[ClientField]]:
                 chain.append(byrow[p].name)
                 cur = p
             f.group = " < ".join(chain)
-        out[(stmt, scope)] = fields
-    wb.close()
+
+
+def template_from_taxonomy(
+        taxonomy: dict[str, list[dict]]) -> dict[tuple[str, str], list[ClientField]]:
+    """Compile presentation order and FID-based formulas from taxonomy v2."""
+    out: dict[tuple[str, str], list[ClientField]] = {}
+    calculations: dict[tuple[str, str, str], dict] = {}
+    for statement, items in taxonomy.items():
+        for item in items:
+            for scope, scoped in item.get("scopes", {}).items():
+                position = int(scoped["position"])
+                key = (statement, scope)
+                out.setdefault(key, []).append(ClientField(
+                    fid=item["fid"],
+                    name=item["name"],
+                    order=position,
+                    row=position,
+                    formula=None,
+                ))
+                calculations[(statement, scope, item["fid"])] = (
+                    scoped.get("calculation") or {"type": "reported"})
+    for key, fields in out.items():
+        fields.sort(key=lambda field: (field.order, field.fid))
+        byfid = {field.fid: field for field in fields}
+        if len(byfid) != len(fields):
+            raise ValueError(f"duplicate field id in taxonomy scope {key}")
+        positions = [field.order for field in fields]
+        if len(positions) != len(set(positions)):
+            raise ValueError(f"duplicate field position in taxonomy scope {key}")
+        for field in fields:
+            calculation = calculations[(key[0], key[1], field.fid)]
+            kind = calculation.get("type", "reported")
+            if kind == "sum":
+                field.formula = [
+                    (int(term.get("sign", 1)), byfid[str(term["fid"])].row)
+                    for term in calculation.get("terms", [])
+                ]
+                if not field.formula:
+                    raise ValueError(f"empty sum formula for {key}/{field.fid}")
+            elif kind == "ratio":
+                numerator = byfid[str(calculation["numerator"])].row
+                denominator = byfid[str(calculation["denominator"])].row
+                field.ratio = (
+                    numerator, denominator, float(calculation.get("scale", 1)))
+            elif kind != "reported":
+                raise ValueError(
+                    f"unknown calculation type {kind!r} for {key}/{field.fid}")
+    _derive_template_groups(out)
     return out
 
 
@@ -111,42 +149,14 @@ def derived_section_pairs(fields: list[ClientField],
     """For labels that belong to MORE THAN ONE field (duplicate display names,
     or a name/alias shared across fids — 'same concept, different id'), derive
     which fid is the CURRENT vs NON-CURRENT (or OPERATING/INVESTING/FINANCING)
-    variant from the template's own group chains. Fully generic — no hand-written
-    table; sides come from formula hierarchy, labels from template names +
-    taxonomy aliases."""
-    def side_of(group: str) -> str:
-        g = group.lower()
-        # THREE distinct 'attributable to' blocks must map to THREE distinct
-        # field sets, or the OCI block bleeds into the TCI block and doubles it:
-        #   'total comprehensive income attributable' -> TCI  (22303/22302)
-        #   'comprehensive income attributable' (the OCI block) -> CI (22291/22290)
-        #   'profit attributable' -> PROFIT (22299/22298)
-        if re.search(r"total comprehensive income.*attributable", g):
-            return "TCI-ATTRIBUTION"
-        if re.search(r"comprehensive income.*attributable", g):
-            return "CI-ATTRIBUTION"
-        if re.search(r"profit.*attributable", g):
-            return "PROFIT-ATTRIBUTION"
-        if "total segment revenue" in g:
-            return "SEGMENT-REVENUE"
-        if "ordinary activities before tax" in g:
-            return "SEGMENT-RESULTS"
-        if "total segment assets" in g:
-            return "SEGMENT-ASSETS"
-        if "total segment liabilit" in g:
-            return "SEGMENT-LIABILITIES"
-        if re.search(r"non[\s-]*current|long[\s-]*term", g):
-            return "NON-CURRENT"
-        if re.search(r"current|short[\s-]*term", g):
-            return "CURRENT"
-        if "operating" in g:
-            return "OPERATING"
-        if "investing" in g:
-            return "INVESTING"
-        if "financing" in g:
-            return "FINANCING"
-        return ""
-    side = {f.fid: side_of(f.group) for f in fields}
+    variant from the taxonomy's declared locations. Fully generic — no
+    hand-written FID or caption table."""
+    declared = {
+        str(item["fid"]): item.get("locations", [])[0]
+        for item in (defs or [])
+        if len(item.get("locations", [])) == 1
+    }
+    side = {f.fid: declared.get(f.fid, "") for f in fields}
     bylabel: dict[str, dict[str, ClientField]] = {}
     byfid = {f.fid: f for f in fields}
     for f in fields:
@@ -248,7 +258,8 @@ def map_quarter(tables, template, taxonomy, model: str | None = None,
     for key, gl in grids.items():
         width = max(len(r) for g in gl for r in g)
         merged = [r + [""] * (width - len(r)) for g in gl for r in g]
-        ms = map_statement(merged, key[0], taxonomy, template[key], model=model)
+        ms = map_statement(
+            merged, key[0], taxonomy, template[key], model=model, scope=key[1])
         _nu = lambda u: {"mn": "million", "'000": "thousand"}.get(u, u).rstrip("s")
         if default_unit and not ms.unit:
             ms.unit = default_unit        # units line is printed above the
@@ -264,7 +275,7 @@ def map_quarter(tables, template, taxonomy, model: str | None = None,
         out[key] = ms
     resolve_bare_periods(out, period_hint)
     for key, ms in out.items():
-        verify_mapped(ms, template[key], key[0])
+        verify_mapped(ms, key[0], taxonomy)
         # completeness: distinct value columns must map to DISTINCT periods.
         # If two columns share a period, the wide workbook silently merges them
         # and drops data — flag it rather than lose a column unseen.
@@ -552,14 +563,12 @@ def adopt_verified_second_reads(rows, tables2, keys, page_forms, page_lines,
     return out, notes
 
 
-def verify_mapped(ms: "MappedStatement", template_fields: list[ClientField],
-                  stmt: str) -> None:
+def verify_mapped(ms: "MappedStatement", stmt: str,
+                  taxonomy: Taxonomy) -> None:
     """Post-mapping CORRECTNESS check on the MAPPED numbers.
 
-    Correctness is decided by the statement's own PRINTED CROSS-IDENTITIES —
-    relationships between reported printed totals (Assets = Equity+Liabilities;
-    PBT − tax = Net Profit; Net Profit + OCI = TCI; op+inv+fin(+fx) = Δcash;
-    opening + Δ = closing). A break here means a value was genuinely misread or
+    Correctness is decided by the statement's declarative cross-identities in
+    the active sector taxonomy. A break means a value was genuinely misread or
     mis-mapped, so it becomes a statement flag.
 
     It deliberately does NOT flag 'mapped components don't sum to a template
@@ -568,18 +577,11 @@ def verify_mapped(ms: "MappedStatement", template_fields: list[ClientField],
     printed figure and is correct. Those remain in ms.verification as Audit
     notes only (see map_statement), never as review flags. This is what stops
     a 100%-correct statement (TCS, HM) from being orange-tabbed."""
-    row2fid = {f.row: f.fid for f in template_fields}
-
-    def by_name(*pats):
-        for f in template_fields:
-            if all(re.search(p, f.name.lower()) for p in pats):
-                return f.fid
-        return None
-
     def fact(fid):
         return ms.facts.get(fid, {}) if fid else {}
 
-    def check(name, lhs_fids_signs, rhs_fid, alt_lhs=None):
+    def check(name, lhs_fids_signs, rhs_fid, alt_lhs=None,
+              optional_lhs=None):
         """LHS (signed sum of reported facts) == RHS reported fact, per column.
         Only runs when every term is a REPORTED fact (printed figure) — never
         forces a verdict off a partially-mapped aggregate."""
@@ -587,79 +589,58 @@ def verify_mapped(ms: "MappedStatement", template_fields: list[ClientField],
         if not rhs:
             return
         for c in sorted(rhs):
-            for lhs in (lhs_fids_signs, alt_lhs):
-                if lhs is None:
-                    continue
-                if not all(c in fact(f) for _s, f in lhs):
-                    continue
-                tot = sum(s * fact(f)[c] for s, f in lhs)
-                if abs(tot - rhs[c]) <= max(1.0, 0.005 * abs(rhs[c])):
-                    break                    # ties on one accepted form -> ok
-            else:
-                # no accepted form tied AND at least one form was fully present
-                if any(all(c in fact(f) for _s, f in lhs)
-                       for lhs in (lhs_fids_signs, alt_lhs) if lhs):
-                    per = next((p for p in ms.periods if p.col == c), None)
-                    lbl = _period_label(per) if per else f"column {c}"
-                    ms.flag(f"{name} does not hold ({lbl}) — a value is misread "
-                            "or mis-mapped; verify against the filing")
-                    ms.verification.append(f"⚠ {name} fails at {lbl}")
-                return
+            # The primary form is authoritative whenever all of its terms are
+            # present. An alternate is a fallback for a genuinely missing
+            # primary term, never a way to excuse a failed primary identity.
+            lhs = (
+                lhs_fids_signs
+                if all(c in fact(f) for _s, f in lhs_fids_signs)
+                else alt_lhs
+            )
+            if not lhs or not all(c in fact(f) for _s, f in lhs):
+                continue
+            optional = [
+                (sign, fid) for sign, fid in (optional_lhs or [])
+                if c in fact(fid)
+            ]
+            tot = sum(s * fact(f)[c] for s, f in lhs + optional)
+            if abs(tot - rhs[c]) <= max(1.0, 0.005 * abs(rhs[c])):
+                continue
+            per = next((p for p in ms.periods if p.col == c), None)
+            lbl = _period_label(per) if per else f"column {c}"
+            ms.flag(f"{name} does not hold ({lbl}) — a value is misread "
+                    "or mis-mapped; verify against the filing")
+            ms.verification.append(f"⚠ {name} fails at {lbl}")
+            return
 
-    if stmt == "balance":
-        ta = by_name(r"^total assets$")
-        tel = by_name(r"^total equity and liabilit")
-        tnca = by_name(r"total non.?current assets")
-        tca = by_name(r"total current assets")
-        if ta and tel:
-            check("Assets = Equity + Liabilities", [(1, ta)], tel)
-        if tnca and tca and ta:
-            check("Non-current + Current assets = Total assets",
-                  [(1, tnca), (1, tca)], ta)
-    elif stmt == "income":
-        pbt = by_name(r"ordinary activities before tax|before tax")
-        tax = by_name(r"^tax expense$") or by_name(r"tax expense")
-        dtax = by_name(r"^deferred tax$")
-        npf = by_name(r"net profit.*for the period|profit for the period")
-        oci = by_name(r"^other comprehensive income$")
-        tci = by_name(r"total comprehensive")
-        if pbt and tax and npf:
-            check("PBT − tax = Net Profit",
-                  [(1, pbt), (-1, tax), (-1, dtax)], npf,
-                  alt_lhs=[(1, pbt), (-1, tax)])
-        if npf and oci and tci:
-            check("Net Profit + OCI = Total Comprehensive Income",
-                  [(1, npf), (1, oci)], tci)
-        # attribution: TCI-attributable = profit-attributable + OCI-attributable,
-        # per owner class. Catches the OCI-attribution block being summed into
-        # the TCI-attribution fields (a silent double-count otherwise).
-        for tci_a, prof_a, oci_a in (("22303", "22299", "22291"),
-                                     ("22302", "22298", "22290")):
-            if all(ms.facts.get(f) for f in (tci_a, prof_a, oci_a)):
-                check("TCI attributable = Profit + OCI attributable",
-                      [(1, prof_a), (1, oci_a)], tci_a)
-    elif stmt == "cashflow":
-        op = by_name(r"net cash flow from operating")
-        inv = by_name(r"net cash flow from investing")
-        fin = by_name(r"net cash flow from financing")
-        fx = by_name(r"effect of exchange")
-        net = by_name(r"net increase in cash")
-        beg = by_name(r"beginning")
-        end = by_name(r"at the end")
-        if op and inv and fin and net:
-            check("Operating + Investing + Financing = Net change",
-                  [(1, op), (1, inv), (1, fin), (1, fx)], net,
-                  alt_lhs=[(1, op), (1, inv), (1, fin)])
-        if beg and net and end:
-            check("Opening + Net change = Closing",
-                  [(1, beg), (1, net), (1, fx)], end,
-                  alt_lhs=[(1, beg), (1, net)])
+    for identity in taxonomy.identities.get(stmt, []):
+        lhs = [
+            (int(term["sign"]), str(term["fid"]))
+            for term in identity["lhs"]
+        ]
+        alternate = identity.get("alternate_lhs")
+        alt_lhs = (
+            [(int(term["sign"]), str(term["fid"])) for term in alternate]
+            if alternate else None
+        )
+        optional = [
+            (int(term["sign"]), str(term["fid"]))
+            for term in identity.get("optional_lhs", [])
+        ]
+        check(
+            str(identity["name"]), lhs, str(identity["rhs"]), alt_lhs,
+            optional,
+        )
 
 
 # --------------------------------------------------------------------------- taxonomy (definitions)
 
 def norm_label(s: str) -> str:
     s = str(s or "").lower()
+    # Preserve economic tokens before punctuation is removed. Without this,
+    # "Gross NPA (%)" collapsed to "Gross NPA" and became indistinguishable
+    # from the amount field.
+    s = s.replace("%", " percent ")
     s = re.sub(r"\(refer[^)]*\)", " ", s)
     s = re.sub(r"^\(?[a-z][.)]\s*", " ", s)             # 'a)' 'b.' '(c)' enumerators
     # roman enumerators ('VI Total tax expense') — VALID numerals only, so real
@@ -668,15 +649,538 @@ def norm_label(s: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", s).split())
 
 
-def load_taxonomy(path: str) -> dict[str, list[dict]]:
+def _label_value_type(label: str) -> str:
+    """Infer only explicit type cues; return empty when the caption is silent."""
+    text = str(label or "")
+    normalized = norm_label(text)
+    if "%" in text or re.search(r"\bpercent(?:age)?\b", normalized):
+        return "percentage"
+    if re.search(r"\b(?:eps|earnings per (?:equity )?share)\b", normalized):
+        return "per_share"
+    if (re.search(r"\b(?:number|no|total)\s+of\s+shares\b", normalized)
+            or re.search(r"\bshares?\s+(?:issued|outstanding|held)\b", normalized)
+            or re.search(r"\b(?:issued|outstanding)\s+shares?\b", normalized)):
+        return "count"
+    return ""
+
+
+def _compile_definition(definition, statement: str, fid: str) -> str:
+    if not isinstance(definition, dict):
+        raise ValueError(
+            f"definition must be an object for {statement}/{fid}")
+    required = {
+        "meaning", "includes", "excludes", "mapping_notes",
+        "distinguish_from",
+    }
+    absent = sorted(required - set(definition))
+    if absent:
+        raise ValueError(
+            f"definition contract for {statement}/{fid} is missing "
+            f"{', '.join(absent)}")
+    meaning = str(definition.get("meaning", "")).strip()
+    if not meaning:
+        raise ValueError(
+            f"definition meaning cannot be empty for {statement}/{fid}")
+    for key in ("includes", "excludes", "mapping_notes", "distinguish_from"):
+        values = definition.get(key)
+        if not isinstance(values, list):
+            raise ValueError(
+                f"definition.{key} must be a list for {statement}/{fid}")
+        if any(not str(value).strip() for value in values):
+            raise ValueError(
+                f"definition.{key} contains an empty value for "
+                f"{statement}/{fid}")
+    details = [meaning]
+    for key, heading in (
+            ("includes", "Includes"), ("excludes", "Excludes"),
+            ("mapping_notes", "Mapping notes")):
+        if definition[key]:
+            details.append(f"{heading}: " + "; ".join(definition[key]))
+    if definition["distinguish_from"]:
+        details.append(
+            "Competing field FIDs: "
+            + ", ".join(str(value)
+                        for value in definition["distinguish_from"]))
+    details.append(
+        "A different unit, time nature, statement/location, or granularity "
+        "is not this field. If more than one field fits, reject the mapping.")
+    return " ".join(details)
+
+
+def _validate_taxonomy_semantics(item: dict, statement: str, fid: str) -> None:
+    value_type = str(item.get("value_type", "")).strip()
+    allowed_value_types = {
+        "amount", "percentage", "count", "per_share", "text",
+    }
+    if value_type not in allowed_value_types:
+        raise ValueError(
+            f"invalid value_type {value_type!r} for {statement}/{fid}")
+    scopes = item.get("scopes")
+    if not isinstance(scopes, dict) or not scopes:
+        raise ValueError(
+            f"scopes must be a non-empty object for {statement}/{fid}")
+    invalid_scopes = set(scopes) - {"standalone", "consolidated"}
+    if invalid_scopes:
+        raise ValueError(
+            f"invalid scopes for {statement}/{fid}: "
+            f"{sorted(invalid_scopes)}")
+
+    unit = str(item.get("unit", "")).strip()
+    time_nature = str(item.get("time_nature", "")).strip()
+    units_for_type = {
+        "amount": {"statement_currency"},
+        "percentage": {"percent"},
+        "count": {"count", "shares"},
+        "per_share": {"currency_per_share"},
+        "text": {"text"},
+    }
+    allowed_time_natures = {
+        "point_in_time", "duration", "period_average", "context_dependent",
+    }
+    if unit not in units_for_type[value_type]:
+        raise ValueError(
+            f"invalid unit {unit!r} for {value_type} field "
+            f"{statement}/{fid}")
+    if time_nature not in allowed_time_natures:
+        raise ValueError(
+            f"invalid time_nature {time_nature!r} for {statement}/{fid}")
+    if item.get("evidence") not in {"client_mapping", "template_inferred"}:
+        raise ValueError(
+            f"invalid evidence provenance for {statement}/{fid}: "
+            f"{item.get('evidence')!r}")
+
+
+def load_taxonomy(path: str) -> Taxonomy:
     """{statement: [ {fid, name, concept, aliases, ...} ]}"""
     import yaml
-    with open(path) as fh:
-        doc = yaml.safe_load(fh)
-    out: dict[str, list[dict]] = {}
+    with open(path, encoding="utf-8") as fh:
+        doc = yaml.safe_load(fh) or {}
+    if not isinstance(doc, dict) or not isinstance(doc.get("items"), list):
+        raise ValueError(f"taxonomy must contain an items list: {path}")
+    allowed_locations = {
+        str(value).strip().upper()
+        for value in (doc.get("location_vocabulary") or [])
+        if str(value).strip()
+    }
+    if not allowed_locations or "STATEMENT-WIDE" not in allowed_locations:
+        raise ValueError(
+            "location_vocabulary must explicitly include STATEMENT-WIDE")
+    statement_sections = doc.get("statement_sections")
+    if not isinstance(statement_sections, dict):
+        raise ValueError("statement_sections must be an object")
+    compiled_sections = {}
+    section_locations = {}
+    for statement, entries in statement_sections.items():
+        if not isinstance(entries, list):
+            raise ValueError(
+                f"statement_sections.{statement} must be a list")
+        compiled = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise ValueError(
+                    f"statement section entry must be an object: {entry!r}")
+            pattern = str(entry.get("pattern", "")).strip()
+            section = str(entry.get("section", "")).strip().upper()
+            location = str(entry.get("location", "")).strip().upper()
+            if not pattern or not section or not location:
+                raise ValueError(
+                    f"statement section requires pattern, section, and "
+                    f"location: "
+                    f"{entry!r}")
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(
+                    f"invalid section pattern {pattern!r}") from exc
+            if location not in allowed_locations:
+                raise ValueError(
+                    f"section {section!r} uses an unknown location "
+                    f"{location!r} outside "
+                    "location_vocabulary")
+            compiled.append((pattern, section, location))
+            statement_key = str(statement).lower()
+            prior = section_locations.setdefault(
+                statement_key, {}).get(section)
+            if prior and prior != location:
+                raise ValueError(
+                    f"section {statement_key}/{section} has conflicting "
+                    f"locations {prior!r} and {location!r}")
+            section_locations[statement_key][section] = location
+        compiled_sections[str(statement).lower()] = compiled
+    implicit_sections = doc.get("implicit_initial_sections") or {}
+    if not isinstance(implicit_sections, dict):
+        raise ValueError("implicit_initial_sections must be an object")
+    for statement, entry in implicit_sections.items():
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"implicit_initial_sections.{statement} must be an object")
+        pattern = str(entry.get("before_pattern", "")).strip()
+        section = str(entry.get("section", "")).strip().upper()
+        location = str(entry.get("location", "")).strip().upper()
+        if (not pattern or not section or location not in allowed_locations):
+            raise ValueError(
+                f"invalid implicit initial section for {statement}")
+        re.compile(pattern)
+        implicit_sections[statement] = {
+            **entry,
+            "section": section,
+            "location": location,
+        }
+        statement_key = str(statement).lower()
+        prior = section_locations.setdefault(
+            statement_key, {}).get(section)
+        if prior and prior != location:
+            raise ValueError(
+                f"implicit section {statement_key}/{section} conflicts with "
+                f"declared location {prior!r}")
+        section_locations[statement_key][section] = location
+    identities = doc.get("identities") or {}
+    if not isinstance(identities, dict):
+        raise ValueError("identities must be an object")
+    out: Taxonomy = Taxonomy(
+        location_vocabulary=allowed_locations,
+        statement_sections=compiled_sections,
+        section_locations=section_locations,
+        implicit_initial_sections=implicit_sections,
+        identities=identities,
+    )
+    seen: set[tuple[str, str]] = set()
     for it in doc.get("items", []):
-        out.setdefault(it["statement"], []).append(it)
+        if not isinstance(it, dict):
+            raise ValueError(f"taxonomy item must be an object: {it!r}")
+        definition = it.get("definition")
+        missing = [key for key in ("fid", "name", "statement")
+                   if not str(it.get(key, "")).strip()]
+        if not definition:
+            missing.append("definition")
+        if missing:
+            raise ValueError(
+                f"taxonomy item is missing {', '.join(missing)}: {it!r}")
+        stmt = str(it["statement"]).strip().lower()
+        fid = str(it["fid"]).strip()
+        key = (stmt, fid)
+        if key in seen:
+            raise ValueError(f"duplicate taxonomy field {stmt}/{fid}")
+        seen.add(key)
+        item = dict(it)
+        item["statement"] = stmt
+        item["fid"] = fid
+        mapping = item.get("mapping", {})
+        if not isinstance(mapping, dict):
+            raise ValueError(f"mapping must be an object for {stmt}/{fid}")
+        aliases = mapping.get("aliases", [])
+        if aliases is None:
+            aliases = []
+        if not isinstance(aliases, list):
+            raise ValueError(f"aliases must be a list for {stmt}/{fid}")
+        item["aliases"] = [str(alias).strip() for alias in aliases
+                           if str(alias).strip()]
+        if "match_name" not in mapping:
+            raise ValueError(
+                f"mapping.match_name must be explicit for "
+                f"{stmt}/{fid}")
+        match_name = mapping.get("match_name", True)
+        if not isinstance(match_name, bool):
+            raise ValueError(
+                f"mapping.match_name must be boolean for {stmt}/{fid}")
+        item["match_name"] = match_name
+        mode = str(mapping.get("mode", "")).strip()
+        expected_mode = (
+            "canonical_name_and_aliases" if match_name
+            else "aliases_only" if item["aliases"]
+            else "rules_only" if mapping.get("rules")
+            else "disabled"
+        )
+        if mode != expected_mode:
+            raise ValueError(
+                f"mapping.mode for {stmt}/{fid} must be "
+                f"{expected_mode!r}, got {mode!r}")
+        item["concept"] = _compile_definition(definition, stmt, fid)
+        locations = mapping.get("locations", [])
+        if not isinstance(locations, list):
+            raise ValueError(f"mapping.locations must be a list for {stmt}/{fid}")
+        item["locations"] = [
+            str(location).strip().upper() for location in locations
+            if str(location).strip()
+        ]
+        invalid_locations = set(item["locations"]) - allowed_locations
+        if invalid_locations:
+            raise ValueError(
+                f"invalid mapping.locations for {stmt}/{fid}: "
+                f"{sorted(invalid_locations)}")
+        if not item["locations"]:
+            raise ValueError(
+                f"mapping.locations cannot be empty for "
+                f"{stmt}/{fid}; use STATEMENT-WIDE explicitly")
+        if mapping.get("location_source") != "declared":
+            raise ValueError(
+                f"mapping.location_source must be declared for "
+                f"{stmt}/{fid}")
+        alias_norms = [norm_label(alias) for alias in item["aliases"]]
+        if len(alias_norms) != len(set(alias_norms)):
+            raise ValueError(
+                f"mapping.aliases contains normalized duplicates for "
+                f"{stmt}/{fid}")
+        rules = mapping.get("rules", [])
+        if rules is None:
+            rules = []
+        if not isinstance(rules, list):
+            raise ValueError(f"mapping.rules must be a list for {stmt}/{fid}")
+        compiled_rules = []
+        for rule in rules:
+            if not isinstance(rule, dict):
+                raise ValueError(
+                    f"mapping rule must be an object for {stmt}/{fid}")
+            rule_id = str(rule.get("id", "")).strip()
+            status = str(rule.get("status", "")).strip().lower()
+            rule_aliases = rule.get("aliases", [])
+            rule_locations = [
+                str(value).strip().upper()
+                for value in (rule.get("locations", []) or [])
+                if str(value).strip()
+            ]
+            rule_scopes = [
+                str(value).strip().lower()
+                for value in (rule.get("scopes", []) or [])
+                if str(value).strip()
+            ]
+            occurrence = str(rule.get("occurrence", "")).strip().lower()
+            if not rule_id or status != "reviewed":
+                raise ValueError(
+                    f"mapping rule for {stmt}/{fid} requires a stable id and "
+                    "status: reviewed")
+            if not isinstance(rule_aliases, list) or not rule_aliases:
+                raise ValueError(
+                    f"mapping rule {rule_id} requires aliases for {stmt}/{fid}")
+            if set(rule_locations) - allowed_locations:
+                raise ValueError(
+                    f"invalid locations in mapping rule {rule_id} for "
+                    f"{stmt}/{fid}")
+            if set(rule_scopes) - {"standalone", "consolidated"}:
+                raise ValueError(
+                    f"invalid scopes in mapping rule {rule_id} for {stmt}/{fid}")
+            if occurrence not in {"", "first", "last", "only"}:
+                raise ValueError(
+                    f"invalid occurrence in mapping rule {rule_id} for "
+                    f"{stmt}/{fid}")
+            compiled = dict(rule)
+            compiled["id"] = rule_id
+            compiled["status"] = status
+            compiled["aliases"] = [
+                str(value).strip() for value in rule_aliases
+                if str(value).strip()
+            ]
+            compiled["locations"] = rule_locations
+            compiled["scopes"] = rule_scopes
+            compiled["occurrence"] = occurrence
+            compiled["min_occurrences"] = int(rule.get("min_occurrences", 1))
+            for condition in (
+                    "locations_present", "locations_absent",
+                    "labels_present", "labels_absent"):
+                values = [
+                    (str(value).strip().upper()
+                     if condition.startswith("locations")
+                     else norm_label(value))
+                    for value in (rule.get(condition, []) or [])
+                    if str(value).strip()
+                ]
+                if (condition.startswith("locations")
+                        and set(values) - allowed_locations):
+                    raise ValueError(
+                        f"invalid {condition} in mapping rule {rule_id} for "
+                        f"{stmt}/{fid}")
+                compiled[condition] = values
+            compiled_rules.append(compiled)
+        item["rules"] = compiled_rules
+        _validate_taxonomy_semantics(item, stmt, fid)
+        out.setdefault(stmt, []).append(item)
+    expected_fields = int(doc.get("expected_unique_field_count", -1))
+    expected_scoped = int(doc.get("expected_scope_assignment_count", -1))
+    actual_fields = sum(len(items) for items in out.values())
+    actual_scoped = sum(
+        len(item.get("scopes", {}))
+        for items in out.values() for item in items)
+    if expected_fields != actual_fields or expected_scoped != actual_scoped:
+        raise ValueError(
+            "taxonomy count guard failed: "
+            f"fields {actual_fields}/{expected_fields}, "
+            f"scoped fields {actual_scoped}/{expected_scoped}")
+
+    expected_policy = {
+        "ambiguity": "reject",
+        "sign": "preserve_source",
+        "unit_and_time_nature": "strict",
+        "total_component_boundary": "exact",
+        "model_authority": "proposal_only",
+    }
+    if doc.get("mapping_policy") != expected_policy:
+        raise ValueError(
+            f"mapping_policy must be exactly {expected_policy!r}")
+    by_key = {
+        (statement, item["fid"]): item
+        for statement, items in out.items() for item in items
+    }
+    for statement, items in out.items():
+        for item in items:
+            fid = item["fid"]
+            competitors = {
+                str(value).strip()
+                for value in item["definition"]["distinguish_from"]
+            }
+            for competitor in competitors:
+                other = by_key.get((statement, competitor))
+                if other is None:
+                    raise ValueError(
+                        f"definition.distinguish_from {competitor!r} for "
+                        f"{statement}/{fid} is not a field in the same "
+                        "statement")
+                reverse = {
+                    str(value).strip()
+                    for value in other["definition"]["distinguish_from"]
+                }
+                if fid not in reverse:
+                    raise ValueError(
+                        f"definition.distinguish_from must be symmetric: "
+                        f"{statement}/{fid} -> {competitor}")
+    for statement, checks in identities.items():
+        if statement not in out or not isinstance(checks, list):
+            raise ValueError(
+                f"identities.{statement} must be a list for a known statement")
+        valid_fids = {item["fid"] for item in out[statement]}
+        for check in checks:
+            if not isinstance(check, dict) or not str(check.get("name", "")).strip():
+                raise ValueError(
+                    f"invalid identity declaration for {statement}: {check!r}")
+            rhs = str(check.get("rhs", "")).strip()
+            lhs_groups = [
+                check.get("lhs"), check.get("alternate_lhs"),
+                check.get("optional_lhs"),
+            ]
+            if rhs not in valid_fids or not isinstance(lhs_groups[0], list):
+                raise ValueError(
+                    f"identity {check.get('name')!r} has invalid FIDs")
+            for terms in lhs_groups:
+                if terms is None:
+                    continue
+                if not isinstance(terms, list) or not terms:
+                    raise ValueError(
+                        f"identity {check['name']!r} has empty terms")
+                for term in terms:
+                    if (not isinstance(term, dict)
+                            or str(term.get("fid", "")) not in valid_fids
+                            or term.get("sign") not in (-1, 1)):
+                        raise ValueError(
+                            f"identity {check['name']!r} has invalid term "
+                            f"{term!r}")
+    configured_statements = (
+        set(compiled_sections) | {str(key).lower() for key in implicit_sections}
+    )
+    unknown_statements = configured_statements - set(out)
+    if unknown_statements:
+        raise ValueError(
+            "section configuration references unknown statements: "
+            + ", ".join(sorted(unknown_statements)))
     return out
+
+
+def validate_template_taxonomy(
+        template: dict[tuple[str, str], list[ClientField]],
+        taxonomy: dict[str, list[dict]]) -> None:
+    """Fail fast when the structural template and semantic taxonomy diverge.
+
+    Position, scope and formula role remain authoritative in the template;
+    meaning and aliases remain authoritative in the taxonomy. Duplicating
+    either source into the other would create two independently stale copies.
+    """
+    template_fids: dict[str, set[str]] = {}
+    for (stmt, _scope), fields in template.items():
+        template_fids.setdefault(stmt, set()).update(f.fid for f in fields)
+    taxonomy_fids = {
+        stmt: {str(item["fid"]) for item in items}
+        for stmt, items in taxonomy.items()
+    }
+    problems = []
+    for stmt in sorted(set(template_fids) | set(taxonomy_fids)):
+        missing = sorted(template_fids.get(stmt, set())
+                         - taxonomy_fids.get(stmt, set()))
+        extra = sorted(taxonomy_fids.get(stmt, set())
+                       - template_fids.get(stmt, set()))
+        if missing:
+            problems.append(f"{stmt}: template fields missing from taxonomy: "
+                            + ", ".join(missing))
+        if extra:
+            problems.append(f"{stmt}: taxonomy fields absent from template: "
+                            + ", ".join(extra))
+    if problems:
+        raise ValueError("template/taxonomy mismatch — " + "; ".join(problems))
+
+    # Every active caption collision must have a deterministic separator.
+    # Location, balance-sheet side, or a reviewed rule may separate the
+    # candidates.  Otherwise startup fails instead of allowing dictionary/set
+    # order or a model to choose a field.
+    taxonomy_by_key = {
+        (statement, item["fid"]): item
+        for statement, items in taxonomy.items() for item in items
+    }
+    collision_problems = []
+    for (statement, scope), fields in template.items():
+        field_by_fid = {field.fid: field for field in fields}
+        vocabulary: dict[str, list[dict]] = {}
+        for fid in field_by_fid:
+            item = taxonomy_by_key[(statement, fid)]
+            labels = list(item.get("aliases", []))
+            if item.get("match_name", True):
+                labels.append(item["name"])
+            for label in labels:
+                vocabulary.setdefault(norm_label(label), []).append(item)
+        for label, candidates in vocabulary.items():
+            unique = {item["fid"]: item for item in candidates}
+            values = list(unique.values())
+            for index, first in enumerate(values):
+                for second in values[index + 1:]:
+                    first_locations = set(first.get("locations", []))
+                    second_locations = set(second.get("locations", []))
+                    location_separates = (
+                        "STATEMENT-WIDE" not in
+                        first_locations | second_locations
+                        and first_locations.isdisjoint(second_locations)
+                    )
+                    first_group = field_by_fid[first["fid"]].group.lower()
+                    second_group = field_by_fid[second["fid"]].group.lower()
+                    first_kind = (
+                        "asset" if "asset" in first_group else
+                        "liability" if "liabilit" in first_group else "")
+                    second_kind = (
+                        "asset" if "asset" in second_group else
+                        "liability" if "liabilit" in second_group else "")
+                    side_separates = (
+                        statement == "balance" and first_kind and second_kind
+                        and first_kind != second_kind
+                    )
+                    first_rule_labels = {
+                        norm_label(alias)
+                        for rule in first.get("rules", [])
+                        for alias in rule.get("aliases", [])
+                    }
+                    second_rule_labels = {
+                        norm_label(alias)
+                        for rule in second.get("rules", [])
+                        for alias in rule.get("aliases", [])
+                    }
+                    rules_separate = (
+                        label in first_rule_labels
+                        and label in second_rule_labels
+                    )
+                    if not (location_separates
+                            or side_separates
+                            or rules_separate):
+                        collision_problems.append(
+                            f"{statement}/{scope} caption {label!r}: "
+                            f"{first['fid']} vs {second['fid']}")
+    if collision_problems:
+        raise ValueError(
+            "ambiguous active taxonomy aliases — "
+            + "; ".join(collision_problems))
 
 
 # --------------------------------------------------------------------------- periods, values, units
@@ -910,29 +1414,28 @@ _MAP_SCHEMA = {
     "additionalProperties": False,
 }
 
-_SECTION_PAT = [
-    (r"non\s*-?\s*current\s+assets", "NON-CURRENT ASSETS"),
-    (r"current\s+assets", "CURRENT ASSETS"),
-    (r"non\s*-?\s*current\s+liabilit", "NON-CURRENT LIABILITIES"),
-    (r"current\s+liabilit", "CURRENT LIABILITIES"),
-    (r"^\s*equity\b|shareholders.?\s*funds", "EQUITY"),
-    (r"inter.?segment\s+revenue", "INTER-SEGMENT"),
-    (r"external\s+customers", "EXTERNAL-REVENUE"),
-    (r"^segment\s+revenue", "SEGMENT-REVENUE"),
-    (r"^segment\s+result", "SEGMENT-RESULTS"),
-    (r"^segment\s+assets", "SEGMENT-ASSETS"),
-    (r"^segment\s+liabilit", "SEGMENT-LIABILITIES"),
-    (r"operating\s+activities", "OPERATING"),
-    (r"investing\s+activities", "INVESTING"),
-    (r"financing\s+activities", "FINANCING"),
-]
 
-_MAP_INSTR = """You map lines of an Indian company's financial statement to a client's field
-taxonomy BY ECONOMIC MEANING using the field DEFINITIONS provided — never by name similarity.
+def _mapping_schema(line_count: int, valid_fids: set[str]) -> dict:
+    """Constrain model output to this exact statement invocation."""
+    import copy
+
+    schema = copy.deepcopy(_MAP_SCHEMA)
+    assignments = schema["properties"]["assignments"]
+    assignments["minItems"] = line_count
+    assignments["maxItems"] = line_count
+    item = assignments["items"]["properties"]
+    item["line"]["minimum"] = 1
+    item["line"]["maximum"] = line_count
+    item["fid"]["enum"] = [""] + sorted(valid_fids, key=lambda x: (len(x), x))
+    return schema
+
+_PROPOSAL_INSTR = """You review unresolved lines of an Indian company's financial statement and
+PROPOSE a client-taxonomy field by economic meaning. Your response is advisory only and is never
+written to the authoritative report.
 
 Rules:
-- Assign each report line to the ONE field whose definition it satisfies; return fid "" if no
-  definition fits (do NOT force a fit).
+- Propose the ONE field whose definition the report line appears to satisfy; return fid "" if no
+  definition fits or if the evidence is ambiguous (do NOT force a fit).
 - Respect total-vs-component guards in definitions: a printed subtotal/total line maps only to a
   field defined as that aggregate — NEVER to a component field.
 - Lines under a 'Components of cash and cash equivalents' block (balances with banks,
@@ -1118,9 +1621,15 @@ def _header_and_data(grid, mode: str = "clean"):
 
 
 def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dict]],
-                  template_fields: list[ClientField], model: str | None = None) -> MappedStatement:
-    """Definition-driven mapping of one raw statement grid + formula verification."""
-    from src.llm import extract_json
+                  template_fields: list[ClientField], model: str | None = None,
+                  scope: str | None = None) -> MappedStatement:
+    """Map one raw statement using reviewed taxonomy rules, then verify formulas.
+
+    ``model`` remains in the public signature for callers from older releases,
+    but model output is deliberately not consumed here.  Advisory model
+    suggestions are produced by :func:`propose_unmapped_mappings` as a separate
+    review artifact and therefore cannot change reported facts.
+    """
 
     # Detect the grid's number format up front. 'repair' is used only when the
     # text layer shows the corrupted-decimal signature; clean/integer filings
@@ -1144,33 +1653,86 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
 
     rows = []
     section = ""
+    section_patterns = getattr(
+        taxonomy, "statement_sections", {}).get(stmt, ())
     for hrow in header:
-        hl = re.sub(r"^\s*\d+[.)]\s*", "", str(hrow[0] or "").lower())
-        for pat, name in _SECTION_PAT:
-            if re.search(pat, hl):
-                section = name
-                break
+        for header_cell in hrow:
+            hl = norm_label(header_cell)
+            for pat, name, _location in section_patterns:
+                if re.search(pat, hl):
+                    section = name
+                    break
+    # Some extracted Schedule III balance sheets lose the printed
+    # "Non-current assets" heading but retain the subsequent "Current assets"
+    # heading.  When numeric asset rows precede that boundary, their location
+    # is unambiguously NON-CURRENT by statement order.  This is structural
+    # recovery from the surviving boundary, not a company- or label-specific
+    # mapping rule.  IFRS layouts that genuinely start with "Current assets"
+    # are untouched because no numeric row precedes the heading.
+    implicit = getattr(
+        taxonomy, "implicit_initial_sections", {}).get(stmt)
+    if implicit and not section:
+        first_numeric = None
+        first_boundary = None
+        for index, candidate_row in enumerate(data):
+            candidate_label, candidate_values = _label_and_vals(
+                candidate_row, num_mode)
+            candidate_normalised = norm_label(candidate_label)
+            if candidate_values and first_numeric is None:
+                first_numeric = index
+            if (re.search(str(implicit["before_pattern"]),
+                          candidate_normalised)
+                    and first_boundary is None):
+                first_boundary = index
+        if (first_numeric is not None and first_boundary is not None
+                and first_numeric < first_boundary):
+            section = str(implicit["section"]).upper()
     for row in data:
         label, vals = _label_and_vals(row, num_mode)
         if label and any(c.isalpha() for c in label):
-            ll = re.sub(r"^\s*\d+[.)]\s*", "", label.lower())   # '2. Segment results'
-            if re.search(r"total comprehensive income.*attributable", ll):
-                section = "TCI-ATTRIBUTION"
-            elif re.search(r"comprehensive income.*attributable", ll):
-                section = "CI-ATTRIBUTION"     # the OCI-attributable block
-            elif re.search(r"profit.*attributable", ll):   # 'Net profit attributable to' too
-                section = "PROFIT-ATTRIBUTION"
-            elif not ll.startswith("total"):
-                for pat, name in _SECTION_PAT:
-                    if re.search(pat, ll):
-                        section = name
-                        break
+            ll = norm_label(label)
+            for pat, name, _location in section_patterns:
+                if re.search(pat, ll):
+                    section = name
+                    break
             if vals:
                 rows.append((label, section, vals))
 
     # deterministic layer first: duplicate names resolved by template structure
     valid_all = {d["fid"] for d in taxonomy.get(stmt, [])}
     pairs = derived_section_pairs(template_fields, taxonomy.get(stmt, []))
+    exact: dict[str, set[str]] = {}
+    reviewed_rules: dict[str, list[tuple[str, dict, list[str]]]] = {}
+    byfid = {f.fid: f for f in template_fields}
+    for d in taxonomy.get(stmt, []):
+        if d["fid"] not in byfid:
+            continue
+        labels = list(d.get("aliases", []))
+        if d.get("match_name", True):
+            labels.insert(0, d.get("name", ""))
+        for label in labels:
+            normalized = norm_label(label)
+            if normalized:
+                exact.setdefault(normalized, set()).add(d["fid"])
+        for rule in d.get("rules", []):
+            for label in rule.get("aliases", []):
+                normalized = norm_label(label)
+                if normalized:
+                    reviewed_rules.setdefault(normalized, []).append(
+                        (d["fid"], rule, d.get("locations", [])))
+    declared_locations = {
+        str(item["fid"]): set(item.get("locations", []))
+        for item in taxonomy.get(stmt, [])
+        if item.get("locations")
+    }
+    locations = {
+        field.fid: declared_locations.get(field.fid, set())
+        for field in template_fields
+    }
+    value_types = {
+        str(item["fid"]): str(item.get("value_type", ""))
+        for item in taxonomy.get(stmt, [])
+    }
     # asset/liability kind of each fid, from its template group chain — a pinned
     # fid must agree with the report section on this axis too
     def _bs_kind(group: str) -> str:
@@ -1183,81 +1745,106 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     kind = {f.fid: _bs_kind(f.group) for f in template_fields}
     from collections import Counter
     label_sec_count = Counter((norm_label(lab), sec) for lab, sec, _v in rows)
+    label_sec_positions: dict[tuple[str, str], list[int]] = {}
+    for idx, (lab, sec, _vals) in enumerate(rows):
+        label_sec_positions.setdefault((norm_label(lab), sec), []).append(idx)
     secs_present = {sec for _l, sec, _v in rows if sec}
+    section_locations = taxonomy.section_locations.get(stmt, {})
+    locations_present = {
+        section_locations.get(sec, "") for sec in secs_present
+        if section_locations.get(sec, "")
+    }
+    labels_present = {norm_label(label) for label, _sec, _vals in rows}
     # a statement with separate external-customer / inter-segment revenue
     # sub-sections prints several bare totals — revenue-side pins are unsafe there
-    multi_revenue = bool(secs_present & {"EXTERNAL-REVENUE", "INTER-SEGMENT"})
+    multi_revenue = bool(
+        locations_present & {"EXTERNAL-REVENUE", "INTER-SEGMENT"})
     pre: dict[int, str] = {}
     for i, (lab, sec, vals) in enumerate(rows):
         nl = norm_label(lab)
+        row_location = section_locations.get(sec, "")
+        sec_kind = ("ASSETS" if "ASSETS" in sec else
+                    ("LIABILITIES" if "LIABILITIES" in sec else ""))
+        # Explicit reviewed rules are more specific than the field's default
+        # alias list. They resolve the few cases where the same printed caption
+        # has different meanings by scope, location, or occurrence.
+        ruled: list[tuple[str, int]] = []
+        positions = label_sec_positions.get((nl, sec), [])
+        for fid, rule, default_locations in reviewed_rules.get(nl, []):
+            rule_scopes = set(rule.get("scopes", []))
+            rule_locations = set(rule.get("locations", []) or default_locations)
+            if (fid not in valid_all
+                    or (rule_scopes and scope not in rule_scopes)
+                    or (rule_locations and row_location not in rule_locations)
+                    or not set(rule.get("locations_present", [])).issubset(
+                        locations_present)
+                    or set(rule.get("locations_absent", [])) & locations_present
+                    or not set(rule.get("labels_present", [])).issubset(
+                        labels_present)
+                    or set(rule.get("labels_absent", [])) & labels_present
+                    or len(positions) < int(rule.get("min_occurrences", 1))):
+                continue
+            occurrence = rule.get("occurrence", "")
+            if (occurrence == "first" and positions and i != positions[0]
+                    or occurrence == "last" and positions and i != positions[-1]
+                    or occurrence == "only" and len(positions) != 1):
+                continue
+            score = (10 + bool(rule_scopes) + bool(rule_locations)
+                     + bool(occurrence)
+                     + len(rule.get("locations_present", []))
+                     + len(rule.get("locations_absent", []))
+                     + len(rule.get("labels_present", []))
+                     + len(rule.get("labels_absent", [])))
+            ruled.append((fid, score))
+        if ruled:
+            top = max(score for _fid, score in ruled)
+            candidates = {fid for fid, score in ruled if score == top}
+        else:
+            candidates = {
+                fid for fid in exact.get(nl, set())
+                if (fid in valid_all
+                    and (not row_location
+                         or "STATEMENT-WIDE" in locations.get(fid, set())
+                         or not locations.get(fid)
+                         or row_location in locations[fid])
+                    and (not sec_kind or not kind.get(fid)
+                         or kind[fid] == sec_kind))
+            }
+        value_type_cue = _label_value_type(lab)
+        if value_type_cue:
+            typed = {
+                fid for fid in candidates
+                if value_types.get(fid) == value_type_cue
+            }
+            if typed:
+                candidates = typed
+        # A printed "Total ..." cannot be assigned to a leaf when an exact,
+        # reviewed aggregate candidate exists. This resolves legacy component
+        # captions such as "Other Current Liabilities" that historically also
+        # carried the alias "Total current liabilities".
+        if nl.startswith(("total ", "grand total")):
+            aggregates = {
+                fid for fid in candidates
+                if byfid.get(fid) and byfid[fid].formula
+            }
+            if aggregates:
+                candidates = aggregates
+        if len(candidates) == 1:
+            fid = next(iter(candidates))
+            pre[i] = fid
+            continue
         pair = pairs.get(nl)
-        if pair and sec == "SEGMENT-REVENUE" and multi_revenue:
+        if pair and row_location == "SEGMENT-REVENUE" and multi_revenue:
             pair = None
         if pair and sec and label_sec_count[(nl, sec)] == 1:
-            if "NON-CURRENT" in sec:
-                side = "NON-CURRENT"
-            elif "CURRENT" in sec:
-                side = "CURRENT"
-            elif sec in ("OPERATING", "INVESTING", "FINANCING",
-                         "PROFIT-ATTRIBUTION", "CI-ATTRIBUTION", "TCI-ATTRIBUTION",
-                         "SEGMENT-REVENUE", "SEGMENT-RESULTS",
-                         "SEGMENT-ASSETS", "SEGMENT-LIABILITIES"):
-                side = sec
-            else:
-                side = ""
+            side = row_location
             fid = pair.get(side)
             sec_kind = "ASSETS" if "ASSETS" in sec else ("LIABILITIES" if "LIABILITIES" in sec else "")
             if fid and fid in valid_all and (
                     not sec_kind or not kind.get(fid) or kind[fid] == sec_kind):
                 pre[i] = fid
-    todo = [(i, lab, sec, vals) for i, (lab, sec, vals) in enumerate(rows) if i not in pre]
-
     defs = taxonomy.get(stmt, [])
-    grp = {f.fid: f.group for f in template_fields if f.group}
-    def_lines = []
-    for d in defs:
-        al = "; ".join(d.get("aliases", [])[:5])
-        g = grp.get(d["fid"], "")
-        def_lines.append(f"fid={d['fid']} | {d['name']}"
-                         + (f" | GROUP: {g}" if g else "")
-                         + f" | {d['concept']}"
-                         + (f" | e.g.: {al}" if al else ""))
-    assign: dict[int, str] = {}
-    if todo:
-        res = extract_json(
-            instructions=_MAP_INSTR,
-            user_input=("FIELD DEFINITIONS:\n" + "\n".join(def_lines)
-                        + "\n\nSTATEMENT LINES TO MAP:\n"
-                        + "\n".join(f"L{k}: " + (f"[{sec}] " if sec else "") + lab
-                                     for k, (_, lab, sec, _v) in enumerate(todo, 1))),
-            schema_name="line_mapping", schema=_MAP_SCHEMA,
-            model=model, max_output_tokens=8000, temperature=0.1)
-        raw = {int(a["line"]): str(a["fid"]) for a in res.get("assignments", [])
-               if isinstance(a.get("line"), int)}
-        for k, (i, lab, sec, vals) in enumerate(todo, 1):
-            if k in raw:
-                assign[i] = raw[k]
-    assign.update(pre)
-
-    # focused second pass: lines the model left unmapped get one strict re-ask
-    valid_pre = {d["fid"] for d in defs}
-    retry = [(i, lab, sec) for i, (lab, sec, vals) in enumerate(rows)
-             if vals and assign.get(i, "") not in valid_pre]
-    if retry and len(retry) <= 15:
-        res2 = extract_json(
-            instructions=_MAP_INSTR + "\nThese lines were left unmapped in a first pass — "
-            "map each to the closest fitting definition; use \"\" ONLY if truly nothing fits.",
-            user_input=("FIELD DEFINITIONS:\n" + "\n".join(def_lines)
-                        + "\n\nSTATEMENT LINES TO MAP:\n"
-                        + "\n".join(f"L{k}: " + (f"[{sec}] " if sec else "") + lab
-                                     for k, (_, lab, sec) in enumerate(retry, 1))),
-            schema_name="line_mapping", schema=_MAP_SCHEMA,
-            model=model, max_output_tokens=4000, temperature=0.1)
-        raw2 = {int(a["line"]): str(a["fid"]) for a in res2.get("assignments", [])
-                if isinstance(a.get("line"), int)}
-        for k, (i, lab, sec) in enumerate(retry, 1):
-            if raw2.get(k) and i not in pre:
-                assign[i] = raw2[k]
+    assign: dict[int, str] = dict(pre)
 
     valid_fids = {d["fid"] for d in defs}
     # a printed TOTAL line subsumes its components: if a fid was assigned both
@@ -1481,7 +2068,110 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
                          unit=unit, multiplier=mult, currency=cur)
     ms.sources_vals = sources_vals            # exact per-line provenance
     ms.unmapped_vals = unmapped_vals
+    ms.unmapped_details = [
+        (label, sec, dict(vals))
+        for i, (label, sec, vals) in enumerate(rows)
+        if not (assign.get(i, "") and assign.get(i, "") in valid_fids)
+    ]
     return ms
+
+
+def propose_unmapped_mappings(
+        mapped: dict[tuple[str, str], MappedStatement],
+        taxonomy: dict[str, list[dict]],
+        template: dict[tuple[str, str], list[ClientField]],
+        model: str | None = None) -> dict:
+    """Return non-authoritative model suggestions for unresolved report lines.
+
+    This function is intentionally separate from :func:`map_quarter`.  It
+    receives a completed deterministic mapping and returns a standalone review
+    payload; it never mutates ``MappedStatement.facts``, sources, verification,
+    or flags. Consequently model sampling, retries, outages, and future model
+    versions cannot change the client workbook.
+    """
+    from src.llm import extract_json
+
+    proposals = []
+    for stmt, scope in sorted(mapped):
+        ms = mapped[(stmt, scope)]
+        details = getattr(ms, "unmapped_details", None)
+        if details is None:
+            details = [
+                (label, "", values)
+                for label, values in (getattr(ms, "unmapped_vals", None) or [])
+            ]
+        if not details:
+            continue
+        fields = template.get((stmt, scope), [])
+        byfid = {field.fid: field for field in fields}
+        defs = [item for item in taxonomy.get(stmt, [])
+                if item["fid"] in byfid]
+        valid_fids = {item["fid"] for item in defs}
+        definition_lines = []
+        for item in defs:
+            aliases = "; ".join(item.get("aliases", [])[:5])
+            field = byfid[item["fid"]]
+            role = ("ratio" if field.ratio else
+                    "formula-verified aggregate" if field.formula else
+                    "reported field")
+            definition_lines.append(
+                f"fid={item['fid']} | {item['name']} | ROLE: {role} | "
+                f"{item['concept']}"
+                + (f" | e.g.: {aliases}" if aliases else ""))
+        result = extract_json(
+            instructions=_PROPOSAL_INSTR,
+            user_input=(
+                "FIELD DEFINITIONS:\n" + "\n".join(definition_lines)
+                + "\n\nUNRESOLVED STATEMENT LINES:\n"
+                + "\n".join(
+                    f"L{line}: " + (f"[{section}] " if section else "") + label
+                    for line, (label, section, _values)
+                    in enumerate(details, 1))),
+            schema_name="mapping_proposals",
+            schema=_mapping_schema(len(details), valid_fids),
+            model=model, max_output_tokens=8000, temperature=0)
+        by_line: dict[int, set[str]] = {}
+        for assignment in result.get("assignments", []):
+            line = assignment.get("line")
+            if isinstance(line, int):
+                by_line.setdefault(line, set()).add(
+                    str(assignment.get("fid", "")))
+        for line, (label, section, _values) in enumerate(details, 1):
+            candidates = by_line.get(line, set())
+            suggested = next(iter(candidates)) if len(candidates) == 1 else ""
+            if suggested not in valid_fids:
+                suggested = ""
+            proposals.append({
+                "statement": stmt,
+                "scope": scope,
+                "report_line": label,
+                "location": section,
+                "suggested_fid": suggested,
+                "suggested_name": (
+                    byfid[suggested].name if suggested in byfid else ""),
+                "status": "unreviewed",
+                "authority": "proposal_only",
+            })
+    return {
+        "schema_version": 1,
+        "authority": "proposal_only",
+        "authoritative_report_affected": False,
+        "proposals": proposals,
+    }
+
+
+def write_mapping_proposals(path: str, payload: dict) -> None:
+    """Atomically write the advisory mapping-review sidecar."""
+    import json
+    import os
+    import uuid
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    temporary = path + f".{uuid.uuid4().hex}.tmp"
+    with open(temporary, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, sort_keys=True, ensure_ascii=False)
+        handle.write("\n")
+    os.replace(temporary, path)
 
 
 # --------------------------------------------------------------------------- client workbook output
@@ -1629,7 +2319,8 @@ def classify_unmapped(ms: "MappedStatement",
       aggregate : the line equals a +/- combination of mapped fields (verified)
       component : the line belongs to a consecutive group that sums exactly to
                   a mapped field's value (verified — already included there)
-      info      : neither — genuinely informational, no client field
+      unresolved: neither — no reviewed taxonomy rule matched; a model may
+                  propose a candidate in the separate review sidecar
 
     Returns [(class, comment)] aligned with ms.unmapped_vals."""
     from itertools import combinations
@@ -1698,8 +2389,11 @@ def classify_unmapped(ms: "MappedStatement",
                           "(shown for verification)")
     for i in range(len(uv)):
         if not results[i]:
-            results[i] = ("info", "No matching client field — informational disclosure line; "
-                                  "value not contained in any mapped field")
+            results[i] = (
+                "unresolved",
+                "No reviewed taxonomy rule matched. The value was not written "
+                "to an authoritative field; any model suggestion is retained "
+                "only in the separate proposal review sidecar.")
     return results
 
 
@@ -2087,6 +2781,43 @@ def to_wide(long_path: str, wide_path: str) -> None:
     out.save(wide_path)
 
 
+def canonicalize_xlsx(path: str) -> None:
+    """Normalize non-semantic XLSX metadata for byte-for-byte reproducibility.
+
+    Excel workbooks are ZIP archives. openpyxl writes the current time into
+    both ZIP members and core.xml on every save, making identical financial
+    data hash differently. This changes metadata only, never workbook cells.
+    """
+    import os
+    import zipfile
+
+    fixed_time = b"2000-01-01T00:00:00Z"
+    temp = path + ".canonical.tmp"
+    with zipfile.ZipFile(path, "r") as source:
+        with zipfile.ZipFile(temp, "w", compression=zipfile.ZIP_DEFLATED,
+                             compresslevel=9) as target:
+            target.comment = source.comment
+            for name in sorted(source.namelist()):
+                data = source.read(name)
+                if name == "docProps/core.xml":
+                    data = re.sub(
+                        rb"(<dcterms:created\b[^>]*>)[^<]*(</dcterms:created>)",
+                        rb"\g<1>" + fixed_time + rb"\g<2>", data)
+                    data = re.sub(
+                        rb"(<dcterms:modified\b[^>]*>)[^<]*(</dcterms:modified>)",
+                        rb"\g<1>" + fixed_time + rb"\g<2>", data)
+                original = source.getinfo(name)
+                info = zipfile.ZipInfo(name, (2000, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.create_system = original.create_system
+                info.external_attr = original.external_attr
+                info.internal_attr = original.internal_attr
+                info.flag_bits = original.flag_bits
+                target.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED,
+                                compresslevel=9)
+    os.replace(temp, path)
+
+
 def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "MappedStatement"],
                                template: dict[tuple[str, str], list[ClientField]],
                                out_path: str) -> None:
@@ -2256,7 +2987,7 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
     # listed ONCE, keeping the most informative reason (verified ✓ over info)
     entries: dict = {}
     order: list = []
-    RANK = {"component": 0, "aggregate": 0, "info": 1}
+    RANK = {"component": 0, "aggregate": 0, "unresolved": 1}
     for (stmt, scope) in keys:
         ms = mapped[(stmt, scope)]
         denom = ms.unit or "units"

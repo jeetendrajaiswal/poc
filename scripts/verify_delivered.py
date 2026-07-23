@@ -27,7 +27,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PKL_DIR = os.path.join(ROOT, "output", "qtr_raw")
-TEMPLATE = os.path.join(ROOT, "config", "client_template_software.xlsx")
 
 _SHEETK = {"Income Statement": "income", "Balance Sheet": "balance",
            "Cash Flow": "cashflow"}
@@ -48,43 +47,6 @@ def _raw_has(raw_rows, stmt, scope) -> bool:
         if sc == scope and statement_of(sec, t) == stmt and "ifrs" not in s and len(g) >= 3:
             return True
     return False
-
-
-# canonical template fids for the printed CROSS-IDENTITIES (correctness checks).
-# These compare reported printed totals against each other — a break means a
-# value was genuinely misread or mis-mapped.
-_CROSS = {
-    "balance": [
-        ("Assets = Equity + Liabilities", [(1, "13771")], "13776", None),
-        ("Non-current + Current assets = Total assets",
-         [(1, "13777"), (1, "13774")], "13771", None),
-    ],
-    "income": [
-        ("PBT − tax = Net Profit", [(1, "296"), (-1, "318"), (-1, "231")], "269",
-         [(1, "296"), (-1, "318")]),
-        ("Net Profit + OCI = Total Comprehensive Income",
-         [(1, "269"), (1, "16484")], "20019", None),
-        ("TCI attributable (owners) = Profit + OCI attributable",
-         [(1, "22299"), (1, "22291")], "22303", None),
-        ("TCI attributable (NCI) = Profit + OCI attributable",
-         [(1, "22298"), (1, "22290")], "22302", None),
-    ],
-    "cashflow": [
-        ("Operating + Investing + Financing (+fx) = Net change",
-         [(1, "17538"), (1, "17537"), (1, "17536"), (1, "17529")], "17541",
-         [(1, "17538"), (1, "17537"), (1, "17536")]),
-        ("Opening + Net change (+fx) = Closing",
-         [(1, "17519"), (1, "17541"), (1, "17529")], "30371",
-         [(1, "17519"), (1, "17541")]),
-    ],
-}
-
-# fids that reconcile opening to closing cash between the net-change and the
-# closing line (cash acquired in a business combination, bank overdrafts).
-# They are OPTIONAL: added to a cash-flow identity when the filing prints them,
-# never required, so a filing without them keeps the plain opening+net=closing
-# check.
-_CF_OPTIONAL_ADJ = ("30513",)
 
 
 def _printed_digitset(pdf_path=None, raw_rows=None):
@@ -124,7 +86,8 @@ def _grounds(v, dig):
     return any(len(d) >= 4 and d in dig for d in forms)
 
 
-def verify_workbook(path: str, raw_rows=None, template=None, pdf_path=None) -> list[dict]:
+def verify_workbook(path: str, raw_rows=None, template=None, taxonomy=None,
+                    pdf_path=None) -> list[dict]:
     """Findings for one wide workbook. Each: {stmt, scope, kind, detail}.
 
     kind='identity' — a real value error:
@@ -141,8 +104,11 @@ def verify_workbook(path: str, raw_rows=None, template=None, pdf_path=None) -> l
       what stops a 100%-correct statement (TCS, HM) from being orange-tabbed.
     """
     import openpyxl
-    from src.engine.client_map import load_template
-    template = template or load_template(TEMPLATE)
+    if template is None or taxonomy is None:
+        from src.engine.sector_config import load_sector_assets
+        _sector, loaded_template, loaded_taxonomy = load_sector_assets()
+        template = template or loaded_template
+        taxonomy = taxonomy or loaded_taxonomy
     dig = _printed_digitset(pdf_path, raw_rows)
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     findings: list[dict] = []
@@ -175,31 +141,47 @@ def verify_workbook(path: str, raw_rows=None, template=None, pdf_path=None) -> l
                 return _num(r[j]) if r and j < len(r) else None
 
             # (1) printed cross-identities between reported totals
-            for name, lhs, rhs_fid, alt in _CROSS.get(stmt, []):
+            for identity in getattr(taxonomy, "identities", {}).get(stmt, []):
+                name = str(identity["name"])
+                lhs = [
+                    (int(term["sign"]), str(term["fid"]))
+                    for term in identity["lhs"]
+                ]
+                alternate = identity.get("alternate_lhs")
+                alt = ([
+                    (int(term["sign"]), str(term["fid"]))
+                    for term in alternate
+                ] if alternate else None)
+                optional = [
+                    (int(term["sign"]), str(term["fid"]))
+                    for term in identity.get("optional_lhs", [])
+                ]
+                rhs_fid = str(identity["rhs"])
                 if str(rhs_fid) not in byfid:
                     continue
                 for j in pcols:
                     rv = val(rhs_fid, j)
                     if rv is None:
                         continue
-                    # optional reconciling adjustments this filing actually
-                    # prints (e.g. cash from a business combination) — added ONLY
-                    # to the opening->closing identity (rhs = closing balance),
-                    # never to the op+inv+fin = net-change identity
-                    opt = ([(1, f) for f in _CF_OPTIONAL_ADJ
-                            if str(f) in byfid and val(f, j) is not None]
-                           if stmt == "cashflow" and str(rhs_fid) == "30371" else [])
-                    ok, present = False, False
-                    for form in (lhs, alt):
-                        if not form or not all(str(f) in byfid and val(f, j) is not None
-                                               for _s, f in form):
-                            continue
-                        present = True
-                        if _close(sum(s * val(f, j) for s, f in form + opt), rv):
-                            ok = True
-                            break
-                    if present and not ok:
-                        tot = sum(s * (val(f, j) or 0) for s, f in lhs + opt)
+                    # A declared alternate is used only when the primary form
+                    # is incomplete. Optional terms participate when printed.
+                    form = (
+                        lhs
+                        if all(val(f, j) is not None for _s, f in lhs)
+                        else alt
+                    )
+                    if not form or not all(
+                            val(f, j) is not None for _s, f in form):
+                        continue
+                    present_optional = [
+                        (sign, fid) for sign, fid in optional
+                        if val(fid, j) is not None
+                    ]
+                    tot = sum(
+                        sign * val(fid, j)
+                        for sign, fid in form + present_optional
+                    )
+                    if not _close(tot, rv):
                         findings.append({"stmt": stmt, "scope": scope, "kind": "identity",
                                          "detail": (f"{name} broken (col {j}): reported {rv:,.2f} "
                                                     f"vs {tot:,.2f} from the other reported totals")})
@@ -285,17 +267,18 @@ if __name__ == "__main__":
         sys.exit(__doc__)
     if args == ["--all"]:
         args = sorted(glob.glob(os.path.join(ROOT, "output", "client", "*.xlsx")))
-    from src.engine.client_map import load_template
-    template = load_template(TEMPLATE)
+    from src.engine.sector_config import load_sector_assets
+    _sector, template, _taxonomy = load_sector_assets()
     n_bad = 0
     for path in args:
         base = os.path.basename(path)
         if base.startswith("~$") or base == "REMAINING_DIFFS.xlsx":
             continue
-        fs = verify_workbook(path, raw_rows=_raw_rows_for(path), template=template,
-                             pdf_path=_pdf_for(path))
+        fs = verify_workbook(
+            path, raw_rows=_raw_rows_for(path), template=template,
+            taxonomy=_taxonomy, pdf_path=_pdf_for(path))
         if fs:
-            n_bad += 1
+            n_bad += int(any(finding["kind"] != "info" for finding in fs))
             print(f"\n{base}: {len(fs)} finding(s)")
             for f in fs:
                 print(f"   [{f['kind']}] {f['stmt']}/{f['scope']}: {f['detail']}")

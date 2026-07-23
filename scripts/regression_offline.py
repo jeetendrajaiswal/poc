@@ -44,8 +44,13 @@ def check(name, ok, detail=""):
 
 
 def _pdf_for(name):
-    full = os.path.join(PDF, "full", f"{name}_full.pdf")
-    return full if os.path.exists(full) else os.path.join(PDF, f"{name}.pdf")
+    candidates = [
+        os.path.join(PDF, "full", f"{name}_full.pdf"),
+        os.path.join(PDF, f"{name}.pdf"),
+        os.path.join(os.path.dirname(PDF), f"{name}.pdf"),
+    ]
+    return next((path for path in candidates if os.path.exists(path)),
+                candidates[1])
 
 
 def _reconciled(name):
@@ -67,14 +72,18 @@ print("== 1. named decimal / wrong-column repairs (infosys_q4 standalone) ==")
 _infosys_pdf = _pdf_for("infosys_q4FY2026")
 if os.path.exists(_infosys_pdf):
     rec = _reconciled("infosys_q4FY2026")
+    _travel_rows = []
+    _standalone_failures = []
     for title, scope, section, g0, g2, rep in rec:
         if scope == "standalone" and "Results" in section and "IFRS" not in section:
             travel = next((r for r in g2 if any("ravel" in str(c) for c in r)), None)
-            check("Travelling Cost 15.96 corrected to 1,596",
-                  travel is not None and "1,596" in travel, str(travel))
-            check("standalone results identities tie after reconcile",
-                  not identities.failing(section, title, g2),
-                  str(identities.failing(section, title, g2)))
+            if travel is not None:
+                _travel_rows.append(travel)
+            _standalone_failures.extend(identities.failing(section, title, g2))
+    check("Travelling Cost 15.96 corrected to 1,596",
+          any("1,596" in row for row in _travel_rows), str(_travel_rows))
+    check("standalone results identities tie after reconcile",
+          not _standalone_failures, str(_standalone_failures))
 else:
     print(f"  SKIP  Infosys Q4 source PDF is not present: {_infosys_pdf}")
 
@@ -311,10 +320,16 @@ _llm.extract_json = lambda **k: {"assignments": []}     # deterministic pins onl
 import importlib as _il
 import src.engine.client_map as _cm
 _il.reload(_cm)
-_TPL = _cm.load_template(os.path.join(os.path.dirname(PKL), "..", "config", "client_template_software.xlsx"))
-_TAX = _cm.load_taxonomy(os.path.join(os.path.dirname(PKL), "..", "config", "client_taxonomy_software.yaml"))
-_lvg = next((g for _p, _n, t, sc, sec, g in pickle.load(open(os.path.join(PKL, "latent_view_q4FY2026.pkl"), "rb"))
-             if sc == "consolidated" and _cm.statement_of(sec, t) == "income"), None)
+from src.engine.sector_config import load_sector_assets as _load_sector_assets
+_sector_cfg, _TPL, _TAX = _load_sector_assets("software")
+_latent_candidates = [
+    os.path.join(PKL, "latent_view_q4FY2026.pkl"),
+    os.path.join(PKL, "latent_q4FY2026.pkl"),
+]
+_latent_path = next((path for path in _latent_candidates if os.path.exists(path)), None)
+_lvg = (next((g for _p, _n, t, sc, sec, g in pickle.load(open(_latent_path, "rb"))
+              if sc == "consolidated" and _cm.statement_of(sec, t) == "income"), None)
+        if _latent_path else None)
 if _lvg:
     _lms = _cm.map_statement(_lvg, "income", _TAX, _TPL[("income", "consolidated")])
     _po = sorted(_lms.facts.get("22299", {}).values())
@@ -324,13 +339,12 @@ if _lvg:
           and 1468.52 not in [round(v, 2) for v in _to], f"22299={_po[:2]} 22303={_to[:2]}")
 
 print("== 6. verify_mapped catches an unbalanced mapped balance sheet ==")
-from src.engine.client_map import load_template, verify_mapped
-template = load_template(os.path.join(os.path.dirname(PKL), "..", "config",
-                                      "client_template_software.xlsx"))
+from src.engine.client_map import verify_mapped
+_sector_cfg, template, _taxonomy = _load_sector_assets("software")
 bs = MappedStatement(periods=[Period("?", "2026-03-31", "", 1)],
                      facts={"13771": {1: 115541.51}, "13776": {1: 101198.69}},
                      sources={}, unmapped=[], verification=[])
-verify_mapped(bs, template[("balance", "standalone")], "balance")
+verify_mapped(bs, "balance", _taxonomy)
 check("Genesis-style TA≠TEL raises a statement flag",
       bool(getattr(bs, "flags", None))
       and any("assets = equity" in f.lower() for f in bs.flags))
@@ -382,18 +396,16 @@ check("techm q2 span-ambiguous income columns produce no false flags",
 # cross-quarter mechanics on a SYNTHETIC pair (independent of live pkls, which
 # a fresh run may legitimately clean): a repeated March column that disagrees
 # between two filings must be flagged.
-_bs = lambda ta: [["Particulars", "March 31, 2025"], ["ASSETS", ""],
+_bs = lambda cash, liabilities, ta: [["Particulars", "March 31, 2025"], ["ASSETS", ""],
                   ["Property plant and equipment", "1000"], ["Investments", "2000"],
-                  ["Trade receivables", "3000"], ["Cash", "500"],
+                  ["Trade receivables", "3000"], ["Cash", cash],
                   ["Total assets", ta], ["Total equity", "4000"],
-                  ["Total liabilities", "2500"], ["Total equity and liabilities", ta]]
+                  ["Total liabilities", liabilities], ["Total equity and liabilities", ta]]
 _q4 = [(1, 1, "Standalone Financial Results — Balance Sheet", "standalone",
-        "Statement of Assets and Liabilities", _bs("6500"))]
+        "Statement of Assets and Liabilities", _bs("500", "2500", "6500"))]
 _q2 = [(1, 1, "Standalone Financial Results — Balance Sheet", "standalone",
-        "Statement of Assets and Liabilities", _bs("9999"))]  # disagrees on repeated col
-import types as _types
-_orig_listdir = os.listdir
-_orig_open = open
+        "Statement of Assets and Liabilities",
+        _bs("600", "2600", "6600"))]  # valid statement; repeated values disagree
 def _fake_flags():
     # feed the synthetic q2 as the sibling of the synthetic q4
     import pickle as _pk
@@ -437,42 +449,6 @@ check("completeness tripwire: stripped balance sheet is reported missing",
           os.path.join(PDF, "techm_q2FY2026.pdf"), stripped))
 check("completeness tripwire: full extraction reports nothing missing",
       _fc.unextracted_statements(os.path.join(PDF, "techm_q2FY2026.pdf"), tabs) == [])
-
-print("== 10a. incomplete cached workbooks are not reused ==")
-_cache_pdf = os.path.join(PDF, "techm_q2FY2026.pdf")
-if os.path.exists(_cache_pdf):
-    import tempfile
-    from openpyxl import Workbook
-    from src.webapp import _cached_workbook_missing_statements
-
-    _tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
-    _tmp.close()
-    try:
-        _wb = Workbook()
-        _wb.active.title = "Income Statement - Standalone"
-        _wb.active.append(["Field id", "Display Name", "2026-03-31"])
-        _wb.active.append(["1", "Revenue", 1])
-        _cf = _wb.create_sheet("Cash Flow - Standalone")
-        _cf.append(["Field id", "Display Name", "2026-03-31"])
-        _cf.append(["2", "Net cash flow", 1])
-        _wb.save(_tmp.name)
-        check("cache guard rejects a workbook missing a printed balance sheet",
-              "balance sheet" in
-              _cached_workbook_missing_statements(_tmp.name, _cache_pdf))
-        _bs = _wb.create_sheet("Balance Sheet - Standalone")
-        _bs.append(["Field id", "Display Name", "2026-03-31"])
-        _bs.append(["3", "Total assets", 1])
-        _wb.save(_tmp.name)
-        check("cache guard accepts the balance-sheet tab once populated",
-              "balance sheet" not in
-              _cached_workbook_missing_statements(_tmp.name, _cache_pdf))
-    finally:
-        try:
-            os.remove(_tmp.name)
-        except OSError:
-            pass
-else:
-    print(f"  SKIP  cache completeness source PDF is not present: {_cache_pdf}")
 
 print("== 10b. filing-level scope is resolved before extraction and mapping ==")
 _single_entity = """

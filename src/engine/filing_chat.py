@@ -47,7 +47,7 @@ def ask_filing(pdf_path: str, question: str, model: str | None = None,
     with ephemeral_file(content, "filing.pdf") as fid:
         return ask_text(instructions=SYSTEM_PROMPT, question=question,
                         file_ids=[fid], model=model,
-                        max_output_tokens=max_output_tokens, temperature=0.1)
+                        max_output_tokens=max_output_tokens, temperature=0)
 
 
 # --------------------------------------------------------------------------- internal statement questions
@@ -346,6 +346,27 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
     page_forms = _page_number_forms(pdf_path)
     page_lines = source_align.page_word_lines(pdf_path)
     scans = source_align.untrusted_text_pages(pdf_path)
+    import pymupdf
+    _scope_doc = pymupdf.open(pdf_path)
+    page_heads = [" ".join(page.get_text().split())[:1200].lower()
+                  for page in _scope_doc]
+    _scope_doc.close()
+
+    def source_scope(report) -> str:
+        """Scope proved by the heading of the source page selected through
+        positional reconciliation. Ambiguous pages deliberately return
+        unknown instead of guessing."""
+        found = set()
+        for page_number in (report or {}).get("pages", []):
+            if not (1 <= page_number <= len(page_heads)):
+                continue
+            head = page_heads[page_number - 1]
+            if re.search(r"\bconsolidated\b", head):
+                found.add("consolidated")
+            if re.search(r"\bstandalone\b", head):
+                found.add("standalone")
+        return next(iter(found)) if len(found) == 1 else "unknown"
+
     document_scope = filing_document_scope(pdf_path)
     questions = _questions_for_document_scope(document_scope)
     if document_scope == "standalone":
@@ -377,7 +398,7 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
         def _ask(q, budget=6000):
             return ask_text(instructions=EXTRACT_PROMPT, question=q,
                             file_ids=[fid], model=model,
-                            max_output_tokens=budget, temperature=0.1,
+                            max_output_tokens=budget, temperature=0,
                             with_status=True)
 
         def one(args):
@@ -455,6 +476,16 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                 sc = "consolidated"
             elif "standalone" in head:
                 sc = "standalone"
+            proved_scope = source_scope(rep)
+            if (proved_scope != "unknown" and sc in ("standalone", "consolidated")
+                    and sc != proved_scope):
+                log(
+                    f"    · [skip] {heading or label}: requested/model scope "
+                    f"{sc} contradicts source page scope {proved_scope}"
+                )
+                continue
+            if proved_scope != "unknown":
+                sc = proved_scope
             title = heading or label
             notes = []
             if rep:
@@ -483,7 +514,8 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                 section += " — Ind AS"
             log(f"    · [{sc[:4]}] {title[:56]}: {'; '.join(notes)[:140]}")
             out.append(RawTable(
-                page=i, n=k, title=title, scope=sc,
+                page=((rep or {}).get("pages") or [i])[0],
+                n=k, title=title, scope=sc,
                 section=section,
                 page_head=("(quarterly filing — LLM statement extraction; "
                            + "; ".join(notes) + ")"),

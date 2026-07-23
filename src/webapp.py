@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import threading
 import uuid
 
@@ -31,9 +32,6 @@ TABLES_DIR = os.path.join(OUT_DIR, "tables")
 MDNA_DIR = os.path.join(OUT_DIR, "mdna")
 CLIENT_DIR = os.path.join(OUT_DIR, "client")
 QTR_RAW_DIR = os.path.join(OUT_DIR, "qtr_raw")
-TEMPLATE = os.getenv("CLIENT_TEMPLATE",
-                     os.path.join(ROOT, "config", "client_template_software.xlsx"))
-TAXONOMY = os.path.join(ROOT, "config", "client_taxonomy_software.yaml")
 for _d in (TABLES_DIR, MDNA_DIR, CLIENT_DIR, QTR_RAW_DIR):
     os.makedirs(_d, exist_ok=True)
 
@@ -46,6 +44,7 @@ for _d in (TABLES_DIR, MDNA_DIR, CLIENT_DIR, QTR_RAW_DIR):
 S3_BUCKET = os.getenv("S3_BUCKET", "")
 S3_PREFIX = os.getenv("S3_PREFIX", "data-extraction/output")
 JOBS_FILE = os.path.join(OUT_DIR, ".jobs.json")
+CANONICAL_REPORT_DIR = os.path.join(OUT_DIR, ".canonical_reports")
 
 # The long-format companion workbook (output/client/long/*_long.xlsx) is PAUSED:
 # it is still built in-memory because the wide deliverable is derived from it,
@@ -69,10 +68,14 @@ def _sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
-def _pipeline_sha256() -> str:
+def _pipeline_sha256(sector_config) -> str:
     """Fingerprint every local input capable of changing report contents."""
-    paths = [TEMPLATE, TAXONOMY, os.path.join(ROOT, "requirements.txt"),
-             os.path.join(ROOT, "src", "webapp.py")]
+    paths = [sector_config.taxonomy_path,
+             os.path.join(ROOT, "config", "default.yaml"),
+             os.path.join(ROOT, "requirements.txt"),
+             os.path.join(ROOT, "src", "webapp.py"),
+             os.path.join(ROOT, "src", "config.py"),
+             os.path.join(ROOT, "src", "llm.py")]
     paths += glob.glob(os.path.join(ROOT, "src", "engine", "*.py"))
     paths += [
         os.path.join(ROOT, "scripts", name)
@@ -96,15 +99,33 @@ def _determinism_manifest(raw_name: str) -> str:
 
 
 def _report_fingerprint(pdf_path: str, name: str, mode: str,
-                        fin_only: bool, vision: bool) -> dict:
+                        fin_only: bool, vision: bool, sector_config) -> dict:
+    from importlib.metadata import PackageNotFoundError, version
+    from src.config import config
+
+    package_versions = {}
+    for package in ("openai", "PyMuPDF", "openpyxl", "PyYAML"):
+        try:
+            package_versions[package] = version(package)
+        except PackageNotFoundError:
+            package_versions[package] = "missing"
     return {
-        "version": 1,
+        "version": 2,
         "name": name,
+        "sector": sector_config.sector_id,
         "mode": mode,
         "financial_only": bool(fin_only),
         "vision": bool(vision),
         "pdf_sha256": _sha256_file(pdf_path),
-        "pipeline_sha256": _pipeline_sha256(),
+        "pipeline_sha256": _pipeline_sha256(sector_config),
+        "runtime": {
+            "model_default": config.model_default,
+            "model_large": config.model_large,
+            "reasoning_effort": config.reasoning_effort,
+            "self_consistency_n": config.self_consistency_n,
+            "double_read": os.getenv("DOUBLE_READ", "1"),
+            "packages": package_versions,
+        },
     }
 
 
@@ -137,6 +158,80 @@ def _deterministic_cache_hit(name: str, raw_name: str,
         )
     except (OSError, ValueError, TypeError):
         return False
+
+
+def _canonical_report_path(fingerprint: dict) -> str:
+    payload = json.dumps(
+        fingerprint, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return os.path.join(
+        CANONICAL_REPORT_DIR, hashlib.sha256(payload).hexdigest())
+
+
+def _restore_canonical_report(name: str, raw_name: str,
+                              fingerprint: dict) -> bool:
+    """Restore a previously verified result for identical immutable inputs."""
+    source_dir = _canonical_report_path(fingerprint)
+    manifest_path = os.path.join(source_dir, "manifest.json")
+    try:
+        with open(manifest_path, encoding="utf-8") as fh:
+            manifest = json.load(fh)
+        if manifest.get("fingerprint") != fingerprint:
+            return False
+        destinations = _report_artifacts(name, raw_name)
+        sources = {}
+        for kind, destination in destinations.items():
+            source = os.path.join(source_dir, kind)
+            if (not os.path.isfile(source)
+                    or _sha256_file(source)
+                    != manifest["artifact_sha256"].get(kind)):
+                return False
+            sources[kind] = (source, destination)
+        for source, destination in sources.values():
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            temp = destination + f".{uuid.uuid4().hex}.tmp"
+            shutil.copyfile(source, temp)
+            os.replace(temp, destination)
+        return _write_determinism_manifest(
+            name, raw_name, fingerprint) is not None
+    except (KeyError, OSError, TypeError, ValueError):
+        return False
+
+
+def _publish_canonical_report(name: str, raw_name: str,
+                              fingerprint: dict) -> str | None:
+    """Promote only a complete, review-free artifact set to immutable cache."""
+    review = os.path.join(QTR_RAW_DIR, f"{raw_name}.review")
+    artifacts = _report_artifacts(name, raw_name)
+    if os.path.exists(review) or not all(
+            os.path.isfile(path) for path in artifacts.values()):
+        return None
+    final_dir = _canonical_report_path(fingerprint)
+    if os.path.isdir(final_dir):
+        return final_dir
+    os.makedirs(CANONICAL_REPORT_DIR, exist_ok=True)
+    temp_dir = final_dir + f".{uuid.uuid4().hex}.tmp"
+    os.makedirs(temp_dir)
+    try:
+        hashes = {}
+        for kind, source in artifacts.items():
+            destination = os.path.join(temp_dir, kind)
+            shutil.copyfile(source, destination)
+            hashes[kind] = _sha256_file(destination)
+        with open(os.path.join(temp_dir, "manifest.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump({"fingerprint": fingerprint, "artifact_sha256": hashes},
+                      fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        try:
+            os.replace(temp_dir, final_dir)
+        except OSError:
+            if not os.path.isdir(final_dir):
+                raise
+            shutil.rmtree(temp_dir)
+        return final_dir
+    except Exception:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
 
 
 def _write_determinism_manifest(name: str, raw_name: str,
@@ -237,7 +332,8 @@ s3_restore()
 jobs: dict = {}   # job_id -> {state, company, message}
 try:
     import json as _json
-    jobs = _json.load(open(JOBS_FILE))
+    with open(JOBS_FILE, encoding="utf-8") as _jobs_file:
+        jobs = _json.load(_jobs_file)
     for _j in jobs.values():
         # a job that was 'running' when the server went down is gone — say so
         # instead of the confusing 'unknown job'
@@ -496,6 +592,10 @@ TABLES_PAGE = r"""<!doctype html><html><head><meta charset=utf-8><title>Reports 
   </div>
   <form id=f>
    <input type=hidden name=mode id=mode value="quarterly">
+   <div class=field>
+    <label>Sector</label>
+    <select name=sector id=sector>__SECTOR_OPTIONS__</select>
+   </div>
    <div class=field>
     <label>Company</label>
     <input type=text name=company id=company placeholder="e.g. Wipro" autocomplete=off required oninput="onCompany()">
@@ -762,8 +862,8 @@ def _job_logger(raw_name: str):
     return log, path
 
 
-def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, vision: bool,
-                    mode: str = "auto"):
+def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool,
+                    vision: bool, mode: str = "auto", sector_id: str | None = None):
     jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
     _save_jobs()
     run_lock = None
@@ -783,12 +883,18 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         # extract raw statements -> verify identities -> map to the client
         # taxonomy -> final client workbook (wide; long kept alongside)
         import pickle
-        import subprocess
         import sys as _sys
         from src.engine.tables_llm import extract_tables_smart
-        from src.engine.client_map import (company_unit, load_template,
-                                           load_taxonomy, map_quarter, to_wide,
-                                           write_client_workbook_long)
+        from src.engine.client_map import (
+            company_unit,
+            map_quarter,
+            propose_unmapped_mappings,
+            to_wide,
+            write_client_workbook_long,
+            write_mapping_proposals,
+        )
+        from src.engine.sector_config import load_sector_assets
+        sector_config, template, taxonomy = load_sector_assets(sector_id)
         m = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
         raw_name = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else name.lower()
         log, log_path = _job_logger(raw_name)
@@ -799,7 +905,7 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         run_lock = _report_lock(raw_name)
         run_lock.acquire()
         fingerprint = _report_fingerprint(
-            pdf_path, name, mode, fin_only, vision)
+            pdf_path, name, mode, fin_only, vision, sector_config)
         if _deterministic_cache_hit(name, raw_name, fingerprint):
             out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
             log("CACHE: exact PDF/config/pipeline fingerprint hit — "
@@ -810,10 +916,21 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
             }
             _save_jobs()
             return
+        if _restore_canonical_report(name, raw_name, fingerprint):
+            out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
+            log("CACHE: identical PDF/config/pipeline restored from the "
+                "verified content-addressed canonical report")
+            jobs[job_id] = {
+                "state": "done", "company": name,
+                "message": f"<b>{os.path.basename(out)}</b> is ready.",
+            }
+            _save_jobs()
+            return
         import time as _time
         import traceback as _tb
         _t0 = _time.time()
-        log(f"=== job start: {name} | pdf {os.path.getsize(pdf_path):,} bytes ===")
+        log(f"=== job start: {name} | sector {sector_config.sector_id} | "
+            f"pdf {os.path.getsize(pdf_path):,} bytes ===")
 
         jobs[job_id]["message"] = "Processing…"
         from src.engine.tables_llm import maybe_trim_large_filing
@@ -925,35 +1042,14 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
             except Exception:
                 log("DOUBLE-READ: crashed —\n" + _tb.format_exc())
 
-        import verify_raw as _vr
-        # comparative-column reconciliation (free): a prior-period column
-        # misread on a scan is corrected from the company's OTHER filings that
-        # reported the same period (corroborated + identity-gated). Runs before
-        # cross-quarter so a corrected column no longer flags as a disagreement.
-        recon_notes = []
-        try:
-            rows, recon_notes = _vr.reconcile_comparatives(
-                raw_name, rows, log=lambda m_: log(f"RECONCILE: {m_}"))
-            if recon_notes:
-                pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
-        except Exception:
-            log("RECONCILE: crashed —\n" + _tb.format_exc())
-
-        # cross-quarter consistency (free): columns repeated from the
-        # company's other cached filings must agree — mismatch = review flag
-        xq_flags = []
-        try:
-            xq_flags = _vr.cross_quarter_flags(raw_name, rows)
-            for d in xq_flags:
-                log(f"CROSS-QUARTER ⚠ [{d['scope'][:4]}] {d['stmt']}: {d['note'][:140]}")
-        except Exception:
-            log("CROSS-QUARTER: crashed —\n" + _tb.format_exc())
-
+        # Report generation is a pure function of this PDF and the selected
+        # sector configuration. Historical filings may be compared in a
+        # separate QA process, but must never mutate or flag this deliverable:
+        # otherwise an identical clean run changes merely because a sibling
+        # cache happens to exist.
         review_items = ([f"[{sc}] {t}: {'; '.join(bad)}"
                          for _pg, t, sc, _sec, bad in failing]
                         + xread_notes
-                        + [f"[{d['scope'][:4]}] {d['stmt']}: {d['note']}" for d in xq_flags]
-                        + [f"[{d['scope'][:4]}] {d['stmt']}: {d['note']}" for d in recon_notes]
                         + [f"COMPLETENESS: '{k}' printed in the PDF but not extracted"
                            for k in missing_stmts])
         if review_items:
@@ -967,8 +1063,6 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         jobs[job_id]["message"] = "Processing…"
         unit = company_unit(pdf_path, pages=sorted({r_[0] for r_ in rows}))
         log(f"UNIT: filing denomination = '{unit or '?'}'")
-        template = load_template(TEMPLATE)
-        taxonomy = load_taxonomy(TAXONOMY)
         # period hint from the job's own metadata (Q4 FY2026 …) — used only
         # when a statement's header cannot resolve its periods (bare-year
         # cash-flow columns); every use is flagged for review
@@ -976,14 +1070,26 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         log(f"MAP: taxonomy mapping (period hint {hint})")
         mapped = map_quarter(rows, template, taxonomy, default_unit=unit,
                              period_hint=hint, log=lambda m_: log(f"MAP: {m_}"))
-        for d in xq_flags:
-            ms_ = mapped.get((d["stmt"], d["scope"]))
-            if ms_ is not None:
-                ms_.flag("cross-quarter: " + d["note"])
-        for d in recon_notes:
-            ms_ = mapped.get((d["stmt"], d["scope"]))
-            if ms_ is not None:
-                ms_.flag(d["note"])
+        # Semantic suggestions are a separate, explicitly non-authoritative
+        # review artifact. They never enter `mapped`, the workbook, its
+        # verification, or the canonical-report cache.
+        proposal_path = os.path.join(
+            CLIENT_DIR, ".proposals", f"{raw_name}.json")
+        try:
+            proposal_payload = propose_unmapped_mappings(
+                mapped, taxonomy, template)
+            write_mapping_proposals(proposal_path, proposal_payload)
+            suggested = sum(
+                bool(item["suggested_fid"])
+                for item in proposal_payload["proposals"])
+            log("MAP-PROPOSALS: "
+                f"{suggested}/{len(proposal_payload['proposals'])} "
+                "unreviewed suggestion(s) written to review sidecar; "
+                "0 promoted to report facts")
+        except Exception:
+            proposal_path = None
+            log("MAP-PROPOSALS: advisory generation failed; authoritative "
+                "report is unaffected\n" + _tb.format_exc())
         cache = os.path.join(CLIENT_DIR, ".cache", f"{raw_name}.pkl")
         os.makedirs(os.path.dirname(cache), exist_ok=True)
         pickle.dump(mapped, open(cache, "wb"))
@@ -1003,21 +1109,41 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         # flag and every identity the DELIVERED file breaks is stamped onto
         # the workbook itself (Review sheet + orange tabs) — nothing that
         # failed verification can look verified
-        from src.engine.client_map import annotate_flags, annotate_review
+        from src.engine.client_map import (
+            annotate_flags,
+            annotate_review,
+            canonicalize_xlsx,
+        )
         from src.engine.client_map import statement_of as _sof3
         n_flags = annotate_flags(out, mapped)
         import verify_delivered as _vd
-        _findings = _vd.verify_workbook(out, raw_rows=rows, template=template,
-                                        pdf_path=pdf_path)
+        _findings = _vd.verify_workbook(
+            out, raw_rows=rows, template=template, taxonomy=taxonomy,
+            pdf_path=pdf_path)
         for f_ in _findings:
             log(f"POST-WRITE ⚠ [{f_['kind']}] {f_['stmt']}/{f_['scope']}: {f_['detail'][:140]}")
         _vd.annotate_findings(out, _findings)
+        blocking_findings = [
+            finding for finding in _findings
+            if finding.get("kind") in ("identity", "empty")
+        ]
+        if blocking_findings:
+            with open(review, "a", encoding="utf-8") as fh:
+                if os.path.getsize(review):
+                    fh.write("\n")
+                fh.write("\n".join(
+                    f"POST-WRITE [{finding['kind']}] "
+                    f"{finding['stmt']}/{finding['scope']}: {finding['detail']}"
+                    for finding in blocking_findings))
         annotate_review(out, suspects,
                         [{"stmt": _sof3(sec_, t_), "scope": sc_, "title": t_, "page": pg_}
                          for pg_, t_, sc_, sec_, _bad in failing] + broad
                         + [{"stmt": k, "scope": "?", "title": k, "page": ""}
                            for k in missing_stmts])
+        canonicalize_xlsx(out)
         determinism_path = _write_determinism_manifest(
+            name, raw_name, fingerprint)
+        canonical_path = _publish_canonical_report(
             name, raw_name, fingerprint)
         log(f"DONE: {os.path.basename(out)} written | {n_flags} statement flag(s), "
             f"{len(_findings)} post-write finding(s), {len(suspects)} review cell(s) "
@@ -1027,7 +1153,11 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         _save_jobs()
         s3_upload(out, cache,
                   os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review, log_path,
-                  determinism_path)
+                  determinism_path,
+                  *([proposal_path] if proposal_path else []),
+                  *([os.path.join(canonical_path, name_)
+                     for name_ in ("manifest.json", "workbook", "mapped", "raw")]
+                    if canonical_path else []))
         if EMIT_LONG:
             s3_upload(long_out)
         else:
@@ -1058,11 +1188,24 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
 @app.route("/")
 @app.route("/tables")
 def tables_page():
+    from src.engine.sector_config import (
+        available_sector_ids,
+        default_sector_id,
+        load_sector_config,
+    )
+
     name = session.get("name", "User")
+    default = default_sector_id()
+    options = "".join(
+        f'<option value="{sid}"{" selected" if sid == default else ""}>'
+        f'{load_sector_config(sid).name}</option>'
+        for sid in available_sector_ids()
+    )
     return (TABLES_PAGE
             .replace("__LOGO__", LOGO_SVG)
             .replace("__USERNAME__", name)
-            .replace("__INITIAL__", (name[:1] or "U").upper()))
+            .replace("__INITIAL__", (name[:1] or "U").upper())
+            .replace("__SECTOR_OPTIONS__", options))
 
 
 def _canonical_name(company: str, fy: str, quarter: str, mode: str) -> str:
@@ -1081,47 +1224,10 @@ def _canonical_name(company: str, fy: str, quarter: str, mode: str) -> str:
     return f"{comp}_{fy_tag}"          # annual / MD&A
 
 
-def _cached_workbook_missing_statements(workbook_path: str,
-                                        pdf_path: str) -> list[str]:
-    """Core statements printed in *pdf_path* but absent from a cached workbook.
-
-    A company/quarter filename is not sufficient proof that a cached result is
-    complete: an older extractor may have omitted an entire statement. Reuse
-    the existing filing-level completeness detector against the workbook's
-    populated statement tabs before short-circuiting a newly uploaded PDF.
-    """
-    from types import SimpleNamespace
-
-    from openpyxl import load_workbook
-    from src.engine.filing_chat import unextracted_statements
-
-    labels = {
-        "income statement": "financial results",
-        "balance sheet": "balance sheet",
-        "cash flow": "cash flow statement",
-    }
-    try:
-        wb = load_workbook(workbook_path, read_only=True, data_only=True)
-        tables = []
-        for ws in wb.worksheets:
-            if ws.max_row < 2:
-                continue
-            low = ws.title.lower()
-            section = next((label for key, label in labels.items()
-                            if key in low), "")
-            if section:
-                tables.append(SimpleNamespace(section=section, title=ws.title))
-        wb.close()
-    except Exception:
-        return list(labels.values())
-    core = {"financial results (P&L)", "balance sheet",
-            "cash flow statement"}
-    return [kind for kind in unextracted_statements(pdf_path, tables)
-            if kind in core]
-
-
 @app.route("/tables/process", methods=["POST"])
 def tables_process():
+    from src.engine.sector_config import load_sector_config
+
     mode = request.form.get("mode") or "quarterly"
     if mode not in ("annual", "quarterly", "mdna", "auto"):
         mode = "quarterly"
@@ -1133,6 +1239,10 @@ def tables_process():
     if not name:
         need_q = " and quarter" if mode == "quarterly" else ""
         return jsonify(error=f"Please provide a company, fiscal year{need_q}."), 400
+    try:
+        sector_config = load_sector_config(request.form.get("sector") or None)
+    except (OSError, TypeError, ValueError):
+        return jsonify(error="Please select a configured sector."), 400
 
     # De-duplication: an existing filename is reusable only after checking the
     # newly uploaded PDF. This prevents a stale workbook produced by an older
@@ -1149,17 +1259,21 @@ def tables_process():
     pdf = request.files.get("pdf")
     if not pdf or not pdf.filename.lower().endswith(".pdf"):
         return jsonify(error="Please upload a PDF file."), 400
-    pdf_path = os.path.join(UPLOAD_DIR, f"tables_{name}.pdf")
+    # A request-specific upload path prevents simultaneous runs for the same
+    # report from overwriting the file another worker is still reading.
+    pdf_path = os.path.join(
+        UPLOAD_DIR, f"tables_{name}_{uuid.uuid4().hex}.pdf")
     pdf.save(pdf_path)
     if mode != "mdna" and os.path.exists(existing):
         m_raw = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
         raw = (f"{m_raw.group(1).lower()}_{m_raw.group(2).lower()}{m_raw.group(3)}"
                if m_raw else name.lower())
-        flagged = os.path.exists(os.path.join(QTR_RAW_DIR, f"{raw}.review"))
-        missing = _cached_workbook_missing_statements(existing, pdf_path)
-        # A review sidecar means the existing workbook is explicitly
-        # unresolved.  Never let that stale artifact bypass a newer extractor.
-        if not flagged and not missing:
+        fingerprint = _report_fingerprint(
+            pdf_path, name, mode, True, True, sector_config)
+        # Filename equality is not evidence of equality. Reuse only an intact
+        # artifact set produced from these exact bytes and this exact sector
+        # configuration/code fingerprint.
+        if _deterministic_cache_hit(name, raw, fingerprint):
             try:
                 os.remove(pdf_path)
             except OSError:
@@ -1172,7 +1286,8 @@ def tables_process():
     jobs[job_id] = {"state": "running", "company": name, "message": "Queued…"}
     _save_jobs()
     threading.Thread(target=_run_tables_job,
-                     args=(job_id, name, pdf_path, fin_only, vision, mode),
+                     args=(job_id, name, pdf_path, fin_only, vision, mode,
+                           sector_config.sector_id),
                      daemon=True).start()
     return jsonify(job=job_id)
 
