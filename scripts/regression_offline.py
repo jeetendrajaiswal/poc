@@ -406,8 +406,14 @@ check("extraction has its own prompt without the Q&A 'prefer consolidated' bias"
       and "parentheses are NEGATIVE" in _fc.EXTRACT_PROMPT)
 check("questions request the denomination line + period banner",
       "denomination line" in _fc._DETAIL and "period banner" in _fc._DETAIL)
+_balance_questions = [(sc, lab) for sc, lab, _q in _fc._QUESTIONS
+                      if "Balance Sheet" in lab]
+check("standalone and consolidated balance sheets use isolated calls",
+      {sc for sc, _lab in _balance_questions} == {"standalone", "consolidated"}
+      and len(_balance_questions) == 2)
 check("ask_text exposes the truncation signal",
       "with_status" in inspect.signature(_at).parameters)
+
 tabs = [type("T", (), {"section": sec, "title": t})()
         for _p, _n, t, _sc, sec, _g in techm]
 stripped = [x for x in tabs if "Assets and Liab" not in x.section]
@@ -416,6 +422,42 @@ check("completeness tripwire: stripped balance sheet is reported missing",
           os.path.join(PDF, "techm_q2FY2026.pdf"), stripped))
 check("completeness tripwire: full extraction reports nothing missing",
       _fc.unextracted_statements(os.path.join(PDF, "techm_q2FY2026.pdf"), tabs) == [])
+
+print("== 10a. incomplete cached workbooks are not reused ==")
+_cache_pdf = os.path.join(PDF, "techm_q2FY2026.pdf")
+if os.path.exists(_cache_pdf):
+    import tempfile
+    from openpyxl import Workbook
+    from src.webapp import _cached_workbook_missing_statements
+
+    _tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
+    _tmp.close()
+    try:
+        _wb = Workbook()
+        _wb.active.title = "Income Statement - Standalone"
+        _wb.active.append(["Field id", "Display Name", "2026-03-31"])
+        _wb.active.append(["1", "Revenue", 1])
+        _cf = _wb.create_sheet("Cash Flow - Standalone")
+        _cf.append(["Field id", "Display Name", "2026-03-31"])
+        _cf.append(["2", "Net cash flow", 1])
+        _wb.save(_tmp.name)
+        check("cache guard rejects a workbook missing a printed balance sheet",
+              "balance sheet" in
+              _cached_workbook_missing_statements(_tmp.name, _cache_pdf))
+        _bs = _wb.create_sheet("Balance Sheet - Standalone")
+        _bs.append(["Field id", "Display Name", "2026-03-31"])
+        _bs.append(["3", "Total assets", 1])
+        _wb.save(_tmp.name)
+        check("cache guard accepts the balance-sheet tab once populated",
+              "balance sheet" not in
+              _cached_workbook_missing_statements(_tmp.name, _cache_pdf))
+    finally:
+        try:
+            os.remove(_tmp.name)
+        except OSError:
+            pass
+else:
+    print(f"  SKIP  cache completeness source PDF is not present: {_cache_pdf}")
 
 print("== 10b. filing-level scope is resolved before extraction and mapping ==")
 _single_entity = """

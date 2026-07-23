@@ -93,9 +93,12 @@ _QUESTIONS = [
     ("unknown", "Segment Information",
      f"Provide the full segment information table(s) — segment revenue, segment results, "
      f"segment assets/liabilities if shown — standalone and consolidated separately if both exist, {_DETAIL}"),
-    ("unknown", "Statement of Assets and Liabilities (Balance Sheet)",
-     f"Provide the full statement of assets and liabilities (balance sheet) — standalone and "
-     f"consolidated separately if both exist — {_DETAIL}"),
+    ("standalone", "Standalone Statement of Assets and Liabilities (Balance Sheet)",
+     f"Provide the full STANDALONE statement of assets and liabilities (balance sheet) — "
+     f"{_DETAIL}"),
+    ("consolidated", "Consolidated Statement of Assets and Liabilities (Balance Sheet)",
+     f"Provide the full CONSOLIDATED statement of assets and liabilities (balance sheet) — "
+     f"{_DETAIL}"),
     ("unknown", "Statement of Cash Flows",
      f"Provide the full statement of cash flows — standalone and consolidated separately "
      f"if both exist — {_DETAIL}"),

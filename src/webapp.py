@@ -922,6 +922,45 @@ def _canonical_name(company: str, fy: str, quarter: str, mode: str) -> str:
     return f"{comp}_{fy_tag}"          # annual / MD&A
 
 
+def _cached_workbook_missing_statements(workbook_path: str,
+                                        pdf_path: str) -> list[str]:
+    """Core statements printed in *pdf_path* but absent from a cached workbook.
+
+    A company/quarter filename is not sufficient proof that a cached result is
+    complete: an older extractor may have omitted an entire statement. Reuse
+    the existing filing-level completeness detector against the workbook's
+    populated statement tabs before short-circuiting a newly uploaded PDF.
+    """
+    from types import SimpleNamespace
+
+    from openpyxl import load_workbook
+    from src.engine.filing_chat import unextracted_statements
+
+    labels = {
+        "income statement": "financial results",
+        "balance sheet": "balance sheet",
+        "cash flow": "cash flow statement",
+    }
+    try:
+        wb = load_workbook(workbook_path, read_only=True, data_only=True)
+        tables = []
+        for ws in wb.worksheets:
+            if ws.max_row < 2:
+                continue
+            low = ws.title.lower()
+            section = next((label for key, label in labels.items()
+                            if key in low), "")
+            if section:
+                tables.append(SimpleNamespace(section=section, title=ws.title))
+        wb.close()
+    except Exception:
+        return list(labels.values())
+    core = {"financial results (P&L)", "balance sheet",
+            "cash flow statement"}
+    return [kind for kind in unextracted_statements(pdf_path, tables)
+            if kind in core]
+
+
 @app.route("/tables/process", methods=["POST"])
 def tables_process():
     mode = request.form.get("mode") or "quarterly"
@@ -936,8 +975,9 @@ def tables_process():
         need_q = " and quarter" if mode == "quarterly" else ""
         return jsonify(error=f"Please provide a company, fiscal year{need_q}."), 400
 
-    # De-duplication: if this exact company/period was already generated,
-    # return the existing output instead of re-running the pipeline.
+    # De-duplication: an existing filename is reusable only after checking the
+    # newly uploaded PDF. This prevents a stale workbook produced by an older
+    # extractor from permanently hiding a statement that the filing prints.
     if mode == "mdna":
         existing = os.path.join(MDNA_DIR, f"{name}_MDNA.md")
         if os.path.exists(existing):
@@ -946,15 +986,21 @@ def tables_process():
                            message=f"Already generated — showing existing MD&A summary for <b>{name}</b>.")
     else:
         existing = os.path.join(CLIENT_DIR, f"{name}.xlsx")
-        if os.path.exists(existing):
-            return jsonify(cached=True, kind="tables", name=name,
-                           message=f"Already generated — client workbook <b>{name}</b> is ready below.")
 
     pdf = request.files.get("pdf")
     if not pdf or not pdf.filename.lower().endswith(".pdf"):
         return jsonify(error="Please upload a PDF file."), 400
     pdf_path = os.path.join(UPLOAD_DIR, f"tables_{name}.pdf")
     pdf.save(pdf_path)
+    if mode != "mdna" and os.path.exists(existing):
+        missing = _cached_workbook_missing_statements(existing, pdf_path)
+        if not missing:
+            try:
+                os.remove(pdf_path)
+            except OSError:
+                pass
+            return jsonify(cached=True, kind="tables", name=name,
+                           message=f"Already generated — client workbook <b>{name}</b> is ready below.")
     fin_only = True   # financial-statements section only, always
     vision = True     # scanned pages are handled automatically in both modes
     job_id = uuid.uuid4().hex[:8]
