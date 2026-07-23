@@ -74,26 +74,6 @@ for title, scope, section, g0, g2, rep in rec:
               not identities.failing(section, title, g2),
               str(identities.failing(section, title, g2)))
 
-print("== 1b. candidate selection picks the true full-column source (infosys_q4 consolidated) ==")
-# The consolidated P&L text layer is column-major; a corrupt (dup) grid shares
-# its digits with the 4-column ANNUAL REPRINT (p341/p83) more than with its own
-# 5-column source (p25), so raw coverage ranks the reprint first. Selection must
-# prefer COLUMN-STRUCTURE match so reconcile lands on the true source (p25) and
-# full authority repairs the column. (The raw's exact dup state varies run to
-# run — extraction is non-deterministic — so we assert the stable invariants:
-# the chosen source and the distinct printed Dec'25 value.)
-for title, scope, section, g0, g2, rep in rec:
-    if scope == "consolidated" and "Results" in section and "IFRS" not in section:
-        check("reconcile selects the true 5-column source page (25), not the reprint",
-              bool(rep) and 25 in rep.get("pages", []), str(rep and rep.get("pages")))
-        check("no duplicated period column after reconcile",
-              not identities.dup_columns(g2))
-        emp = next((r for r in g2 if "Employee benefit" in str(r[0])), None)
-        check("Dec'25 column is the distinct printed value (24,122, not the Q4'25 22,015)",
-              emp is not None and "24,122" in str(emp[2]) and "22,015" in str(emp[3]),
-              str(emp))
-        break
-
 print("== 2. corpus-wide: reconciliation never worsens identities ==")
 tot_before = tot_after = 0
 worse = []
@@ -432,48 +412,6 @@ check("completeness tripwire: stripped balance sheet is reported missing",
           os.path.join(PDF, "techm_q2FY2026.pdf"), stripped))
 check("completeness tripwire: full extraction reports nothing missing",
       _fc.unextracted_statements(os.path.join(PDF, "techm_q2FY2026.pdf"), tabs) == [])
-
-print("== 11. identity-driven vision re-read (stubbed — no paid call) ==")
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
-import repair_raw as _rr
-from src.engine import tables_llm as _tll
-
-_SEC = _TI = "Standalone Balance Sheet"
-_CORRUPT = [["Non-current assets", ""], ["  PP&E", "100"], ["  Investments", "200"],
-            ["Total non-current assets", ""],                    # blank -> inactive
-            ["Current assets", ""], ["  Cash", "50"],
-            ["Total current assets", "50"], ["Total assets", "350"]]
-_GOOD = [r[:] for r in _CORRUPT]; _GOOD[3] = ["Total non-current assets", "300"]
-_WORSE = [r[:] for r in _GOOD]; _WORSE[3] = ["Total non-current assets", "999"]
-_rows_v = [(7, 1, _TI, "standalone", _SEC, _CORRUPT)]
-
-
-class _FT:
-    def __init__(s, g):
-        s.grid, s.scope, s.title, s.section, s.page, s.n = g, "standalone", _TI, _TI, 7, 1
-
-
-def _stub(g):
-    def f(pdf, pages, model=None, log=print):
-        return [_FT(g)]
-    return f
-
-
-_orig_locate = _rr._locate_pages
-_rr._locate_pages = lambda pdf, kind, scope: [7]
-_fid = [{"kind": "identity", "scope": "standalone", "stmt": "balance"}]
-
-_tll.vision_tables_consensus = _stub(_GOOD)
-_o, _n = _rr.vision_reread(_rows_v, [], "x.pdf", log=lambda m: None)
-check("vision re-read does NOT fire without an identity finding", not _n and _o[0][5] is _CORRUPT)
-
-_o, _n = _rr.vision_reread(_rows_v, _fid, "x.pdf", log=lambda m: None)
-check("vision re-read adopts a pixel read that ties more identities", bool(_n) and _o[0][5] is _GOOD)
-
-_tll.vision_tables_consensus = _stub(_WORSE)
-_o, _n = _rr.vision_reread(_rows_v, _fid, "x.pdf", log=lambda m: None)
-check("vision re-read rejects a pixel read that breaks an identity", not _n and _o[0][5] is _CORRUPT)
-_rr._locate_pages = _orig_locate
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

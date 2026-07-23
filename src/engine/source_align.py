@@ -325,7 +325,7 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
     report = {"abstained": False, "corrections": [], "filled": 0,
               "unmatched_rows": 0, "numeric_rows": 0,
               "structure_mismatch": False, "unverified_cols": [],
-              "conservative": False, "n_value_cols": 0, "n_grid_cols": 0}
+              "conservative": False}
     lines = [_Line(ln) for ln in lines_raw]
     matches = _match_rows(grid, lines)
     numeric_rows = [ri for ri, row in enumerate(grid) if _grid_row_features(row)[2]]
@@ -374,8 +374,6 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
                         for j in _grid_row_features(grid[ri])[2]
                         if sum(1 for r2 in numeric_rows
                                if j in _grid_row_features(grid[r2])[2]) >= 2})
-    report["n_value_cols"] = len(value_ks)
-    report["n_grid_cols"] = len(grid_cols)
 
     # ---- column mapping. Left-to-right order is the ground truth of a table;
     # when the counts agree, map by order and use the votes as a CHECK. When
@@ -400,28 +398,12 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
         report["abstained"] = True
         return grid, report
 
-    # ---- authority level. Column authority comes from MATCHING COLUMN
-    # STRUCTURE, not from row coverage. A page that maps every grid value
-    # column to its own printed cluster, with most of those columns CONFIRMED
-    # by verbatim cell matches, IS the statement's true source — even when it
-    # prints only some ROWS (a real hazard: source pages whose top rows are
-    # vector-rendered carry no text for them, so text-layer row coverage is
-    # low though the columns are perfect). Row coverage then wrongly forced
-    # conservative mode and left transcription errors — e.g. a duplicated
-    # period column — unrepaired. Two things still hold the line: a page with
-    # FEWER printed columns (a reduced reprint -> unverified_cols) stays
-    # conservative, and full authority requires the columns be vote-confirmed,
-    # so a wrong same-shape twin (few verbatim matches) does NOT qualify. The
-    # caller's identity gate is the final backstop: it rejects any rewrite
-    # that worsens the printed arithmetic.
-    confirmed = sum(1 for j in grid_cols
-                    if j in vote_map and vote_map[j] == col_map.get(j))
-    full_column_authority = (not report["unverified_cols"]
-                             and len(grid_cols) == len(value_ks)
-                             and confirmed >= 2
-                             and confirmed >= 0.6 * len(grid_cols))
-    conservative = bool(report["unverified_cols"]) or (
-        coverage < _FULL_AUTHORITY_COVERAGE and not full_column_authority)
+    # ---- authority level. A page that does not print ~all of the grid's
+    # numbers is a DIFFERENT layout of the statement (fewer period columns) —
+    # its positions must not overwrite values it never printed. Same when the
+    # column mapping itself is in doubt: fix forms, fill blanks, flag — the
+    # identity suite + repair loop own the rest.
+    conservative = coverage < _FULL_AUTHORITY_COVERAGE or bool(report["unverified_cols"])
     report["conservative"] = conservative
 
     # ---- per-cell verification/correction
@@ -544,12 +526,7 @@ def reconcile_with_source(grid, section, title, page_forms, page_lines,
     scan_pages = scan_pages or set()
     baseline = len(identities.failing(section, title, grid))
     best = None
-    # Widen the candidate net: coverage RANK is unreliable when the LLM grid is
-    # itself corrupt (a grid with a duplicated period column shares its digits
-    # with a REDUCED reprint more than with its own full-column source, so the
-    # true source can rank below the reprint). We compensate below by preferring
-    # column-structure match, but the true source must first be in the net.
-    for span, cov in candidate_spans(grid, page_forms, k=8):
+    for span, cov in candidate_spans(grid, page_forms):
         if all((p + 1) in scan_pages for p in span):
             continue
         pool = [ln for p in span for ln in page_lines[p] if (p + 1) not in scan_pages]
@@ -567,24 +544,7 @@ def reconcile_with_source(grid, section, title, page_forms, page_lines,
         # near-certainly the source (a wrong twin page could rewrite silently)
         if not checks and (rep["corrections"] or rep["filled"]) and cov < 0.9:
             continue
-        # COLUMN-STRUCTURE MATCH is the primary selector, ahead of nfail and
-        # coverage. A page that prints the SAME number of value columns as the
-        # grid is the statement's true source; a page with fewer columns is a
-        # reduced reprint that can never repair a shifted/duplicated column
-        # (it leaves one grid column unmapped -> conservative -> no rewrite).
-        # This is what makes the corrupt grid reconcile against its real 5-column
-        # source instead of the 4-column annual reprint that scores higher raw
-        # coverage. nfail still gates (a matching page that worsens identities
-        # was already rejected above), then coverage/corrections break ties.
-        col_match = (rep["n_grid_cols"] > 0
-                     and rep["n_value_cols"] == rep["n_grid_cols"])
-        # Prefer a SINGLE page over a pooled [p, p+1] span at equal column-match
-        # and identity cost: pooling risks matching a grid row to a same-named
-        # line on the adjacent page (a different statement), corrupting cells the
-        # true source simply doesn't print (those are left for the vision
-        # backstop instead). len(span) breaks that tie before coverage.
-        key = (0 if col_match else 1, nfail, len(span), rep["unmatched_rows"],
-               -round(cov, 3), -len(rep["corrections"]) - rep["filled"])
+        key = (nfail, rep["unmatched_rows"], -len(rep["corrections"]) - rep["filled"])
         if best is None or key < best[0]:
             rep["pages"] = [p + 1 for p in span]
             rep["coverage"] = cov
