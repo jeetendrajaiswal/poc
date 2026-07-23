@@ -44,6 +44,12 @@ S3_BUCKET = os.getenv("S3_BUCKET", "")
 S3_PREFIX = os.getenv("S3_PREFIX", "data-extraction/output")
 JOBS_FILE = os.path.join(OUT_DIR, ".jobs.json")
 
+# The long-format companion workbook (output/client/long/*_long.xlsx) is PAUSED:
+# it is still built in-memory because the wide deliverable is derived from it,
+# but it is no longer persisted to disk or mirrored to S3. Set EMIT_LONG=1 to
+# re-enable the long deliverable later.
+EMIT_LONG = os.getenv("EMIT_LONG", "").lower() in ("1", "true", "yes", "on")
+
 
 def _s3():
     import boto3
@@ -617,6 +623,26 @@ setMode('quarterly');
 </script></body></html>"""
 
 
+def _job_logger(raw_name: str):
+    """Per-job debug log: output/logs/<raw_name>.log — every stage writes what
+    it did and why (pages, corrections, flags, paid-call decisions, findings),
+    so a wrong workbook can be diagnosed from the log alone. Thread-safe;
+    also mirrors to stdout for the server console."""
+    import datetime
+    log_dir = os.path.join(ROOT, "output", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    path = os.path.join(log_dir, f"{raw_name}.log")
+    lock = threading.Lock()
+
+    def log(msg):
+        line = f"{datetime.datetime.now().strftime('%H:%M:%S')} {msg}"
+        with lock:
+            with open(path, "a", encoding="utf-8") as fh:
+                fh.write(line + "\n")
+        print(f"[{raw_name}] {line}", flush=True)
+    return log, path
+
+
 def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, vision: bool,
                     mode: str = "auto"):
     jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
@@ -645,20 +671,46 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                                            write_client_workbook_long)
         m = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
         raw_name = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else name.lower()
+        log, log_path = _job_logger(raw_name)
+        import time as _time
+        import traceback as _tb
+        _t0 = _time.time()
+        log(f"=== job start: {name} | pdf {os.path.getsize(pdf_path):,} bytes ===")
 
         jobs[job_id]["message"] = "Processing…"
         from src.engine.tables_llm import maybe_trim_large_filing
-        pdf_in = maybe_trim_large_filing(pdf_path, log=lambda m: None)
-        tables = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
+        pdf_in = maybe_trim_large_filing(pdf_path, log=log)
+        log("EXTRACT: whole-file upload + per-statement questions")
+        tables = extract_tables_smart(pdf_in, mode="quarterly", log=log)
         rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
+        # Deterministic un-mangling of the boxed-negative paren/comma glyph
+        # ('(21,914)' -> text layer '121.914)'). Runs on EVERY statement — the
+        # signature (unbalanced bracket + comma-rendered-as-dot + stray '1') is
+        # self-proving, so it is a no-op on clean cells and fires even where the
+        # printed subtotals read correctly and no identity fails.
+        from src.engine.source_align import repair_bracket_glyphs as _rbg
+        _nfix = 0
+        _rows2 = []
+        for _pg, _n2, _t2, _sc2, _se2, _g2 in rows:
+            _g3 = _rbg(_g2)
+            _nfix += sum(1 for a, b in zip(sum(_g2, []), sum(_g3, [])) if a != b)
+            _rows2.append((_pg, _n2, _t2, _sc2, _se2, _g3))
+        rows = _rows2
+        if _nfix:
+            log(f"EXTRACT: bracket-glyph repair fixed {_nfix} cell(s) deterministically")
         pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
+        log(f"EXTRACT: {len(rows)} tables cached -> {raw_name}.pkl")
+
+        # free completeness tripwire: a statement the PDF prints but the model
+        # never returned must surface, not vanish
+        from src.engine.filing_chat import unextracted_statements
+        missing_stmts = unextracted_statements(pdf_in, tables)
+        for kind in missing_stmts:
+            log(f"⚠ COMPLETENESS: '{kind}' heading printed in the PDF but no "
+                "table extracted")
 
         _sys.path.insert(0, os.path.join(ROOT, "scripts"))
         import repair_raw as _rr
-        import pymupdf as _pm
-        _doc = _pm.open(pdf_path)
-        _nscan = sum(1 for _i2 in range(len(_doc)) if len(_doc[_i2].get_text().strip()) < 100)
-        _doc.close()
 
         jobs[job_id]["message"] = "Processing…"
         note = ""
@@ -668,89 +720,88 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         except OSError:
             pass
         failing = _rr._failing_statements(rows)
+        log(f"VERIFY: {len(failing)} statement(s) failing identities"
+            + ("".join(f"\n    · [{sc[:4]}] {t[:50]}: {'; '.join(b)[:90]}"
+                       for _pg, t, sc, _se, b in failing) if failing else ""))
         if failing:
-            # scanned filings misread ~1-2% of cells in one pass; the printed
-            # arithmetic pinpoints which statements — re-read those from
-            # pixels BEFORE mapping (costs ~$0.1-0.4, only when needed)
+            # the printed arithmetic pinpoints which statements — free
+            # positional repair first, pixels only where text cannot decide
             jobs[job_id]["message"] = "Processing…"
             try:
-                _rr.repair(raw_name, pdf_path=pdf_path)
+                _rr.repair(raw_name, pdf_path=pdf_path, log=lambda m_: log(f"REPAIR: {m_}"))
                 rows = pickle.load(open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "rb"))
             except Exception:
-                pass
+                log("REPAIR: crashed —\n" + _tb.format_exc())
             failing = _rr._failing_statements(rows)
+            log(f"REPAIR: {len(failing)} statement(s) still failing after repair")
 
-        # scanned filing -> read every statement TWICE independently (default
-        # on for scans; DOUBLE_READ=0 disables). Optical misreads are random,
-        # so a CELL where the two scope-labelled reads disagree — after repair,
-        # with no printed total to settle it — is flagged by name and marked
-        # in the deliverable for manual verification.
+        # TARGETED double-read (DOUBLE_READ=0 disables). The file-upload Q&A
+        # already reads pages provider-side, and statements printed on DIGITAL
+        # pages are verified cell-by-cell against the text layer — paying for
+        # a second independent read is justified ONLY for statements with no
+        # text authority (scans), where optical misreads are random and a
+        # cross-read disagreement is the only per-cell error signal.
         suspects, xread_notes, broad = [], [], []
-        if _nscan >= 3 and os.getenv("DOUBLE_READ", "1") != "0":
-            jobs[job_id]["message"] = "Processing…"
+        if os.getenv("DOUBLE_READ", "1") != "0":
             try:
-                from src.engine.client_map import _label_and_vals as _lv
+                from src.engine import source_align as _sa
+                from src.engine.client_map import compare_reads
                 from src.engine.client_map import statement_of as _sof
-                _t2 = extract_tables_smart(pdf_in, mode="quarterly", log=lambda m: None)
-                _bykey = {}
-                for _t in _t2:
-                    _bykey.setdefault((_t.scope, _sof(_t.section, _t.title)), _t.grid)
-                _still_bad = {(_sc2, _sof(_sec2, _t3)) for _pg2, _t3, _sc2, _sec2, _b2 in failing}
-                for _pg, _n, _tt, _sc, _sec, _g in rows:
-                    _st = _sof(_sec, _tt)
-                    _g2 = _bykey.get((_sc, _st))
-                    if not _g2 or (_sc, _st) in _still_bad:
-                        continue                    # failing stmts are flagged whole
-                    if max(len(_r) for _r in _g) != max(len(_r) for _r in _g2):
-                        continue                    # layouts differ: cells can't be paired
-                    _occ, _rows2 = {}, {}
-                    for _r in _g2:
-                        _l2, _v2 = _lv(_r)
-                        _k2 = " ".join(_l2.lower().split())
-                        if _k2 and _v2:
-                            _rows2[(_k2, _occ.get(_k2, 0))] = _v2
-                            _occ[_k2] = _occ.get(_k2, 0) + 1
-                    _hdr = next((_r for _r in _g if sum(1 for _c in _r if str(_c).strip()) > 2), _g[0])
-                    _occ1, _cells = {}, []
-                    for _ri, _r in enumerate(_g):
-                        _l1, _v1 = _lv(_r)
-                        _k1 = " ".join(_l1.lower().split())
-                        if not (_k1 and _v1):
-                            continue
-                        _v2m = _rows2.get((_k1, _occ1.get(_k1, 0)))
-                        _occ1[_k1] = _occ1.get(_k1, 0) + 1
-                        if not _v2m:
-                            continue
-                        for _j, _a in _v1.items():
-                            _b = _v2m.get(_j)
-                            if _b is not None and abs(_a - _b) > 0.02:
-                                _cells.append({"stmt": _st, "scope": _sc, "label": _l1,
-                                               "col": str(_hdr[_j] if _j < len(_hdr) else ""),
-                                               "v1": _a, "v2": _b, "page": _pg,
-                                               "_ri": _ri, "_j": _j})
-                    # a cell is PROVEN when swapping in the other read breaks a
-                    # printed total that currently ties — no flag needed there
-                    _unproven = []
-                    for _c3 in _cells:
-                        _gc = [list(_r) for _r in _g]
-                        _gc[_c3["_ri"]][_c3["_j"]] = f"{_c3['v2']:g}"
-                        if _rr._failing_statements([(_pg, _n, _tt, _sc, _sec, _gc)]):
-                            continue
-                        _unproven.append(_c3)
-                    if len(_unproven) > 8:          # wholesale disagreement = layout
-                        xread_notes.append(f"[{_sc[:4]}] {_tt[:40]}: two reads disagree "
-                                           f"broadly ({len(_unproven)} cells) — verify statement")
-                        broad.append({"stmt": _st, "scope": _sc, "title": _tt, "page": _pg})
-                    else:
-                        suspects.extend(_unproven)
-                xread_notes += [f"[{s['scope'][:4]}] {s['stmt']}: reads disagree on "
-                                f"'{s['label'][:40]}' [{s['col'][:30]}]: {s['v1']} vs {s['v2']}"
-                                for s in suspects]
+                from src.engine.filing_chat import _page_number_forms as _pnf
+                _forms = _pnf(pdf_path)
+                _untrusted = _sa.untrusted_text_pages(pdf_path)
+                _still_bad = {(_sc2, _sof(_sec2, _t3))
+                              for _pg2, _t3, _sc2, _sec2, _b2 in failing}
+                _needs = {(_sc, _sof(_sec, _tt))
+                          for _pg, _n, _tt, _sc, _sec, _g in rows
+                          if _sof(_sec, _tt) and (_sc, _sof(_sec, _tt)) not in _still_bad
+                          and not _sa.has_text_authority(_g, _forms, _untrusted)}
+                if _needs:
+                    log(f"DOUBLE-READ: {len(_needs)} statement(s) lack text "
+                        f"authority -> paid cross-read: {sorted(_needs)}")
+                    jobs[job_id]["message"] = "Processing…"
+                    _t2 = extract_tables_smart(pdf_in, mode="quarterly",
+                                               log=lambda m_: log(f"XREAD: {m_}"))
+                    suspects, xread_notes, broad = compare_reads(rows, _t2, _needs)
+                    log(f"DOUBLE-READ: {len(suspects)} unproven cell "
+                        f"disagreement(s), {len(broad)} statement(s) disagree broadly")
+                else:
+                    log("DOUBLE-READ: skipped — every statement is verified "
+                        "against the text layer (no paid second read)")
             except Exception:
-                pass
+                log("DOUBLE-READ: crashed —\n" + _tb.format_exc())
 
-        review_items = [f"[{sc}] {t}: {'; '.join(bad)}"
-                        for _pg, t, sc, _sec, bad in failing] + xread_notes
+        import verify_raw as _vr
+        # comparative-column reconciliation (free): a prior-period column
+        # misread on a scan is corrected from the company's OTHER filings that
+        # reported the same period (corroborated + identity-gated). Runs before
+        # cross-quarter so a corrected column no longer flags as a disagreement.
+        recon_notes = []
+        try:
+            rows, recon_notes = _vr.reconcile_comparatives(
+                raw_name, rows, log=lambda m_: log(f"RECONCILE: {m_}"))
+            if recon_notes:
+                pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
+        except Exception:
+            log("RECONCILE: crashed —\n" + _tb.format_exc())
+
+        # cross-quarter consistency (free): columns repeated from the
+        # company's other cached filings must agree — mismatch = review flag
+        xq_flags = []
+        try:
+            xq_flags = _vr.cross_quarter_flags(raw_name, rows)
+            for d in xq_flags:
+                log(f"CROSS-QUARTER ⚠ [{d['scope'][:4]}] {d['stmt']}: {d['note'][:140]}")
+        except Exception:
+            log("CROSS-QUARTER: crashed —\n" + _tb.format_exc())
+
+        review_items = ([f"[{sc}] {t}: {'; '.join(bad)}"
+                         for _pg, t, sc, _sec, bad in failing]
+                        + xread_notes
+                        + [f"[{d['scope'][:4]}] {d['stmt']}: {d['note']}" for d in xq_flags]
+                        + [f"[{d['scope'][:4]}] {d['stmt']}: {d['note']}" for d in recon_notes]
+                        + [f"COMPLETENESS: '{k}' printed in the PDF but not extracted"
+                           for k in missing_stmts])
         if review_items:
             with open(review, "w") as fh:
                 fh.write("\n".join(review_items))
@@ -761,31 +812,79 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
 
         jobs[job_id]["message"] = "Processing…"
         unit = company_unit(pdf_path, pages=sorted({r_[0] for r_ in rows}))
+        log(f"UNIT: filing denomination = '{unit or '?'}'")
         template = load_template(TEMPLATE)
         taxonomy = load_taxonomy(TAXONOMY)
-        mapped = map_quarter(rows, template, taxonomy, default_unit=unit)
+        # period hint from the job's own metadata (Q4 FY2026 …) — used only
+        # when a statement's header cannot resolve its periods (bare-year
+        # cash-flow columns); every use is flagged for review
+        hint = (int(m.group(2)[1]), int(m.group(3)[2:])) if m else None
+        log(f"MAP: taxonomy mapping (period hint {hint})")
+        mapped = map_quarter(rows, template, taxonomy, default_unit=unit,
+                             period_hint=hint, log=lambda m_: log(f"MAP: {m_}"))
+        for d in xq_flags:
+            ms_ = mapped.get((d["stmt"], d["scope"]))
+            if ms_ is not None:
+                ms_.flag("cross-quarter: " + d["note"])
+        for d in recon_notes:
+            ms_ = mapped.get((d["stmt"], d["scope"]))
+            if ms_ is not None:
+                ms_.flag(d["note"])
         cache = os.path.join(CLIENT_DIR, ".cache", f"{raw_name}.pkl")
         os.makedirs(os.path.dirname(cache), exist_ok=True)
         pickle.dump(mapped, open(cache, "wb"))
-        long_dir = os.path.join(CLIENT_DIR, "long")
-        os.makedirs(long_dir, exist_ok=True)
-        long_out = os.path.join(long_dir, f"{name}_long.xlsx")
+        if EMIT_LONG:
+            long_dir = os.path.join(CLIENT_DIR, "long")
+            os.makedirs(long_dir, exist_ok=True)
+            long_out = os.path.join(long_dir, f"{name}_long.xlsx")
+        else:
+            # PAUSED: build the long workbook to a throwaway temp path so the
+            # wide deliverable can still be derived from it, then discard it.
+            import tempfile
+            long_out = os.path.join(tempfile.gettempdir(), f"{name}_long.xlsx")
         write_client_workbook_long(name.split("_")[0], mapped, template, long_out)
         out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
         to_wide(long_out, out)
-        from src.engine.client_map import annotate_review
+        # flag propagation + post-write verification: every extraction/mapping
+        # flag and every identity the DELIVERED file breaks is stamped onto
+        # the workbook itself (Review sheet + orange tabs) — nothing that
+        # failed verification can look verified
+        from src.engine.client_map import annotate_flags, annotate_review
         from src.engine.client_map import statement_of as _sof3
+        n_flags = annotate_flags(out, mapped)
+        import verify_delivered as _vd
+        _findings = _vd.verify_workbook(out, raw_rows=rows, template=template,
+                                        pdf_path=pdf_path)
+        for f_ in _findings:
+            log(f"POST-WRITE ⚠ [{f_['kind']}] {f_['stmt']}/{f_['scope']}: {f_['detail'][:140]}")
+        _vd.annotate_findings(out, _findings)
         annotate_review(out, suspects,
                         [{"stmt": _sof3(sec_, t_), "scope": sc_, "title": t_, "page": pg_}
-                         for pg_, t_, sc_, sec_, _bad in failing] + broad)
+                         for pg_, t_, sc_, sec_, _bad in failing] + broad
+                        + [{"stmt": k, "scope": "?", "title": k, "page": ""}
+                           for k in missing_stmts])
+        log(f"DONE: {os.path.basename(out)} written | {n_flags} statement flag(s), "
+            f"{len(_findings)} post-write finding(s), {len(suspects)} review cell(s) "
+            f"| {_time.time() - _t0:.0f}s")
         jobs[job_id] = {"state": "done", "company": name,
                         "message": f"<b>{os.path.basename(out)}</b> is ready.{note}"}
         _save_jobs()
-        s3_upload(out, long_out, cache,
-                  os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review)
+        s3_upload(out, cache,
+                  os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review, log_path)
+        if EMIT_LONG:
+            s3_upload(long_out)
+        else:
+            try:                       # discard the throwaway long intermediate
+                os.remove(long_out)
+            except OSError:
+                pass
     except Exception as e:
         import traceback
         traceback.print_exc()          # full detail stays in server logs only
+        try:
+            log("JOB FAILED —\n" + traceback.format_exc())
+        except Exception:
+            pass
         jobs[job_id] = {"state": "error", "company": name,
                         "message": "Processing failed. Please try again."}
         _save_jobs()

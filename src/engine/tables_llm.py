@@ -144,6 +144,17 @@ MANDATORY rules:
   same parentheses — numbers in parentheses are NEGATIVE, NEVER strip or convert them.
 - One array entry per printed row, cells in column order, INCLUDING the particulars/label column
   and every period column. Include the column-header rows as the first rows.
+- COLUMN PERIODS — make every period column self-identifying. A statement usually prints a merged
+  heading ('Three months ended' / 'Year ended' / 'As at') ABOVE several columns, with only a date
+  or a bare year beneath each. In the header row you return, EXPAND that heading into EVERY column
+  it covers, so each period column's header cell states the COMPLETE period — e.g. 'Three months
+  ended March 31, 2026', 'Year ended March 31, 2026', 'As at March 31, 2026' — never a bare '2026'
+  or a lone date. Read these headings from the page layout; they are what the columns mean.
+- In those period-HEADER cells ONLY, write the date in the normalized form 'Month DD, YYYY' — full
+  month name, a space, the day, a comma, then the 4-digit year (e.g. 'March 31, 2026') — EVEN IF
+  the page prints it run-together or abbreviated ('31March2026', '31.03.2026', '31-Mar-26'). This
+  date normalization applies ONLY to the column period headers; every DATA cell is still copied
+  EXACTLY as printed (rule above).
 - Use the exact printed line-item names — do not rename, summarise, compute, or omit anything.
 - Do NOT invent numbers: only transcribe what is visibly printed.
 - page: the 1-based page of the attached PDF where the table is printed{page_hint}.

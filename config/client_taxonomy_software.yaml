@@ -1357,6 +1357,7 @@ items:
   - Equity holders of the Company
   - Owners of the Company
   - Shareholders of the Company
+  - Owners
   evidence: mapped
 - fid: '22298'
   name: Non-Controlling Interests
@@ -1394,6 +1395,7 @@ items:
   aliases:
   - Owners of the Company
   - Shareholders of the Company
+  - Owners
   evidence: mapped
 - fid: '22290'
   name: Non-Controlling Interests
@@ -1431,6 +1433,7 @@ items:
   - Equity holders of the Company
   - Owners of the Company
   - Shareholders of the Company
+  - Owners
   evidence: mapped
 - fid: '22302'
   name: Non-Controlling Interests

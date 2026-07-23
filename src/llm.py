@@ -166,9 +166,15 @@ def ask_text(
     max_output_tokens: int = 1500,
     reasoning: str = "low",
     temperature: Optional[float] = 0.1,
-) -> str:
+    with_status: bool = False,
+):
     """Free-text (markdown) answer about attached file(s) — the frp chat shape:
-    system prompt + file attachment message(s) + the question. store=False."""
+    system prompt + file attachment message(s) + the question. store=False.
+
+    with_status=True returns (text, status) so the caller can SEE a truncated
+    response (status='incomplete': the answer hit max_output_tokens and lost
+    its tail — e.g. the second of two statements in one answer). Swallowing
+    that signal is a silent-data-loss channel."""
     mdl = model or config.model_default
     api_input: list[dict[str, Any]] = []
     for i, fid in enumerate(file_ids or []):
@@ -195,7 +201,10 @@ def ask_text(
         else:
             raise
     _record_usage(resp)
-    return getattr(resp, "output_text", "") or ""
+    text = getattr(resp, "output_text", "") or ""
+    if with_status:
+        return text, getattr(resp, "status", "") or ""
+    return text
 
 
 def upload_file(content: bytes, name: str) -> str:

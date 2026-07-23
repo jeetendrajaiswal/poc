@@ -5,6 +5,14 @@ persists at OpenAI), then free-form questions answered in markdown:
 
     from src.engine.filing_chat import ask_filing
     print(ask_filing("q1.pdf", "Provide the full consolidated financial results, detailed."))
+
+Statement extraction (`quarterly_statement_tables`) treats every transcribed
+grid as a HYPOTHESIS: it is positionally reconciled against the PDF text layer
+(src/engine/source_align.py — the authority for both value forms and column
+placement), then verified against the statement's own printed identities
+(src/engine/identities.py). A statement that still fails gets ONE informed
+re-ask; whatever fails after that carries a visible ⚠ downstream — flagged,
+never silently wrong.
 """
 from __future__ import annotations
 
@@ -44,8 +52,29 @@ def ask_filing(pdf_path: str, question: str, model: str | None = None,
 
 # --------------------------------------------------------------------------- internal statement questions
 
+# Statement extraction is TRANSCRIPTION, not chat — it gets its own system
+# prompt. The Q&A prompt above must NOT be reused here: its "prefer
+# consolidated figures" rule actively fights the STANDALONE question, and its
+# conversational rules are noise. The rules below directly target the observed
+# failure modes: invented period columns (a model once fabricated a Dec-quarter
+# column that is printed NOWHERE in the filing), blended twin printings,
+# renamed rows, and missing denomination/period banners.
+EXTRACT_PROMPT = """You transcribe financial statements from Indian company filings EXACTLY as printed.
+
+**RULES:**
+- MANDATORY: numbers in parentheses are NEGATIVE — for ALL line items including Revenue, Expenses, Profit and EPS. Never strip parentheses.
+- Copy every value EXACTLY as printed: same digits, same grouping (e.g. 1,45,575.77), same decimals. Never round, compute, convert or "correct" a number.
+- Use line-item names exactly as printed. Do not rename, summarise, reorder or omit rows.
+- NEVER invent data. Transcribe ONLY the period columns actually printed in the ONE table you are reading. If a period is not printed there, it must not appear in your answer — do not fill it in from another page, another table, or memory.
+- Each table you return must reproduce ONE printed statement from ONE page range. Filings often print the same statement twice (earnings release + audited statements, or Ind AS + IFRS): pick one printing and never blend them.
+- Start each table with the heading and any denomination line printed above it (e.g. '(₹ in crore)', 'Rs. in lakhs'), then the FULL column-header rows including any period banner (e.g. 'For the quarter ended June 30, 2025').
+- Answer with markdown tables only — each preceded by a bold heading line, no commentary."""
+
 _DETAIL = ("for ALL periods shown, detailed, row by row, exactly as printed "
            "(exact line-item names, exact values, keep parentheses). "
+           "Include the denomination line and the table's column-header rows exactly as "
+           "printed, INCLUDING any period banner line above the columns "
+           "(e.g. 'For the quarter ended June 30, 2025'). "
            "CRITICAL: some filings present the SAME statement twice — once under Ind AS and "
            "once under IFRS — with different figures. These are DIFFERENT statements: transcribe "
            "each as its own SEPARATE table with a heading naming its GAAP (e.g. "
@@ -71,114 +100,6 @@ _QUESTIONS = [
      f"Provide the full statement of cash flows — standalone and consolidated separately "
      f"if both exist — {_DETAIL}"),
 ]
-
-
-def _num(cell: str):
-    """Parse a printed Indian-format value; parentheses are negative."""
-    s = str(cell).strip().strip("*^")
-    if not s or s in "-–—":
-        return None
-    neg = s.startswith("(") and s.endswith(")")
-    s = s.strip("()").replace(",", "").replace("₹", "").strip()
-    try:
-        v = float(s)
-    except ValueError:
-        return None
-    return -v if neg else v
-
-
-def _find_row(grid, must, must_not=()):
-    for row in grid:
-        label = " ".join(c for c in row if c and _num(c) is None).lower()
-        if all(m in label for m in must) and not any(m in label for m in must_not):
-            vals = [_num(c) for c in row]
-            if any(v is not None for v in vals):
-                return [v for v in vals if v is not None]
-    return None
-
-
-def _ties(a, b, out):
-    """a - b == out per column, within rounding tolerance."""
-    n = min(len(a), len(b), len(out))
-    if n == 0:
-        return False
-    for i in range(n):
-        if abs((a[i] - b[i]) - out[i]) > max(2.0, 0.005 * abs(out[i])):
-            return False
-    return True
-
-
-def tie_out_results(grid) -> tuple[bool, str]:
-    """A results statement must satisfy its own printed identities:
-    PBT - tax = profit;  profit + OCI = total comprehensive income.
-    A sheet blending two GAAP versions CANNOT pass this."""
-    pbt = _find_row(grid, ["profit before tax"])
-    tax = (_find_row(grid, ["total tax"]) or
-           _find_row(grid, ["tax expense"], must_not=["current", "deferred"]))
-    profit = (_find_row(grid, ["profit for the period"], must_not=["attributable"]) or
-              _find_row(grid, ["profit for the year"], must_not=["attributable"]))
-    oci = _find_row(grid, ["total other comprehensive"])
-    tci = _find_row(grid, ["total comprehensive income"], must_not=["attributable"])
-    ti = _find_row(grid, ["total income"])
-    te = _find_row(grid, ["total expenses"])
-    fin_exp = _find_row(grid, ["finance expenses"])
-    fin_inc = _find_row(grid, ["finance and other income"])
-    share = _find_row(grid, ["share of net profit"])
-    # statements with exceptional items tie TI-TE to the PRE-exceptional profit
-    pbt_pre = _find_row(grid, ["profit before exceptional"])
-    checks = []
-    if ti and te and (pbt or pbt_pre):
-        combos = []
-        for target in (t for t in (pbt, pbt_pre) if t):
-            n = min(len(ti), len(te), len(target))
-            for use_fin in (False, True):
-                for use_share in (False, True):
-                    ok = True
-                    for i in range(n):
-                        v = ti[i] - te[i]
-                        if use_fin and fin_exp and fin_inc and i < min(len(fin_exp), len(fin_inc)):
-                            v += fin_inc[i] - fin_exp[i]
-                        if use_share and share and i < len(share):
-                            v += share[i]
-                        if abs(v - target[i]) > max(2.0, 0.005 * abs(target[i])):
-                            ok = False
-                            break
-                    combos.append(ok)
-        checks.append(("income − expenses ties to PBT", any(combos)))
-    if pbt and tax and profit:
-        checks.append(("PBT − tax = profit", _ties(pbt, tax, profit)))
-    if profit and oci and tci:
-        checks.append(("profit + OCI = TCI",
-                       _ties(tci, oci, profit) or _ties(tci, profit, oci)))
-    # OCI COMPONENTS must sum to the Total OCI row (catches a single miscopied
-    # cell that the subtotal identities cannot see)
-    prof_i = next((i for i, r in enumerate(grid)
-                   if "profit for the" in " ".join(str(c) for c in r).lower()
-                   and "attributable" not in " ".join(str(c) for c in r).lower()
-                   and any(_num(c) is not None for c in r)), None)
-    toci_i = next((i for i, r in enumerate(grid)
-                   if "total other comprehensive" in " ".join(str(c) for c in r).lower()
-                   and any(_num(c) is not None for c in r)), None)
-    if prof_i is not None and toci_i is not None and toci_i - prof_i >= 3:
-        total_row = grid[toci_i]
-        cols = [j for j, c in enumerate(total_row) if _num(c) is not None]
-        comp_rows = [r for r in grid[prof_i + 1:toci_i]
-                     if any(_num(c) is not None for c in r)]
-        if len(comp_rows) >= 2 and cols:
-            ok = True
-            for j in cols:
-                s = sum((_num(r[j]) or 0) for r in comp_rows if j < len(r))
-                tv = _num(total_row[j])
-                if tv is None or abs(s - tv) > max(2.0, 0.005 * abs(tv)):
-                    ok = False
-                    break
-            checks.append(("OCI components sum to Total OCI", ok))
-    if not checks:
-        return True, "no verifiable identity rows found"
-    failed = [name for name, ok in checks if not ok]
-    if failed:
-        return False, "; ".join(failed) + " FAILS"
-    return True, f"{len(checks)} identities tie"
 
 
 def _md_tables(answer: str) -> list[tuple[str, list[list[str]]]]:
@@ -211,17 +132,9 @@ def _digits_only(s) -> str:
     return re.sub(r"\D", "", str(s or ""))
 
 
-def _is_2dp(form) -> bool:
-    """A canonically-printed amount: dot decimal + exactly 2 fractional digits
-    (thousands separators removed). '48.20' / '1,323.33' -> True; '4,820' /
-    '296,99' / '29699' -> False."""
-    s = str(form).strip().strip("()").replace(",", "").replace(" ", "")
-    return bool(re.fullmatch(r"\d+\.\d{2}", s))
-
-
 def _page_number_forms(pdf_path: str) -> list:
     """Per page: {digit-sequence -> set of distinct printed numeric forms} from
-    the text layer. The authority for reconciling LLM-vision misreads."""
+    the text layer. Used to locate each statement's source page(s)."""
     import pymupdf
     doc = pymupdf.open(pdf_path)
     forms = []
@@ -236,267 +149,105 @@ def _page_number_forms(pdf_path: str) -> list:
     return forms
 
 
-def _best_page(grid, forms) -> int:
-    """Index of the text page whose tokens best cover this grid's numbers."""
-    gd = [_digits_only(c) for row in grid for c in row if re.search(r"\d", str(c))]
-    gd = [d for d in gd if len(d) >= 3]
-    best, best_hits = -1, 0
-    for i, d in enumerate(forms):
-        hits = sum(1 for x in gd if x in d)
-        if hits > best_hits:
-            best, best_hits = i, hits
-    return best if best_hits >= 3 else -1
-
-
-def _reconcile_grid(grid, page_forms):
-    """Fix LLM decimal/grouping misreads against the page's text layer. For each
-    numeric cell, among {its own form} ∪ {text tokens sharing its digits}, if
-    exactly one form is canonically 2-decimal, adopt it. This corrects
-    '4,820'->'48.20' on clean pages AND keeps a correct model read ('296.99')
-    when the text layer itself is the corrupted one ('296,99'). Never touches
-    year-like integers, non-numeric cells, or ambiguous ones."""
-    out = []
-    for row in grid:
-        newrow = []
-        for c in row:
-            s = str(c or "").strip()
-            core = s.strip("()").strip()
-            bare = core.replace(",", "").replace(" ", "")
-            if (not re.search(r"\d", core) or not re.fullmatch(r"[\d,. ]+", core)
-                    or re.fullmatch(r"(19|20)\d{2}", bare)):     # letters / year -> leave
-                newrow.append(c); continue
-            D = _digits_only(core)
-            if len(D) < 3:
-                newrow.append(c); continue
-            cands = set(page_forms.get(D, set())); cands.add(core)
-            valid = {v.strip().strip("()").strip() for v in cands if _is_2dp(v)}
-            if len(valid) == 1:
-                chosen = next(iter(valid))
-                if _digits_only(chosen) == D and chosen != core:
-                    neg = s.startswith("(") and s.endswith(")")
-                    newrow.append(f"({chosen})" if neg else chosen); continue
-            newrow.append(c)
-        out.append(newrow)
-    return out
-
-
-def _cell_value(form):
-    """(value, is_negative) for a numeric cell, else (None, False)."""
-    s = str(form or "").strip()
-    if not re.fullmatch(r"[()\d,.\s₹-]+", s) or not re.search(r"\d", s):
-        return None, False
-    neg = s.startswith("(") and s.endswith(")")
-    s2 = s.strip("()").replace(",", "").replace(" ", "").replace("₹", "")
-    try:
-        v = float(s2)
-    except ValueError:
-        return None, False
-    return (-v if neg else v), neg
-
-
-def _is_bare_int(form):
-    """A dropped-decimal candidate: 3+ digit integer with NO decimal point
-    (thousands separators allowed) — e.g. '4,820' or '406'."""
-    s = str(form).strip().strip("()").replace(",", "").replace(" ", "").replace("₹", "")
-    return bool(re.fullmatch(r"\d{3,}", s))
-
-
-def _repair_dropped_decimals(grid):
-    """Recover decimals that are ABSENT from the source text (e.g. '4820' for
-    48.20 — no comma/dot to signal it). Uses cross-period magnitude: Indian
-    statement amounts are 2 dp, and one line item's value never varies ~100x
-    across quarter/half-year/full-year columns (FY is ~4x a quarter at most). So
-    a bare integer that is ≥20x the row's decimal-bearing peers, and whose ÷100
-    lands back in their range, is a dropped decimal → correct it. Requires ≥2
-    clean 2-dp peers in the row, so headers/year rows and all-integer rows are
-    never touched."""
-    import statistics
-    out = [list(r) for r in grid]
-    for ri, row in enumerate(out):
-        cells = []
-        for ci, c in enumerate(row):
-            v, neg = _cell_value(c)
-            if v is not None:
-                cells.append((ci, v, str(c).strip(), neg))
-        peers = [abs(v) for _ci, v, form, _neg in cells if _is_2dp(form) and abs(v) > 0]
-        if len(peers) < 2:
-            continue
-        med = statistics.median(peers)
-        if med <= 0:
-            continue
-        for ci, v, form, neg in cells:
-            if _is_bare_int(form) and abs(v) >= 20 * med:
-                corr = v / 100.0
-                if med / 5 <= abs(corr) <= med * 5:
-                    out[ri][ci] = f"({abs(corr):.2f})" if neg else f"{corr:.2f}"
-    return out
-
-
-def _numeric_word(w):
-    w = str(w or "").strip()
-    return bool(re.search(r"\d", w)) and bool(re.fullmatch(r"\(?-?[\d,]*\.?\d+\)?", w))
-
-
-def _page_word_lines(pdf_path):
-    """Per page: printed visual lines as [(x_center, word), …] sorted by x —
-    used for coordinate-based column alignment."""
-    import pymupdf
-    doc = pymupdf.open(pdf_path)
-    out = []
-    for pg in doc:
-        groups = {}
-        for x0, y0, x1, y1, w, *_ in pg.get_text("words"):
-            groups.setdefault(round(y0 / 2), []).append(((x0 + x1) / 2, w))
-        out.append([sorted(v) for _k, v in sorted(groups.items())])
-    doc.close()
-    return out
-
-
-def _column_centers(lines, n):
-    """x-centre of each of the n period columns, from lines that print all n
-    values (full rows). None if they can't be established."""
-    import statistics
-    cols = [[] for _ in range(n)]
-    for ln in lines:
-        nums = [xc for xc, w in ln if _numeric_word(w)]
-        if len(nums) == n:
-            for i, xc in enumerate(nums):
-                cols[i].append(xc)
-    return [statistics.median(c) for c in cols] if all(cols) else None
-
-
-_OCR_MAP = str.maketrans({"O": "0", "o": "0", "Q": "0", "I": "1", "l": "1", "i": "1",
-                          "Z": "2", "S": "5", "s": "5", "B": "8", "G": "6", "b": "6",
-                          "g": "9", "q": "9"})
-
-
-def _ocr_digits(w):
-    """Digit sequence of an OCR-corrupted numeric token (S->5, O->0, l->1, …).
-    Used ONLY to locate a value's printed x-position for column alignment —
-    never to change a value. Conservative: needs >=2 digits and at most one OCR
-    letter, so real words ('loss', 'SO') are never mistaken for numbers."""
-    core = re.sub(r"[.,\s()\-]", "", str(w).strip())
-    if not core:
-        return ""
-    letters = sum(c.isalpha() for c in core)
-    digits = sum(c.isdigit() for c in core)
-    if digits < 2 or letters > 1 or digits < letters:
-        return ""
-    t = core.translate(_OCR_MAP)
-    return t if t.isdigit() else ""
-
-
-def _realign_sparse_rows(grid, lines):
-    """Fix LLM column-shift: when the model drops a blank period cell, a row has
-    fewer values than the header and a comparative-only value lands in the wrong
-    year. Re-place each value in a SHORT row by its printed x-position (its true
-    column). Full/correct rows and rows we can't confidently place are never
-    touched — so correctly-extracted output is unaffected."""
-    counts = [sum(1 for c in r if _numeric_word(c)) for r in grid]
-    N = max(counts) if counts else 0
-    if N < 2:
-        return grid
-    centers = _column_centers(lines, N)
-    if not centers:
-        return grid
-    out = [list(r) for r in grid]
-    for ri, row in enumerate(grid):
-        nums = [str(c).strip() for c in row if _numeric_word(c)]
-        if not nums or len(nums) == N:                 # empty or already full -> leave
-            continue
-        labcells = [c for c in row if not _numeric_word(c)]
-        labwords = set(re.findall(r"[a-z]{3,}", " ".join(map(str, labcells)).lower()))
-        rowdigs = {_digits_only(v) for v in nums if _digits_only(v)}
-        best, bscore = None, -1
-        for ln in lines:                                # find the printed line for this row
-            m = {}
-            for xc, w in ln:                            # OCR-tolerant so '41.S8' locates 41.58
-                dg = _digits_only(w) if _numeric_word(w) else _ocr_digits(w)
-                if dg:
-                    m[dg] = xc
-            if not (rowdigs & set(m)):
-                continue
-            sc = len(labwords & set(re.findall(r"[a-z]{3,}",
-                                               " ".join(w for _, w in ln).lower())))
-            if sc > bscore:
-                bscore, best = sc, m
-        if best is None:
-            continue
-        newv = [""] * N
-        ok = True
-        for v in nums:
-            d = _digits_only(v)
-            if d not in best:
-                ok = False
-                break
-            col = min(range(N), key=lambda k: abs(centers[k] - best[d]))
-            if newv[col]:                               # column collision -> don't guess
-                ok = False
-                break
-            newv[col] = v
-        if ok:
-            out[ri] = labcells + newv
-    return out
-
+# --------------------------------------------------------------------------- statement extraction
 
 def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                                log=print) -> list:
     """Upload the filing ONCE; internally ask for each detailed statement
     (standalone results, consolidated results, segments, balance sheet, cash
-    flow) in parallel; return the answers as RawTable sheets."""
+    flow) in parallel; return the answers as RawTable sheets.
+
+    Every parsed grid is (1) positionally reconciled against the PDF text
+    layer, (2) checked against its printed identities, (3) re-asked ONCE with
+    the failure spelled out if checks fail, and (4) ⚠-flagged in its title if
+    it still fails — the flag travels with the table into mapping and the
+    deliverable."""
     from concurrent.futures import ThreadPoolExecutor
+    from src.engine import identities, source_align
     from src.engine.tables import RawTable
     from src.llm import ask_text, ephemeral_file
+
+    page_forms = _page_number_forms(pdf_path)
+    page_lines = source_align.page_word_lines(pdf_path)
+    scans = source_align.untrusted_text_pages(pdf_path)
+
+    def _finalize(label: str, answer: str):
+        """markdown → grids → positional reconcile → residual decimal repair
+        → identity checks. Returns [(heading, grid, report, fails)]."""
+        out = []
+        for heading, grid in _md_tables(answer):
+            width = max(len(r) for r in grid)
+            grid = [r + [""] * (width - len(r)) for r in grid]
+            grid, rep = source_align.reconcile_with_source(
+                grid, label, heading or label, page_forms, page_lines,
+                scan_pages=scans)
+            grid = source_align.repair_dropped_decimals(grid)
+            fails = identities.failing(label, heading or label, grid)
+            out.append((heading, grid, rep, fails))
+        return out
 
     with open(pdf_path, "rb") as fh:
         content = fh.read()
     out = []
     with ephemeral_file(content, "filing.pdf") as fid:
+        def _ask(q, budget=6000):
+            return ask_text(instructions=EXTRACT_PROMPT, question=q,
+                            file_ids=[fid], model=model,
+                            max_output_tokens=budget, temperature=0.1,
+                            with_status=True)
+
         def one(args):
             scope, label, q = args
-            answer = ask_text(instructions=SYSTEM_PROMPT, question=q,
-                              file_ids=[fid], model=model,
-                              max_output_tokens=6000, temperature=0.1)
-            # arithmetic tie-out on results statements: a blended/garbled
-            # statement cannot satisfy its own printed identities
-            if "Financial Results" in label:
-                bad = [h for h, g in _md_tables(answer) if not tie_out_results(g)[0]]
-                if bad:
-                    log(f"  {label}: tie-out FAILED ({len(bad)} table(s)) -> re-ask")
-                    answer = ask_text(
-                        instructions=SYSTEM_PROMPT,
-                        question=(q + "\n\nIMPORTANT: your previous attempt mixed rows from "
-                                  "two different printed statements (e.g. Ind AS and IFRS "
-                                  "versions), so the totals did not add up. Transcribe each "
-                                  "printed statement separately and completely, copying every "
-                                  "row from ONE statement only."),
-                        file_ids=[fid], model=model,
-                        max_output_tokens=6000, temperature=0.1)
-            return scope, label, answer
+            answer, status = _ask(q)
+            truncated = False
+            # a truncated answer LOSES ITS TAIL — typically the second of two
+            # statements in one response. Escalate the budget; if the combined
+            # standalone+consolidated question still overflows, ask each scope
+            # separately (halving the response kills the overflow).
+            if status == "incomplete":
+                log(f"  {label}: response truncated at 6000 tokens -> retry at 12000")
+                answer, status = _ask(q, 12000)
+                if status == "incomplete" and scope == "unknown":
+                    log(f"  {label}: still truncated -> one ask per scope")
+                    parts = []
+                    for want in ("STANDALONE", "CONSOLIDATED"):
+                        a3, s3 = _ask(q + f"\n\nIMPORTANT: return ONLY the {want} "
+                                      "version of this statement — the other is being "
+                                      "requested separately.", 12000)
+                        parts.append(a3)
+                        truncated = truncated or s3 == "incomplete"
+                    answer = "\n\n".join(parts)
+                else:
+                    truncated = status == "incomplete"
+                if truncated:
+                    log(f"  {label}: STILL truncated — content may be missing ⚠")
+            tables = _finalize(label, answer)
+            fails = [f for _h, _g, _r, fl in tables for f in fl]
+            if fails and "NOT PRESENT" not in answer[:400]:
+                log(f"  {label}: verification FAILED ({'; '.join(fails)[:90]}) -> re-ask")
+                answer2, _s = _ask(
+                    q + "\n\nIMPORTANT: your previous attempt failed these arithmetic "
+                    "checks against the printed statement: " + "; ".join(fails)[:400]
+                    + ". Common causes: repeating one period column's numbers into an "
+                    "adjacent column, mixing rows from two different printed statements "
+                    "(e.g. Ind AS and IFRS versions), or misplacing values against their "
+                    "labels. Read the table column by column and transcribe EACH "
+                    "period's own values exactly as printed, from ONE statement only.")
+                tables2 = _finalize(label, answer2)
+                if tables2 and sum(len(fl) for _h, _g, _r, fl in tables2) < len(fails):
+                    tables, answer = tables2, answer2
+            return scope, label, answer, tables, truncated
         with ThreadPoolExecutor(max_workers=5) as ex:
             results = list(ex.map(one, _QUESTIONS))
-    # Text layer = the authority for reconciling decimal/grouping misreads the
-    # LLM made while visually transcribing (e.g. '48.20' read as '4,820').
-    page_forms = _page_number_forms(pdf_path)
-    page_lines = _page_word_lines(pdf_path)
-    for i, (scope, label, answer) in enumerate(results, 1):
+
+    for i, (scope, label, answer, tables, truncated) in enumerate(results, 1):
         if "NOT PRESENT" in answer[:400] and answer.count("|") < 10:
             log(f"  {label}: not present in filing")
             continue
-        parsed = _md_tables(answer)
-        if not parsed:
-            log(f"  {label}: no table parsed")
+        if not tables:
+            log(f"  {label}: no table parsed ⚠")
             continue
-        for k, (heading, grid) in enumerate(parsed, 1):
-            width = max(len(r) for r in grid)
-            grid = [r + [""] * (width - len(r)) for r in grid]
-            _pg = _best_page(grid, page_forms)
-            if _pg >= 0:
-                grid = _reconcile_grid(grid, page_forms[_pg])
-                # re-place values the LLM shifted into the wrong period column
-                grid = _realign_sparse_rows(grid, page_lines[_pg])
-            # recover decimals that are absent from the source text entirely
-            grid = _repair_dropped_decimals(grid)
+        for k, (heading, grid, rep, fails) in enumerate(tables, 1):
             sc = scope
             head = (heading or label).lower()
             if "consolidated" in head:
@@ -504,26 +255,81 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
             elif "standalone" in head:
                 sc = "standalone"
             title = heading or label
-            verified = ""
-            if "Financial Results" in label:
-                ok, detail = tie_out_results(grid)
-                verified = f"tie-out: {detail}"
-                if not ok:
-                    title += "  ⚠ arithmetic does not tie — review"
+            notes = []
+            if rep:
+                n_fix = len(rep["corrections"]) + rep["filled"]
+                notes.append(f"source-reconciled p{'/'.join(map(str, rep['pages']))}"
+                             + (f", {n_fix} cell(s) corrected" if n_fix else ""))
+                if rep["structure_mismatch"] or rep["conservative"]:
+                    notes.append("column structure could not be fully verified")
+            elif not fails:
+                notes.append("identities tie (no text-layer source page)")
+            if truncated:
+                title += "  ⚠ response truncated — rows may be missing"
+                notes.append("TRUNCATED response")
+            if fails:
+                title += "  ⚠ verification failed — review"
+                notes.append("FAILED: " + "; ".join(fails))
+            else:
+                checks = identities.run_checks(label, heading or label, grid)
+                if checks:
+                    notes.append(f"{sum(ok for _n, ok in checks)}/{len(checks)} identities tie")
             section = label
             up = head.upper()
             if "IFRS" in up:
                 section += " — IFRS"
             elif "IND AS" in up or "IND-AS" in up:
                 section += " — Ind AS"
+            log(f"    · [{sc[:4]}] {title[:56]}: {'; '.join(notes)[:140]}")
             out.append(RawTable(
                 page=i, n=k, title=title, scope=sc,
                 section=section,
-                page_head=("(quarterly filing — LLM statement extraction"
-                           + (f"; {verified}" if verified else "") + ")"),
+                page_head=("(quarterly filing — LLM statement extraction; "
+                           + "; ".join(notes) + ")"),
                 units="", grid=grid))
-        log(f"  {label}: {len(parsed)} table(s)")
+        log(f"  {label}: {len(tables)} table(s)"
+            + (f" — {sum(len(fl) for _h, _g, _r, fl in tables)} check(s) failing ⚠"
+               if any(fl for _h, _g, _r, fl in tables) else ""))
+    missing = unextracted_statements(pdf_path, out)
+    for kind in missing:
+        log(f"  ⚠ COMPLETENESS: the filing prints a {kind} heading on a "
+            "number-heavy page, but NO such table was extracted")
     return out
+
+
+_STMT_HEADINGS = {
+    "balance sheet": r"balance sheet|assets and liabilit",
+    "cash flow statement": r"cash flow",
+    "segment information": r"segment",
+    "financial results (P&L)": r"financial results|profit and loss",
+}
+
+
+def unextracted_statements(pdf_path: str, tables) -> list[str]:
+    """FREE completeness check: statement kinds whose heading is printed on a
+    number-heavy TEXT page of the filing but for which no table was extracted.
+    (Scan pages carry no text to match — absence there stays the double-read's
+    problem.) A model answering 'NOT PRESENT' for a statement the PDF prints
+    is silent data loss; this is the tripwire."""
+    import pymupdf
+    got = set()
+    for t in tables:
+        s = f"{t.section} {t.title}".lower()
+        for kind, pat in _STMT_HEADINGS.items():
+            if re.search(pat, s):
+                got.add(kind)
+    present = set()
+    doc = pymupdf.open(pdf_path)
+    for page in doc:
+        text = " ".join(page.get_text().split())
+        if len(re.findall(r"\d[\d,]*\.?\d*", text)) < 25:
+            continue
+        head = text[:400].lower()
+        for kind, pat in _STMT_HEADINGS.items():
+            if re.search(pat, head):
+                present.add(kind)
+    doc.close()
+    return sorted(present - got)
 
 
 if __name__ == "__main__":

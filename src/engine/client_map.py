@@ -116,8 +116,15 @@ def derived_section_pairs(fields: list[ClientField],
     taxonomy aliases."""
     def side_of(group: str) -> str:
         g = group.lower()
-        if re.search(r"comprehensive income.*attributable", g):
+        # THREE distinct 'attributable to' blocks must map to THREE distinct
+        # field sets, or the OCI block bleeds into the TCI block and doubles it:
+        #   'total comprehensive income attributable' -> TCI  (22303/22302)
+        #   'comprehensive income attributable' (the OCI block) -> CI (22291/22290)
+        #   'profit attributable' -> PROFIT (22299/22298)
+        if re.search(r"total comprehensive income.*attributable", g):
             return "TCI-ATTRIBUTION"
+        if re.search(r"comprehensive income.*attributable", g):
+            return "CI-ATTRIBUTION"
         if re.search(r"profit.*attributable", g):
             return "PROFIT-ATTRIBUTION"
         if "total segment revenue" in g:
@@ -206,15 +213,23 @@ def _infer_scope(*texts) -> str:
 
 
 def map_quarter(tables, template, taxonomy, model: str | None = None,
-                default_unit: str = ""):
+                default_unit: str = "", period_hint: tuple | None = None,
+                log=None):
     """Map one filing's raw tables to the client taxonomy.
 
     tables: iterable of (page, n, title, scope, section, grid).
     Merges ALL tables of the same (statement, scope) — filings routinely print
     one statement as several blocks (P&L + OCI/EPS, segment revenue + results).
     IFRS versions and unknown scopes are excluded. Returns {key: MappedStatement}.
+
+    period_hint: (quarter 1-4, fiscal-year end year) from the job metadata —
+    used only when a statement's own header cannot resolve its periods.
+    Extraction ⚠ flags in table titles are carried onto the MappedStatement;
+    after mapping, each statement is re-verified (verify_mapped) so a mapping
+    that breaks the statement's printed identities is flagged, never silent.
     """
     grids: dict[tuple[str, str], list] = {}
+    raw_flags: dict[tuple[str, str], list] = {}
     for _page, _n, title, scope, section, grid in tables:
         s = f"{section} {title}".lower()
         stmt = statement_of(section, title)
@@ -226,17 +241,287 @@ def map_quarter(tables, template, taxonomy, model: str | None = None,
         key = (stmt, scope)
         if key in template:
             grids.setdefault(key, []).append(grid)
+            if "⚠" in title:
+                raw_flags.setdefault(key, []).append(
+                    "extraction: " + title.split("⚠", 1)[1].strip())
     out = {}
     for key, gl in grids.items():
         width = max(len(r) for g in gl for r in g)
         merged = [r + [""] * (width - len(r)) for g in gl for r in g]
         ms = map_statement(merged, key[0], taxonomy, template[key], model=model)
+        _nu = lambda u: {"mn": "million", "'000": "thousand"}.get(u, u).rstrip("s")
         if default_unit and not ms.unit:
             ms.unit = default_unit        # units line is printed above the
+        elif default_unit and ms.unit and _nu(ms.unit) != _nu(default_unit):
+            # the grid names one denomination, the filing-level detector
+            # another — one of them is wrong; a wrong unit scales EVERY value
+            ms.flag(f"denomination conflict: statement says '{ms.unit}', the "
+                    f"filing-level detection says '{default_unit}' — verify")
         if key[0] == "cashflow":          # table, not inside the grid
             reconcile_cashflow_opening(ms, template[key])
+        for fl in raw_flags.get(key, []):
+            ms.flag(fl)
         out[key] = ms
+    resolve_bare_periods(out, period_hint)
+    for key, ms in out.items():
+        verify_mapped(ms, template[key], key[0])
+        # completeness: distinct value columns must map to DISTINCT periods.
+        # If two columns share a period, the wide workbook silently merges them
+        # and drops data — flag it rather than lose a column unseen.
+        keyed = [(p.span, p.end) for p in ms.periods if p.end]
+        if len(keyed) != len(set(keyed)):
+            ms.flag("period columns collapsed — two columns resolved to the same "
+                    "period, so a column is dropped in the workbook; verify the "
+                    "period header against the filing")
+        if log:
+            log(f"  map[{key[0]}/{key[1]}]: {len(ms.facts)} fields, "
+                f"{len(ms.unmapped)} unmapped lines, formula checks "
+                f"{ms.n_ok}/{ms.n_checks}, periods "
+                f"{[(p.span, p.end or p.raw[:18]) for p in ms.periods]}")
+            for fl in (getattr(ms, 'flags', None) or []):
+                log(f"    ⚠ {fl[:160]}")
     return out
+
+
+_SPAN_RANK = {"3M": 1, "6M": 2, "9M": 3, "FY": 4}
+
+
+def resolve_bare_periods(mapped: dict, period_hint: tuple | None = None) -> None:
+    """Resolve periods a statement's own header could not (bare-year columns
+    like '2026 | 2025' under 'Statement of Cash Flows' — the span/end context
+    lives outside the table). Evidence, in order:
+
+      1. the OTHER statements of the SAME filing: a bare year names the
+         filing's reporting date for that year, and an interim cash flow is
+         CUMULATIVE, so the longest span the filing reports for that year is
+         the right one;
+      2. the job metadata (quarter, fiscal year) when a statement has exactly
+         current + prior-year columns and no year tokens at all.
+
+    Anything still unresolved keeps its raw column label and the statement is
+    FLAGGED — an empty sheet is never a legal outcome (values exist; only the
+    period label is uncertain)."""
+    evidence: dict[str, set] = {}
+    for ms in mapped.values():
+        for p in ms.periods:
+            if p.end:
+                evidence.setdefault(p.end[:4], set()).add((p.end, p.span))
+
+    _QEND = {1: "06-30", 2: "09-30", 3: "12-31", 4: "03-31"}
+    _QSPAN = {1: "3M", 2: "6M", 3: "9M", 4: "FY"}
+
+    for (stmt, scope), ms in mapped.items():
+        # a statement with facts must expose its value columns as periods even
+        # when the header gave nothing — placeholder first, resolve below
+        if not ms.periods and ms.facts:
+            cols = sorted({c for f in ms.facts.values() for c in f})
+            ms.periods = [Period("?", "", "", c, raw=f"(unresolved period — column {c})")
+                          for c in cols]
+        unresolved = [p for p in ms.periods if not p.end]
+        if not unresolved:
+            continue
+        for p in unresolved:
+            m = re.fullmatch(r"\(?\s*((?:19|20)\d{2})\s*\)?[.,]?\s*(\(?(un)?audited\)?)?",
+                             " ".join(str(p.raw).split()), re.IGNORECASE)
+            yr = m.group(1) if m else None
+            if yr and yr in evidence:
+                cands = sorted(evidence[yr],
+                               key=lambda es: _SPAN_RANK.get(es[1], 0))
+                end, span = (cands[-1] if stmt in ("cashflow", "income")
+                             else cands[0])
+                p.end = end
+                if p.span == "?":
+                    p.span = span if stmt != "balance" else "?"
+                ms.flag(f"period '{p.raw}' resolved to {p.span} ended {p.end} "
+                        "from the filing's other statements — review")
+        still = [p for p in ms.periods if not p.end]
+        if still and period_hint and len(ms.periods) == 2 and \
+                not any(re.search(r"(19|20)\d{2}", str(p.raw)) for p in ms.periods):
+            q, fy = period_hint
+            if fy < 100:                          # 'FY26' → 2026
+                fy += 2000
+            cal = fy if q == 4 else fy - 1
+            ends = [f"{cal}-{_QEND[q]}", f"{cal - 1}-{_QEND[q]}"]
+            span = _QSPAN[q] if stmt in ("cashflow", "income") else "?"
+            for p, end in zip(ms.periods, ends):
+                if not p.end:
+                    p.end, p.span = end, (span if p.span == "?" else p.span)
+            ms.flag(f"periods inferred from the filing's quarter/FY metadata "
+                    f"(Q{q} FY{fy}) — review")
+        if any(not p.end for p in ms.periods):
+            ms.flag("periods could NOT be resolved — column labels are shown "
+                    "as printed; verify against the filing")
+
+
+def compare_reads(rows, tables2, keys) -> tuple[list[dict], list[str], list[dict]]:
+    """Cell-level comparison of two INDEPENDENT reads of the same filing, for
+    the statements in `keys` ({(scope, stmt)}) — the ones with no text-layer
+    authority (scans), where optical misreads are random and a disagreement
+    between reads is the only per-cell error signal.
+
+    A disagreeing cell whose original value is arithmetically PROVEN (swapping
+    in the other read breaks an identity that currently ties) is dropped.
+    Returns (suspects, notes, broad): cell-level items to mark in the
+    deliverable, human-readable notes, and statements where the reads disagree
+    wholesale (layout mismatch — flag the whole statement)."""
+    from src.engine import identities
+    bykey: dict = {}
+    for t in tables2:
+        bykey.setdefault((t.scope, statement_of(t.section, t.title)), t.grid)
+    suspects, notes, broad = [], [], []
+    for pg, n, tt, sc, sec, g in rows:
+        st = statement_of(sec, tt)
+        g2 = bykey.get((sc, st))
+        if (sc, st) not in keys or not g2:
+            continue
+        if max(len(r) for r in g) != max(len(r) for r in g2):
+            continue                        # layouts differ: cells can't be paired
+        occ2, rows2 = {}, {}
+        for r in g2:
+            l2, v2 = _label_and_vals(r)
+            k2 = " ".join(l2.lower().split())
+            if k2 and v2:
+                rows2[(k2, occ2.get(k2, 0))] = v2
+                occ2[k2] = occ2.get(k2, 0) + 1
+        hdr = next((r for r in g if sum(1 for c in r if str(c).strip()) > 2), g[0])
+        occ1, cells = {}, []
+        for ri, r in enumerate(g):
+            l1, v1 = _label_and_vals(r)
+            k1 = " ".join(l1.lower().split())
+            if not (k1 and v1):
+                continue
+            v2m = rows2.get((k1, occ1.get(k1, 0)))
+            occ1[k1] = occ1.get(k1, 0) + 1
+            if not v2m:
+                continue
+            for j, a in v1.items():
+                b = v2m.get(j)
+                if b is not None and abs(a - b) > 0.02:
+                    cells.append({"stmt": st, "scope": sc, "label": l1,
+                                  "col": str(hdr[j] if j < len(hdr) else ""),
+                                  "v1": a, "v2": b, "page": pg,
+                                  "_ri": ri, "_j": j})
+        unproven = []
+        for c in cells:
+            gc = [list(r) for r in g]
+            gc[c["_ri"]][c["_j"]] = f"{c['v2']:g}"
+            if identities.failing(sec, tt, gc):
+                continue                    # original value arithmetically proven
+            unproven.append(c)
+        if len(unproven) > 8:               # wholesale disagreement = layout
+            notes.append(f"[{sc[:4]}] {tt[:40]}: two reads disagree broadly "
+                         f"({len(unproven)} cells) — verify statement")
+            broad.append({"stmt": st, "scope": sc, "title": tt, "page": pg})
+        else:
+            suspects.extend(unproven)
+    notes += [f"[{s['scope'][:4]}] {s['stmt']}: reads disagree on "
+              f"'{s['label'][:40]}' [{s['col'][:30]}]: {s['v1']} vs {s['v2']}"
+              for s in suspects]
+    return suspects, notes, broad
+
+
+def verify_mapped(ms: "MappedStatement", template_fields: list[ClientField],
+                  stmt: str) -> None:
+    """Post-mapping CORRECTNESS check on the MAPPED numbers.
+
+    Correctness is decided by the statement's own PRINTED CROSS-IDENTITIES —
+    relationships between reported printed totals (Assets = Equity+Liabilities;
+    PBT − tax = Net Profit; Net Profit + OCI = TCI; op+inv+fin(+fx) = Δcash;
+    opening + Δ = closing). A break here means a value was genuinely misread or
+    mis-mapped, so it becomes a statement flag.
+
+    It deliberately does NOT flag 'mapped components don't sum to a template
+    total' — that is a mapping-GRANULARITY signal (a printed line had no
+    dedicated client field), not a value error: the reported total is itself a
+    printed figure and is correct. Those remain in ms.verification as Audit
+    notes only (see map_statement), never as review flags. This is what stops
+    a 100%-correct statement (TCS, HM) from being orange-tabbed."""
+    row2fid = {f.row: f.fid for f in template_fields}
+
+    def by_name(*pats):
+        for f in template_fields:
+            if all(re.search(p, f.name.lower()) for p in pats):
+                return f.fid
+        return None
+
+    def fact(fid):
+        return ms.facts.get(fid, {}) if fid else {}
+
+    def check(name, lhs_fids_signs, rhs_fid, alt_lhs=None):
+        """LHS (signed sum of reported facts) == RHS reported fact, per column.
+        Only runs when every term is a REPORTED fact (printed figure) — never
+        forces a verdict off a partially-mapped aggregate."""
+        rhs = fact(rhs_fid)
+        if not rhs:
+            return
+        for c in sorted(rhs):
+            for lhs in (lhs_fids_signs, alt_lhs):
+                if lhs is None:
+                    continue
+                if not all(c in fact(f) for _s, f in lhs):
+                    continue
+                tot = sum(s * fact(f)[c] for s, f in lhs)
+                if abs(tot - rhs[c]) <= max(1.0, 0.005 * abs(rhs[c])):
+                    break                    # ties on one accepted form -> ok
+            else:
+                # no accepted form tied AND at least one form was fully present
+                if any(all(c in fact(f) for _s, f in lhs)
+                       for lhs in (lhs_fids_signs, alt_lhs) if lhs):
+                    per = next((p for p in ms.periods if p.col == c), None)
+                    lbl = _period_label(per) if per else f"column {c}"
+                    ms.flag(f"{name} does not hold ({lbl}) — a value is misread "
+                            "or mis-mapped; verify against the filing")
+                    ms.verification.append(f"⚠ {name} fails at {lbl}")
+                return
+
+    if stmt == "balance":
+        ta = by_name(r"^total assets$")
+        tel = by_name(r"^total equity and liabilit")
+        tnca = by_name(r"total non.?current assets")
+        tca = by_name(r"total current assets")
+        if ta and tel:
+            check("Assets = Equity + Liabilities", [(1, ta)], tel)
+        if tnca and tca and ta:
+            check("Non-current + Current assets = Total assets",
+                  [(1, tnca), (1, tca)], ta)
+    elif stmt == "income":
+        pbt = by_name(r"ordinary activities before tax|before tax")
+        tax = by_name(r"^tax expense$") or by_name(r"tax expense")
+        dtax = by_name(r"^deferred tax$")
+        npf = by_name(r"net profit.*for the period|profit for the period")
+        oci = by_name(r"^other comprehensive income$")
+        tci = by_name(r"total comprehensive")
+        if pbt and tax and npf:
+            check("PBT − tax = Net Profit",
+                  [(1, pbt), (-1, tax), (-1, dtax)], npf,
+                  alt_lhs=[(1, pbt), (-1, tax)])
+        if npf and oci and tci:
+            check("Net Profit + OCI = Total Comprehensive Income",
+                  [(1, npf), (1, oci)], tci)
+        # attribution: TCI-attributable = profit-attributable + OCI-attributable,
+        # per owner class. Catches the OCI-attribution block being summed into
+        # the TCI-attribution fields (a silent double-count otherwise).
+        for tci_a, prof_a, oci_a in (("22303", "22299", "22291"),
+                                     ("22302", "22298", "22290")):
+            if all(ms.facts.get(f) for f in (tci_a, prof_a, oci_a)):
+                check("TCI attributable = Profit + OCI attributable",
+                      [(1, prof_a), (1, oci_a)], tci_a)
+    elif stmt == "cashflow":
+        op = by_name(r"net cash flow from operating")
+        inv = by_name(r"net cash flow from investing")
+        fin = by_name(r"net cash flow from financing")
+        fx = by_name(r"effect of exchange")
+        net = by_name(r"net increase in cash")
+        beg = by_name(r"beginning")
+        end = by_name(r"at the end")
+        if op and inv and fin and net:
+            check("Operating + Investing + Financing = Net change",
+                  [(1, op), (1, inv), (1, fin), (1, fx)], net,
+                  alt_lhs=[(1, op), (1, inv), (1, fin)])
+        if beg and net and end:
+            check("Opening + Net change = Closing",
+                  [(1, beg), (1, net), (1, fx)], end,
+                  alt_lhs=[(1, beg), (1, net)])
 
 
 # --------------------------------------------------------------------------- taxonomy (definitions)
@@ -267,8 +552,10 @@ def load_taxonomy(path: str) -> dict[str, list[dict]]:
 _MONTHS = ("january|february|march|april|may|june|july|august|september|"
            "october|november|december")
 _MABBR = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
-_DATE = re.compile(rf"({_MONTHS})\s+(\d{{1,2}}),?\s+(\d{{4}})|"
-                   rf"(\d{{1,2}})[\s.-]+({_MONTHS}|{_MABBR})[\s.,-]+(\d{{2,4}})|"
+# month-day-year accepts abbreviated months ('Jun 30, 2025'); day-month order
+# accepts a MISSING separator ('31March 2026') — both appear in the corpus
+_DATE = re.compile(rf"({_MONTHS}|{_MABBR})\.?\s+(\d{{1,2}}),?\s+(\d{{4}})|"
+                   rf"(\d{{1,2}})[\s.-]*({_MONTHS}|{_MABBR})[\s.,-]+(\d{{2,4}})|"
                    rf"(\d{{2}})[./-](\d{{2}})[./-](\d{{4}})", re.IGNORECASE)
 _M2N = {m: i + 1 for i, m in enumerate(_MONTHS.split("|"))}
 _M2N.update({m: i + 1 for i, m in enumerate(_MABBR.split("|"))})
@@ -356,8 +643,11 @@ def _num(cell, mode: str = "clean") -> float | None:
     s = str(cell or "").strip().strip("*^#@")
     if not s or s in "-–—" or s.lower() in ("nil", "na", "n.a.", "-"):
         return None
-    neg = s.startswith("(") and s.endswith(")")
-    s = s.strip("()").replace("₹", "").replace("`", "").strip()
+    # a value in parentheses is negative; tolerate an OCR-mangled CLOSING paren
+    # ('(17,253'' or '(17,253`' for '(17,253)') so the cell parses instead of
+    # silently dropping — the opening '(' plus a digits body is unambiguous.
+    neg = s.startswith("(") and (s.endswith(")") or bool(re.search(r"\d[)'`\"]?$", s)))
+    s = s.strip("()'`\"").replace("₹", "").replace("`", "").strip()
     if mode == "repair":
         v = _num_repair(s)
         return None if v is None else (-v if neg else v)
@@ -516,6 +806,19 @@ class MappedStatement:
     unit: str = ""
     multiplier: float = 1.0
     currency: str = "INR"
+    # statement-level review flags. They ONLY accumulate down the pipeline —
+    # extraction ⚠ titles land here, mapped-layer identity failures append
+    # here, and the writer surfaces every entry in the deliverable. A flag can
+    # never be silently dropped between layers.
+    flags: list = None
+
+    def flag(self, msg: str) -> None:
+        cur = getattr(self, "flags", None)   # tolerate pre-flags pickles
+        if cur is None:
+            cur = []
+            self.flags = cur
+        if msg not in cur:
+            cur.append(msg)
 
 
 def _label_and_vals(row, mode: str = "clean"):
@@ -539,23 +842,57 @@ def _label_and_vals(row, mode: str = "clean"):
 
 
 def parse_periods(grid, header=None) -> list[Period]:
-    """Period per value column. Banner rows (a single non-empty PERIOD-WORDED
-    cell, e.g. 'For the six months ended September 30,' with the years on the
-    next row) apply to every column; section headings are never banners."""
+    """Period per value column, parsed COLUMN-FIRST.
+
+    Each column's period comes from ITS OWN header cells; a banner row (a
+    single period-worded cell spanning all columns, e.g. 'For the six months
+    ended September 30,' with the years on the next row) is borrowed ONLY when
+    a column has no date of its own. Critically, a document TITLE that happens
+    to contain a date — 'Audited Standalone Financial Results for the three
+    months and year ended March 31, 2026' — is NOT a banner; treating it as one
+    stamps that single date onto every column and collapses all periods into
+    one (silently dropping columns in the wide output)."""
     if header is None:
-        header, _ = _header_and_data(grid)
+        header, data = _header_and_data(grid)
+    else:
+        _, data = _header_and_data(grid)
     ncol = max(len(r) for r in grid)
+    # VALUE columns only: a period is created for a column that carries numeric
+    # DATA, never for an enumerator ('Sl No'/'Sr No') or the label ('Particulars')
+    # column. Otherwise a filing with a leading serial column makes the label
+    # column look like a period and emits a spurious '(unresolved period)'.
+    from collections import Counter as _Counter
+    _vc: _Counter = _Counter()
+    for r in data:
+        _, _vals = _label_and_vals(r)
+        for _c in _vals:
+            _vc[_c] += 1
+    value_cols = {c for c, n in _vc.items() if n >= 2}
+    _TITLE = re.compile(r"results|financial statement|\blimited\b|\bltd\b|\bcin\b|"
+                        r"balance sheet|cash flow|profit and loss|regd|website|corporate",
+                        re.IGNORECASE)
     banner_parts = []
     for r in header:
         cells = [str(c).strip() for c in r if str(c).strip()]
-        if len(cells) == 1 and re.search(r"month|quarter|year|ended|as at", cells[0], re.I):
+        if (len(cells) == 1 and len(cells[0]) < 55
+                and re.search(r"month|quarter|\byear\b|ended|as at", cells[0], re.I)
+                and not _TITLE.search(cells[0])):
             banner_parts.append(cells[0])
     banner = " ".join(banner_parts)
+    banner_span = _parse_period(banner, 0).span if banner else "?"
     periods = []
     for j in range(1, ncol):
-        text = " ".join(str(r[j]) for r in header if j < len(r) and r[j])
-        if text.strip():
-            periods.append(_parse_period((banner + " " + text).strip(), j))
+        if value_cols and j not in value_cols:   # skip enumerator/label columns
+            continue
+        text = " ".join(str(r[j]) for r in header if j < len(r) and r[j]).strip()
+        if not text:
+            continue
+        p = _parse_period(text, j)               # column's OWN cells first
+        if not p.end and banner:                 # no date of its own -> borrow banner
+            p = _parse_period((banner + " " + text).strip(), j)
+        elif p.end and p.span == "?" and banner_span != "?":
+            p.span = banner_span                 # has date, borrow only the span word
+        periods.append(p)
     return infer_spans(periods)
 
 
@@ -606,7 +943,14 @@ def _header_and_data(grid, mode: str = "clean"):
     first = None
     for i, row in enumerate(grid):
         label, vals = _label_and_vals(row, mode)
-        if label and vals:
+        # A period-header row can carry a stray bare year ('Particulars |
+        # Quarter ended March 31, 2026 | ... | 2025') — its only numeric cell is
+        # a YEAR, not an amount. Such a row is still a HEADER, not the first data
+        # row; requiring a NON-YEAR value keeps the period header out of the data
+        # region so parse_periods can read it.
+        real = {c: v for c, v in vals.items()
+                if not (v == int(v) and 1900 <= v <= 2099)}
+        if label and real:
             first = i
             break
     if first is None:
@@ -651,9 +995,11 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
         label, vals = _label_and_vals(row, num_mode)
         if label and any(c.isalpha() for c in label):
             ll = re.sub(r"^\s*\d+[.)]\s*", "", label.lower())   # '2. Segment results'
-            if re.search(r"comprehensive income.*attributable", ll):
+            if re.search(r"total comprehensive income.*attributable", ll):
                 section = "TCI-ATTRIBUTION"
-            elif re.search(r"profit for the (period|quarter|year).*attributable", ll):
+            elif re.search(r"comprehensive income.*attributable", ll):
+                section = "CI-ATTRIBUTION"     # the OCI-attributable block
+            elif re.search(r"profit.*attributable", ll):   # 'Net profit attributable to' too
                 section = "PROFIT-ATTRIBUTION"
             elif not ll.startswith("total"):
                 for pat, name in _SECTION_PAT:
@@ -694,7 +1040,7 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
             elif "CURRENT" in sec:
                 side = "CURRENT"
             elif sec in ("OPERATING", "INVESTING", "FINANCING",
-                         "PROFIT-ATTRIBUTION", "TCI-ATTRIBUTION",
+                         "PROFIT-ATTRIBUTION", "CI-ATTRIBUTION", "TCI-ATTRIBUTION",
                          "SEGMENT-REVENUE", "SEGMENT-RESULTS",
                          "SEGMENT-ASSETS", "SEGMENT-LIABILITIES"):
                 side = sec
@@ -839,14 +1185,28 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
     # totals. The LLM occasionally assigns a broader total to a narrower field
     # (e.g. both 'Total current liabilities' AND the grand 'TOTAL LIABILITIES'
     # land on fid 13775, summing to a doubled value). When ≥2 total-labelled
-    # lines survive for such a field, keep only the one whose label best matches
-    # the field name and drop the rest (they fall to Unmapped, their true home).
+    # lines survive for such a field, keep the one the ARITHMETIC picks — the
+    # candidate that equals the sum of the field's mapped formula components;
+    # label similarity only breaks a tie the arithmetic cannot.
     _has_formula = {f.fid for f in template_fields if f.formula}
+    _formula_of = {f.fid: f.formula for f in template_fields if f.formula}
+    _row2fid_t = {f.row: f.fid for f in template_fields}
     _byfid3: dict[str, list[int]] = {}
     for _i in range(len(rows)):
         _fd = assign.get(_i)
         if _fd and _fd in valid_fids and rows[_i][2]:
             _byfid3.setdefault(_fd, []).append(_i)
+
+    def _fid_vals(fid, skip: set):
+        """Tentative per-column fact for `fid` from the current assignment."""
+        acc: dict[int, float] = {}
+        for _i2 in range(len(rows)):
+            if _i2 in skip or assign.get(_i2) != fid:
+                continue
+            for _c, _v in rows[_i2][2].items():
+                acc[_c] = acc.get(_c, 0.0) + _v
+        return acc
+
     for _fd, _idxs in _byfid3.items():
         if _fd not in _has_formula:
             continue
@@ -854,11 +1214,34 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
                 if norm_label(rows[i][0]).startswith(("total", "grand"))]
         if len(_tot) < 2:
             continue
-        _fn = set(_fname.get(_fd, "").split())
-        def _match(i, _fn=_fn):
-            _lt = set(norm_label(rows[i][0]).split())
-            return (len(_lt & _fn) / max(1, len(_lt | _fn)), -i)
-        _keep = max(_tot, key=_match)
+        _tot_set = set(_tot)
+        _arith = []
+        for _i in _tot:
+            _comp: dict[int, float] = {}
+            _terms = 0
+            for _sg, _rr in _formula_of[_fd]:
+                _cf = _row2fid_t.get(_rr)
+                if not _cf or _cf == _fd:
+                    continue
+                _cv = _fid_vals(_cf, _tot_set)
+                if _cv:
+                    _terms += 1
+                    for _c, _v in _cv.items():
+                        _comp[_c] = _comp.get(_c, 0.0) + _sg * _v
+            _cand = rows[_i][2]
+            _cc = sorted(set(_comp) & set(_cand))
+            if _terms >= 2 and _cc and all(
+                    abs(_comp[_c] - _cand[_c]) <= max(1.0, 0.01 * abs(_cand[_c]))
+                    for _c in _cc):
+                _arith.append(_i)
+        if len(_arith) == 1:
+            _keep = _arith[0]
+        else:
+            _fn = set(_fname.get(_fd, "").split())
+            def _match(i, _fn=_fn):
+                _lt = set(norm_label(rows[i][0]).split())
+                return (len(_lt & _fn) / max(1, len(_lt | _fn)), -i)
+            _keep = max(_arith or _tot, key=_match)
         for _i in _tot:
             if _i != _keep:
                 assign.pop(_i, None)
@@ -915,12 +1298,24 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
                     if cf and cf in facts and j in facts[cf]:
                         comps.append(f"{'+' if sign > 0 else '-'} {fidname.get(cf, cf)} "
                                      f"({cf}) = {facts[cf][j]:,.2f}")
+                # UNDERSHOOT (components < reported total) = a printed line has no
+                # dedicated client field, so the reconstruction is incomplete —
+                # the reported total is a printed figure and is correct. This is
+                # an informational coverage note, NOT a correctness failure, so it
+                # does not flag the statement. OVERSHOOT (components > total) means
+                # a line was double-counted into two fields; that DOES corrupt a
+                # value, and it surfaces as a broken printed cross-identity in
+                # verify_mapped, which flags. Either way this message is Audit-only.
+                short = printed - total
+                kind = ("components incomplete — a printed line has no dedicated "
+                        "field; reported total is the printed figure"
+                        if short > 0 else
+                        "components exceed the reported total — a line may be "
+                        "double-counted (see cross-identity checks)")
                 verification.append(
-                    f"⚠ {f.name} [{f.fid}] — {plabel}: reported {printed:,.2f}, but its "
-                    f"mapped components add up to {total:,.2f} (off by {total - printed:+,.2f}). "
-                    f"Components summed: {'  '.join(comps)}. "
-                    f"A source line is likely mis-mapped, missing, or double-counted — "
-                    f"verify these against the filing.")
+                    f"note: {f.name} [{f.fid}] — {plabel}: reported {printed:,.2f}, "
+                    f"mapped components sum to {total:,.2f} ({kind}). "
+                    f"Components: {'  '.join(comps)}.")
     ms = MappedStatement(periods=periods, facts=facts, sources=sources,
                          unmapped=unmapped, verification=verification,
                          n_checks=n_checks, n_ok=n_ok,
@@ -1299,6 +1694,70 @@ def _sized_comment(text: str, author: str):
     return Comment(text, author, height=height, width=width)
 
 
+def _review_sheet(wb):
+    """The workbook's Review sheet — created at index 0 on first use, reused
+    afterwards so extraction flags, scan suspects and post-write failures all
+    land on ONE sheet."""
+    from openpyxl.styles import Font
+    if "Review" in wb.sheetnames:
+        return wb["Review"]
+    rv = wb.create_sheet("Review", 0)
+    rv.sheet_properties.tabColor = "ED8B00"
+    rv.append(["Items needing manual review — these could not be fully verified "
+               "automatically. Please check them against the source PDF."])
+    rv["A1"].font = Font(bold=True)
+    rv.append([])
+    rv.append(["Statement", "Scope", "Item", "Period column",
+               "Read 1", "Read 2", "Source page"])
+    for c in rv[3]:
+        c.font = Font(bold=True)
+    for col, w in zip("ABCDEFG", (22, 14, 80, 40, 12, 12, 11)):
+        rv.column_dimensions[col].width = w
+    return rv
+
+
+def _review_append(rv, row) -> None:
+    """Append to the Review sheet unless an identical item is already listed
+    (the mapped-layer flag and the post-write finding for the same defect
+    must not appear twice)."""
+    key = (str(row[0]), str(row[1]), str(row[2])[:120])
+    for r in rv.iter_rows(min_row=4, max_col=3, values_only=True):
+        if (str(r[0]), str(r[1]), str(r[2] or "")[:120]) == key:
+            return
+    _ws_append(rv, row)
+
+
+def annotate_flags(wide_path: str, mapped: dict) -> int:
+    """Stamp every MappedStatement flag ONTO the wide deliverable: orange tab
+    + header note on the statement sheet, one row per flag on the Review
+    sheet. Returns the number of flags written. This is what makes a flag
+    impossible to drop — the file the client opens carries it."""
+    import openpyxl
+    STMT_NAME = {"income": "Income Statement", "balance": "Balance Sheet",
+                 "cashflow": "Cash Flow", "segment": "Segment Finance"}
+    items = [(stmt, scope, f) for (stmt, scope), ms in mapped.items()
+             for f in (getattr(ms, "flags", None) or [])]
+    if not items:
+        return 0
+    wb = openpyxl.load_workbook(wide_path)
+    rv = _review_sheet(wb)
+    for stmt, scope, f in items:
+        sn = f"{STMT_NAME.get(stmt, stmt)} - {str(scope).title()}"[:31]
+        if sn in wb.sheetnames:
+            ws = wb[sn]
+            ws.sheet_properties.tabColor = "ED8B00"
+            c = ws.cell(row=1, column=1)
+            note = f"⚠ {f}"
+            prev = c.comment.text if c.comment else ""
+            if note not in prev:
+                c.comment = _sized_comment((prev + "\n" if prev else "") + note,
+                                           "Reports Radar")
+        _review_append(rv, [STMT_NAME.get(stmt, stmt), str(scope).title(),
+                            f"⚠ {f}", "", "", "", ""])
+    wb.save(wide_path)
+    return len(items)
+
+
 def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -> None:
     """Surface manual-verification items IN the deliverable. Offline.
 
@@ -1357,27 +1816,18 @@ def annotate_review(wide_path: str, suspects: list[dict], failing: list[dict]) -
                         f"{s['v1']} / {s['v2']}.")
                 cell.comment = _sized_comment((cmt + "\n\n" if cmt else "") + note,
                                               "Reports Radar")
-    rv = wb.create_sheet("Review", 0)
-    rv.sheet_properties.tabColor = "ED8B00"
-    rv.append(["This report was produced from a scanned document. The items below "
-               "could not be fully verified automatically — please check them "
-               "against the source PDF."])
-    rv["A1"].font = Font(bold=True)
-    rv.append([])
-    rv.append(["Statement", "Scope", "Report line", "Period column",
-               "Read 1", "Read 2", "Source page"])
-    for c in rv[3]:
-        c.font = Font(bold=True)
+    rv = _review_sheet(wb)
     for s in suspects:
         _ws_append(rv, [STMT_NAME.get(s["stmt"], s["stmt"]), str(s["scope"]).title(),
                         s["label"], s["col"], s["v1"], s["v2"], s["page"]])
     for f in failing:
-        _ws_append(rv, [STMT_NAME.get(f["stmt"], f["stmt"]), str(f["scope"]).title(),
-                        "(whole statement) — values could not be fully verified; "
-                        "please check this statement against the source",
-                        "", "", "", f["page"]])
-    for col, w in zip("ABCDEFG", (22, 14, 52, 40, 12, 12, 11)):
-        rv.column_dimensions[col].width = w
+        _review_append(rv, [STMT_NAME.get(f["stmt"], f["stmt"]), str(f["scope"]).title(),
+                            "⚠ (whole statement) — values could not be fully verified; "
+                            "please check this statement against the source",
+                            "", "", "", f.get("page", "")])
+        sn = f"{STMT_NAME.get(f['stmt'], f['stmt'])} - {str(f['scope']).title()}"[:31]
+        if sn in wb.sheetnames:
+            wb[sn].sheet_properties.tabColor = "ED8B00"
     wb.save(wide_path)
 
 
@@ -1619,6 +2069,19 @@ def write_client_workbook_long(company: str, mapped: dict[tuple[str, str], "Mapp
         if ms.unmapped:
             _ws_append(audit, [stmt, scope, "", "UNMAPPED LINES", "",
                                "; ".join(ms.unmapped)[:300], "", "", ""])
+        # statement-level review flags: visible on the sheet itself (orange
+        # tab + header note), in the Audit sheet, and later on the Review
+        # sheet — a flagged statement can never look verified
+        flags = getattr(ms, "flags", None) or []
+        if flags:
+            ws.sheet_properties.tabColor = "ED8B00"
+            hdr_cell = ws.cell(row=1, column=1)
+            hdr_cell.value = "⚠ Field id"
+            hdr_cell.comment = _sized_comment(
+                "This statement needs review:\n" + "\n".join(f"• {f}" for f in flags),
+                "Reports Radar")
+            _ws_append(audit, [stmt, scope, "", "⚠ REVIEW FLAGS", "",
+                               " | ".join(flags)[:2000], "", "", ""])
         for j, w in zip(range(1, 11), (10, 48, 12, 8, 11, 16, 13, 9, 10, 80)):
             ws.column_dimensions[get_column_letter(j)].width = w
         ws.freeze_panes = "A2"

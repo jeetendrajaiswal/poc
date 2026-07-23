@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pymupdf
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_raw import _suite_for as suite_for
+from src.engine.identities import run_checks  # noqa: E402
 
 PDF_DIR = os.path.expanduser("~/Downloads/qtr_reports")
 PKL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -45,13 +45,12 @@ _PAGE_PAT = {
 
 
 def _failing_statements(rows):
+    """Statements failing ANY check — identity suites AND the duplicate-column
+    structural check (a duplicated column is internally consistent, so only
+    run_checks sees it; it must trigger a pixel re-read like any other fail)."""
     fails = []
     for page, n, title, scope, section, grid in rows:
-        suite = suite_for(section, title)
-        if suite is None:
-            continue
-        checks = suite(grid)
-        bad = [name for name, ok in checks if not ok]
+        bad = [name for name, ok in run_checks(section, title, grid) if not ok]
         if bad:
             fails.append((page, title, scope, section, bad))
     return fails
@@ -100,31 +99,86 @@ def grid_of(rows, page, title):
     return []
 
 
-def repair(name: str, cross: bool = False, pdf_path: str | None = None) -> bool:
+def repair(name: str, cross: bool = False, pdf_path: str | None = None,
+           log=print) -> bool:
     pdf = pdf_path or os.path.join(PDF_DIR, f"{name}.pdf")
     pkl = os.path.join(PKL_DIR, f"{name}.pkl")
     rows = pickle.load(open(pkl, "rb"))
     fails = _failing_statements(rows)
     if not fails:
-        print(f"{name}: all identities tie — nothing to repair")
+        log(f"{name}: all identities tie — nothing to repair")
+        if cross:
+            os.system(f"{sys.executable} scripts/verify_raw.py --cross {name.split('_')[0]}")
+        return True
+
+    # FREE pass first: positional reconciliation against the text layer often
+    # settles a failing statement outright; and when it had FULL authority
+    # (digital page, complete coverage) yet the statement still fails, the
+    # pixels say the same thing the text does — a paid vision re-read cannot
+    # do better, so it is skipped and the statement stays ⚠-flagged.
+    from src.engine import source_align as _sa
+    from src.engine.filing_chat import _page_number_forms
+    _forms = _page_number_forms(pdf)
+    _lines = _sa.page_word_lines(pdf)
+    _scans = _sa.untrusted_text_pages(pdf)
+    no_vision: set = set()
+    new_rows = []
+    for r in rows:
+        page, n, title, scope, section, grid = r
+        if not any(f[0] == page and f[1] == title for f in fails):
+            new_rows.append(r)
+            continue
+        g2, rep = _sa.reconcile_with_source(grid, section, title, _forms,
+                                            _lines, scan_pages=_scans)
+        # Deterministic glyph recovery for boxed-total text-layer corruption
+        # ('(' rendered as '1', comma rendered as space) that positional
+        # reconcile cannot see because the pixels match the corrupt text. Only
+        # adopted when the printed identities tie out — never a guess, no cost.
+        g3, fixed = _sa.repair_glyph_by_identity(g2, section, title)
+        if fixed:
+            log(f"{name}: [{scope[:4]}] '{title[:44]}' — glyph repair tied out "
+                f"{fixed} identity check(s) deterministically")
+            g2 = g3
+        n_old = sum(1 for _c, ok in run_checks(section, title, grid) if not ok)
+        n_new = sum(1 for _c, ok in run_checks(section, title, g2) if not ok)
+        if n_new < n_old:
+            log(f"{name}: [{scope[:4]}] '{title[:44]}' — source reconciliation "
+                  f"fixed {n_old - n_new}/{n_old} check(s) for free")
+            title2 = title.replace("  ⚠ verification failed — review", "") \
+                          .replace("  ⚠ arithmetic does not tie — review", "")
+            if n_new:
+                title2 += "  ⚠ verification failed — review"
+            r = (page, n, title2, scope, section, g2)
+        if rep and not rep["conservative"] and not rep["abstained"] and n_new:
+            no_vision.add((page, scope, section))
+        new_rows.append(r)
+    rows = new_rows
+    pickle.dump(rows, open(pkl, "wb"))     # free-pass repairs survive even if
+    fails = _failing_statements(rows)      # a later vision call crashes
+    if not fails:
+        log(f"{name}: repaired offline — all identities tie")
     else:
         from src.engine.tables_llm import vision_tables_consensus
         for page, title, scope, section, bad in fails:
+            if (page, scope, section) in no_vision:
+                log(f"{name}: [{scope[:4]}] '{title[:44]}' — text layer is "
+                      "authoritative and still fails; vision would read the same "
+                      "pixels — stays ⚠-flagged")
+                continue
             kind = _stmt_kind(section, title)
-            print(f"{name}: REPAIRING [{scope[:4]}] '{title[:44]}' ({'; '.join(bad)[:70]})")
+            log(f"{name}: REPAIRING [{scope[:4]}] '{title[:44]}' ({'; '.join(bad)[:70]})")
             pages = _locate_pages(pdf, kind, scope) if kind else []
             if not pages:
-                print(f"   could not locate pages — statement stays ⚠-flagged")
+                log(f"   could not locate pages — statement stays ⚠-flagged")
                 continue
-            vt = vision_tables_consensus(pdf, pages, log=lambda m: print("   ", m))
+            vt = vision_tables_consensus(pdf, pages, log=lambda m: log("    " + str(m)))
             best = None
             old_grid = grid_of(rows, page, title)
             labs_old = {str(r[0]).strip().lower() for r in old_grid if str(r[0]).strip()}
             vals_old = {str(c).strip() for r in old_grid for c in r[1:]
                         if re.search(r"\d", str(c))}
             for t in vt:
-                suite = suite_for(section, title)
-                checks = suite(t.grid) if suite else []
+                checks = run_checks(section, title, t.grid)
                 if not checks:
                     continue
                 # candidate must BE this statement: labels overlap AND most
@@ -142,30 +196,28 @@ def repair(name: str, cross: bool = False, pdf_path: str | None = None) -> bool:
                 if best is None or score > best[0]:
                     best = (score, t)
             if best is None:
-                print("   vision produced nothing — statement stays ⚠-flagged")
+                log("   vision produced nothing — statement stays ⚠-flagged")
                 continue
             _sc, t = best
-            old_suite = suite_for(section, title)
-            old_bad = sum(1 for _n, ok in old_suite(grid_of(rows, page, title)) if not ok)
-            new_bad = sum(1 for _n, ok in old_suite(t.grid) if not ok)
+            old_bad = sum(1 for _n, ok in run_checks(section, title, grid_of(rows, page, title)) if not ok)
+            new_bad = sum(1 for _n, ok in run_checks(section, title, t.grid) if not ok)
             if new_bad >= old_bad:
-                print("   re-read no better — statement stays ⚠-flagged")
+                log("   re-read no better — statement stays ⚠-flagged")
                 continue
             new_rows = []
             replaced = False
             for r in rows:
                 if r[0] == page and r[2] == title:
-                    flag = "" if all(ok for _n, ok in (suite_for(section, title)(t.grid) or [])) \
-                        else "  ⚠ review"
+                    flag = "" if new_bad == 0 else "  ⚠ verification failed — review"
                     new_rows.append((t.page, t.n, (t.title or title) + flag, scope, section, t.grid))
                     replaced = True
                 else:
                     new_rows.append(r)
             rows = new_rows
-            print(f"   {'replaced from pixels' if replaced else 'no replacement made'}")
+            log(f"   {'replaced from pixels' if replaced else 'no replacement made'}")
         pickle.dump(rows, open(pkl, "wb"))
         residual = _failing_statements(rows)
-        print(f"{name}: after repair — {len(residual)} statement(s) still failing "
+        log(f"{name}: after repair — {len(residual)} statement(s) still failing "
               f"({'⚠ flagged for review' if residual else 'clean'})")
 
     if cross:

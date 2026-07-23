@@ -1,13 +1,13 @@
 """Verify a cached raw extraction (output/qtr_raw/<name>.pkl) against its PDF.
 
 Self-contained, offline, read-only — never touches the extraction pipeline.
+The arithmetic identity suites live in src/engine/identities.py — the SAME
+module the extractor, the repair loop and the mapping layer verify with.
 
 Checks:
   1. digit-grounding — every extracted number must appear in the PDF text
      (exact, or digits-only for scanned pages with a dirty OCR layer);
-  2. arithmetic identities — each statement must satisfy its own printed
-     identities (P&L: PBT-tax=profit, profit+OCI=TCI; BS: A=E+L and subtotal
-     sums; CF: op+inv+fin(+fx)=net change, opening+net(+fx)=closing);
+  2. arithmetic identities + duplicate-column structure (identities.run_checks);
   3. cross-quarter consistency (--cross) — a column repeated in another
      quarter's filing must match it row by row (e.g. Q2's June-quarter column
      vs Q1; Q2's and Q4's March-2025 balance-sheet columns).
@@ -24,22 +24,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pymupdf
 
+from src.engine.identities import (_num, check_balance, check_cashflow,   # noqa: F401
+                                   check_results, run_checks, suite_for)
+
 PDF_DIR = os.path.expanduser("~/Downloads/qtr_reports")
 PKL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "output", "qtr_raw")
 
-
-# ---------------------------------------------------------------- basic parsing
-
-def _num(c):
-    s = str(c).strip().replace(",", "")
-    neg = s.startswith("(") and s.endswith(")")
-    s = s.strip("()")
-    try:
-        v = float(s)
-    except ValueError:
-        return None
-    return -v if neg else v
+# legacy alias: repair_raw historically imported the dispatcher from here
+_suite_for = suite_for
 
 
 def _norm(s):
@@ -47,238 +40,23 @@ def _norm(s):
     return " ".join(re.sub(r"[^a-z ]", " ", s).split())
 
 
-def _find_row(grid, must, must_not=()):
-    """First row whose label contains all `must` substrings; returns its numbers.
-
-    Values start AFTER the label cell: grids may lead with an enumerator
-    column ('Sr. No.' 5, 7, 9 ...) whose numbers are not data."""
-    for row in grid:
-        label = " ".join(c for c in row if c and _num(c) is None).lower()
-        sq = label.replace(" ", "")              # OCR splits words: 'exceptiona l'
-        if (all(m in label or m.replace(" ", "") in sq for m in must)
-                and not any(m in label or m.replace(" ", "") in sq for m in must_not)):
-            li = next((j for j, c in enumerate(row)
-                       if str(c).strip() and _num(c) is None), -1)
-            vals = [_num(c) for c in row[li + 1:]]
-            if any(v is not None for v in vals):
-                return [v for v in vals if v is not None]
-    return None
+def _stem(norm_label):
+    """Drop a trailing plural 's' from each word so labels agree across filings
+    ('purchases…' vs 'purchase…', 'inventories' vs 'inventorie')."""
+    return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w
+                    for w in norm_label.split())
 
 
-def _find_row_any(grid, alternatives, must_not=()):
-    for alt in alternatives:
-        must = [alt] if isinstance(alt, str) else list(alt)
-        row = _find_row(grid, must, must_not)
-        if row is not None:
-            return row
-    return None
-
-
-def _eq(a, b, tol_abs=2.0):
-    n = min(len(a), len(b))
-    return n > 0 and all(abs(a[i] - b[i]) <= max(tol_abs, 0.005 * abs(b[i]))
-                         for i in range(n))
-
-
-# ---------------------------------------------------------------- identity suites
-
-def check_results(grid):
-    pbt = _find_row(grid, ["profit before tax"], must_not=["exceptional"])
-    tax = (_find_row(grid, ["total tax"]) or
-           _find_row(grid, ["tax expense"], must_not=["current", "deferred"]))
-    profit = _find_row_any(grid, [("profit for the period",), ("profit for the year",),
-                                  ("profit for the quarter",), ("profit after tax",)],
-                           must_not=["attributable", "before"])
-    oci = _find_row(grid, ["total other comprehensive"])
-    tci = _find_row(grid, ["total comprehensive income"], must_not=["attributable"])
-    ti = _find_row(grid, ["total income"])
-    rev = _find_row(grid, ["revenue from operations"])
-    oi = _find_row(grid, ["other income"], must_not=["comprehensive", "total"])
-    te = _find_row(grid, ["total expenses"])
-    checks = []
-    if ti and rev and oi:
-        n = min(len(ti), len(rev), len(oi))
-        checks.append(("revenue + other income = total income",
-                       _eq([rev[i] + oi[i] for i in range(n)], ti[:n])))
-    # total expenses = sum of the component rows printed between the income
-    # block and the total-expenses row (catches component-cell misreads on
-    # scans that the profit identities cannot see)
-    if te:
-        comp = []
-        started = False
-        for row in grid:
-            label = " ".join(c for c in row if c and _num(c) is None).lower()
-            sq = label.replace(" ", "")
-            if "totalincome" in sq or (not started and "expenses" in sq and "total" not in sq):
-                started = True
-                comp = []
-                continue
-            if "totalexpense" in sq:
-                break
-            if started and not label.startswith("total"):
-                li = next((j for j, c in enumerate(row)
-                           if str(c).strip() and _num(c) is None), -1)
-                vals = [_num(c) for c in row[li + 1:]]
-                if any(v is not None for v in vals):
-                    comp.append(vals)
-        if len(comp) >= 3:
-            n = min(len(te), min(len(v) for v in comp))
-            sums = [sum(v[i] for v in comp if v[i] is not None) for i in range(n)]
-            checks.append(("expense components = total expenses",
-                           _eq(sums, te[:n])))
-    if pbt and tax and profit:
-        n = min(len(pbt), len(tax), len(profit))
-        checks.append(("PBT - tax = profit",
-                       _eq([pbt[i] - tax[i] for i in range(n)], profit[:n])))
-    if profit and oci and tci:
-        n = min(len(profit), len(oci), len(tci))
-        checks.append(("profit + OCI = TCI",
-                       _eq([profit[i] + oci[i] for i in range(n)], tci[:n])))
-    return checks
-
-
-def check_balance(grid):
-    ta = _find_row(grid, ["total assets"], must_not=["non-current", "current"])
-    tel = _find_row(grid, ["total equity and liabilities"])
-    teq = _find_row(grid, ["total equity"], must_not=["liabilities"])
-    tl = _find_row(grid, ["total liabilities"], must_not=["equity", "non-current", "current"])
-    tnca = _find_row(grid, ["total non-current assets"])
-    tca = _find_row(grid, ["total current assets"])
-    tncl = _find_row(grid, ["total non-current liabilities"])
-    tcl = _find_row(grid, ["total current liabilities"])
-    checks = []
-    if ta and tel:
-        checks.append(("assets = equity+liabilities", _eq(ta, tel)))
-    if teq and tl and ta:
-        n = min(len(teq), len(tl), len(ta))
-        checks.append(("equity + liabilities = assets",
-                       _eq([teq[i] + tl[i] for i in range(n)], ta[:n])))
-    if tnca and tca and ta:
-        n = min(len(tnca), len(tca), len(ta))
-        checks.append(("nc + current assets = total",
-                       _eq([tnca[i] + tca[i] for i in range(n)], ta[:n])))
-    if tncl and tcl and tl:
-        n = min(len(tncl), len(tcl), len(tl))
-        checks.append(("nc + current liabilities = total",
-                       _eq([tncl[i] + tcl[i] for i in range(n)], tl[:n])))
-    return checks
-
-
-def check_cashflow(grid):
-    ncol = max(len(r) for r in grid)
-
-    def aligned(must, must_not=()):
-        """Values aligned to cell positions (None where blank) — sparse rows
-        like '- | 2,768' keep their column."""
-        for row in grid:
-            label = " ".join(c for c in row if c and _num(c) is None).lower()
-            if all(m in label for m in must) and not any(m in label for m in must_not):
-                vals = [_num(row[j]) if j < len(row) else None for j in range(1, ncol)]
-                if any(v is not None for v in vals):
-                    return vals
-        return None
-
-    def aligned_any(alts, must_not=()):
-        for alt in alts:
-            r = aligned([alt] if isinstance(alt, str) else list(alt), must_not)
-            if r is not None:
-                return r
-        return None
-
-    def section_total(word):
-        return aligned_any([("net cash", word), ("net " + word,),
-                            (word + " activities",)], must_not=["before"])
-
-    op, inv, fin = section_total("operating"), section_total("investing"), section_total("financing")
-    fx = aligned_any([("effect of exchange",), ("exchange rate", "cash"),
-                      ("effect of foreign",), ("exchange difference",),
-                      ("net foreign exchange",)],
-                     must_not=["unrealised", "unrealized"])
-    net = aligned_any(["net increase", "net decrease", "net cash flow",
-                       "net cash inflow", "net change in cash"],
-                      must_not=["operating", "investing", "financing"])
-    beg = aligned(["at the beginning"], must_not=["overdraft"])
-    end = aligned(["at the end"])
-    # opening-balance adjustment rows some filings print between net and closing
-    adj = [r for r in (aligned(["bank overdraft", "beginning"]),
-                       aligned(["cash", "acquired", "acquisition"], must_not=["payment", "business"]))
-           if r]
-
-    def cols(*rows):
-        return [j for j in range(ncol - 1)
-                if all(r[j] is not None for r in rows if r is not None)]
-
-    checks = []
-    if op and inv and fin and not net:
-        # some filings (e.g. TCS) print no explicit net-change row: derive it
-        net = [op[j] + inv[j] + fin[j] if j in cols(op, inv, fin) else None
-               for j in range(ncol - 1)]
-    if op and inv and fin and net:
-        ok = True
-        for j in cols(op, inv, fin, net):
-            s = op[j] + inv[j] + fin[j]
-            tol = max(0.05, 0.005 * abs(net[j]))
-            f = fx[j] if fx and fx[j] is not None else 0.0
-            if not (abs(s - net[j]) <= tol or abs(s + f - net[j]) <= tol):
-                ok = False
-                break
-        checks.append(("op+inv+fin(+fx) = net change", ok))
-    if beg and end and net:
-        ok = True
-        for j in cols(beg, end, net):
-            tol = max(0.05, 0.005 * abs(end[j]))
-            a = sum(r[j] for r in adj if r[j] is not None)
-            f = fx[j] if fx and fx[j] is not None else 0.0
-            if not (abs(beg[j] + net[j] + a - end[j]) <= tol
-                    or abs(beg[j] + net[j] + a + f - end[j]) <= tol):
-                ok = False
-                break
-        checks.append(("opening + net(+fx+adj) = closing", ok))
-
-    # PBT + Σ(adjustments) = operating profit before working-capital changes.
-    # Section subtotals (op/inv/fin = net change) stay intact even when a
-    # scanned-page misread scrambles the individual add-back rows, so this
-    # finer identity is what catches value/label misalignment in the operating
-    # adjustments block. Runs ONLY when the statement prints that subtotal.
-    def _row_idx(must, must_not=()):
-        for i, row in enumerate(grid):
-            label = " ".join(c for c in row if c and _num(c) is None).lower()
-            if all(m in label for m in must) and not any(m in label for m in must_not):
-                return i
-        return None
-
-    opbwc = aligned(["before working capital"])
-    i_pbt = _row_idx(["profit before tax"])
-    i_sub = _row_idx(["before working capital"])
-    if opbwc and i_pbt is not None and i_sub is not None and i_pbt < i_sub:
-        ok = True
-        for j in range(ncol - 1):
-            if opbwc[j] is None:
-                continue
-            tot, seen = 0.0, False
-            for r in grid[i_pbt:i_sub]:          # PBT row + all adjustment rows
-                v = _num(r[j + 1]) if j + 1 < len(r) else None
-                if v is not None:
-                    tot += v
-                    seen = True
-            if not seen:
-                continue
-            if abs(tot - opbwc[j]) > max(0.05, 0.005 * abs(opbwc[j])):
-                ok = False
-                break
-        checks.append(("PBT + adjustments = op profit before WC", ok))
-    return checks
-
-
-def _suite_for(section, title):
-    s = f"{section} {title}".lower()
-    if "cash flow" in s:
-        return check_cashflow
-    if "assets and liabilities" in s or "balance" in s:
-        return check_balance
-    if "results" in s and "segment" not in s:
-        return check_results
-    return None
+def _uniq_stemmed(colmap):
+    """Stem a {label: value} colmap's keys and KEEP ONLY labels that remain
+    unique after stemming — an ambiguous label (repeated across a statement's
+    sections) is dropped so it can never be matched to the wrong section."""
+    seen, out = {}, {}
+    for k, v in colmap.items():
+        sk = _stem(k)
+        seen[sk] = seen.get(sk, 0) + 1
+        out[sk] = v
+    return {k: v for k, v in out.items() if seen[k] == 1}
 
 
 # ---------------------------------------------------------------- per-file verify
@@ -305,39 +83,272 @@ def _pdf_number_sets(pdf_path):
 
 def verify(name):
     tables = _load(name)
-    exact, digits = _pdf_number_sets(os.path.join(PDF_DIR, f"{name}.pdf"))
-    checked = grounded = 0
-    for _p, _n, _t, _sc, _sec, grid in tables:
-        for row in grid:
-            for cell in row[1:]:
-                for m in re.finditer(r"\d[\d,]*\.?\d*", str(cell)):
-                    v = m.group(0).replace(",", "")
-                    vv = v.rstrip("0").rstrip(".") if "." in v else v
-                    d = re.sub(r"\D", "", m.group(0))
-                    checked += 1
-                    if (v in exact or vv in exact or v.lstrip("0") in exact
-                            or (len(d) >= 4 and d in digits)):
-                        grounded += 1
+    pdf = os.path.join(PDF_DIR, f"{name}.pdf")
+    grounding = ""
+    if os.path.exists(pdf):
+        exact, digits = _pdf_number_sets(pdf)
+        checked = grounded = 0
+        for _p, _n, _t, _sc, _sec, grid in tables:
+            for row in grid:
+                for cell in row[1:]:
+                    for m in re.finditer(r"\d[\d,]*\.?\d*", str(cell)):
+                        v = m.group(0).replace(",", "")
+                        vv = v.rstrip("0").rstrip(".") if "." in v else v
+                        d = re.sub(r"\D", "", m.group(0))
+                        checked += 1
+                        if (v in exact or vv in exact or v.lstrip("0") in exact
+                                or (len(d) >= 4 and d in digits)):
+                            grounded += 1
+        pct = 100 * grounded / checked if checked else 100.0
+        grounding = f"{grounded}/{checked} numbers grounded ({pct:.1f}%)"
+    else:
+        grounding = "PDF not found — identities only"
     ties = fails = 0
     fail_lines = []
     for _p, _n, title, scope, section, grid in tables:
-        suite = _suite_for(section, title)
-        if suite is None:
-            continue
-        for cname, ok in suite(grid):
+        for cname, ok in run_checks(section, title, grid):
             ties += ok
             fails += not ok
             if not ok:
                 fail_lines.append(f"      FAIL [{scope[:4]}] {title[:52]}: {cname}")
-    pct = 100 * grounded / checked if checked else 100.0
-    print(f"{name}: {grounded}/{checked} numbers grounded ({pct:.1f}%) | "
-          f"identities {ties}/{ties + fails} tie")
+    print(f"{name}: {grounding} | identities {ties}/{ties + fails} tie")
     for line in fail_lines:
         print(line)
     return fails == 0
 
 
 # ---------------------------------------------------------------- cross-quarter
+
+def cross_quarter_flags(raw_name: str, rows) -> list[dict]:
+    """Job-time cross-quarter consistency: a period column REPEATED from the
+    company's other cached filings must match it row by row (Q2 reprints Q1's
+    June quarter; Q2 and Q4 both print the March balance sheet). Mismatches
+    are review FLAGS, never blocks — a genuine restatement looks the same.
+
+    Returns [{stmt, scope, note}] ready to attach to MappedStatement flags."""
+    from src.engine.client_map import _parse_period
+    comp = raw_name.split("_")[0]
+    sibs = [f[:-4] for f in os.listdir(PKL_DIR)
+            if f.endswith(".pkl") and f.startswith(comp + "_") and f[:-4] != raw_name]
+    if not sibs:
+        return []
+
+    from src.engine.client_map import statement_of
+    def grids(rws):
+        out = {}
+        for _p, _n, t, sc, sec, g in rws:
+            s = f"{sec} {t}".lower()
+            if "ifrs" in s or sc not in ("standalone", "consolidated"):
+                continue
+            # most-specific-first (statement_of): a balance sheet titled
+            # '… Financial Results — Balance Sheet' must not be filed as income
+            stmt = statement_of(sec, t)
+            if stmt in ("income", "balance"):
+                out.setdefault((stmt, sc), g)
+        return out
+
+    def cols_by_period(g, stmt):
+        """{period key: column}. Income periods need a KNOWN span — a '?' span
+        can be FY in one filing and a quarter in the other (same end date), so
+        matching on it compares different periods. Balance sheets are
+        point-in-time: the end date alone identifies the column."""
+        out = {}
+        for j in range(1, max(len(r) for r in g)):
+            text = " ".join(str(r[j]) for r in g[:4] if j < len(r))
+            p = _parse_period(text, j)
+            if not p.end:
+                continue
+            if stmt == "balance":
+                out.setdefault(("as at", p.end), j)
+            elif p.span != "?":
+                out.setdefault((p.span, p.end), j)
+        return out
+
+    mine = grids(rows)
+    notes = []
+    for sib in sibs:
+        try:
+            rws = pickle.load(open(os.path.join(PKL_DIR, f"{sib}.pkl"), "rb"))
+        except Exception:
+            continue
+        theirs = grids(rws)
+        for (stmt, sc), g in mine.items():
+            g2 = theirs.get((stmt, sc))
+            if g2 is None:
+                continue
+            c2 = cols_by_period(g2, stmt)
+            for per, j1 in cols_by_period(g, stmt).items():
+                j2 = c2.get(per)
+                if j2 is None:
+                    continue
+                a, b = _colmap(g, j1), _colmap(g2, j2)
+                common = [k for k in a if k in b]
+                bad = [(k, a[k], b[k]) for k in common if abs(a[k] - b[k]) > 1.0]
+                if len(common) >= 5 and bad:
+                    ex = "; ".join(f"'{k[:32]}' {x:g} vs {y:g}" for k, x, y in bad[:3])
+                    notes.append({"stmt": stmt, "scope": sc,
+                                  "note": (f"{per[0]} {per[1]} disagrees with "
+                                           f"{sib} on {len(bad)}/{len(common)} repeated "
+                                           f"rows ({ex}) — review (misread or restatement)")})
+    return notes
+
+
+def reconcile_comparatives(raw_name: str, rows, log=None):
+    """Correct a COMPARATIVE (prior-period) column of a filing from the same
+    company's OTHER filings, which reported that period too.
+
+    A quarterly filing reprints prior periods as comparatives; the SAME period
+    is a CURRENT column in an earlier filing (higher confidence) or a
+    comparative there too. When independent filings corroborate a value that
+    DISAGREES with this filing's comparative cell — the classic scanned-filing
+    misread — we adopt the corroborated value. Vote weight is 2 when a sibling
+    reported the period as its OWN current (latest) column, else 1; a cell is
+    replaced only at total agreeing weight >= 2 (two comparatives, or one
+    authoritative current reading). Replacements are applied per column and
+    kept only if the statement's identity suite is NO WORSE afterwards, so a
+    correction can never break a statement that already tied. The CURRENT
+    (latest-date) column is never touched — only prior comparatives. Every
+    change is returned as a transparent review note (a genuine restatement is
+    rare and stays visible, never silently rewritten).
+
+    Returns (new_rows, notes)."""
+    from src.engine.client_map import _parse_period, statement_of
+    comp = raw_name.split("_")[0]
+    sibs = [f[:-4] for f in os.listdir(PKL_DIR)
+            if f.endswith(".pkl") and f.startswith(comp + "_") and f[:-4] != raw_name]
+    if not sibs:
+        return rows, []
+
+    def _pcols(g):
+        """[(colidx, span, end)] for a grid, plus max end date and end-counts."""
+        out, ends = [], {}
+        for j in range(1, max(len(r) for r in g)):
+            text = " ".join(str(g[i][j]) for i in range(min(4, len(g))) if j < len(g[i]))
+            p = _parse_period(text, j)
+            if not p.end:
+                continue
+            out.append((j, p.span, p.end))
+            ends[p.end] = ends.get(p.end, 0) + 1
+        return out, (max(ends) if ends else None), ends
+
+    # gather sibling readings: {(stmt,scope): [(end, is_current, uniq_stemmed_colmap)]}
+    sib_data = {}
+    for sib in sibs:
+        try:
+            rws = pickle.load(open(os.path.join(PKL_DIR, f"{sib}.pkl"), "rb"))
+        except Exception:
+            continue
+        for _p, _n, t, sc, sec, g in rws:
+            s = f"{sec} {t}".lower()
+            if "ifrs" in s or sc not in ("standalone", "consolidated"):
+                continue
+            stmt = statement_of(sec, t)
+            if stmt not in ("income", "balance", "cashflow"):
+                continue
+            cols, cur_end, ends = _pcols(g)
+            lct = {}
+            for row in g:
+                lct[_norm(row[0])] = lct.get(_norm(row[0]), 0) + 1
+            for j, span, end in cols:
+                cm = {k: v for k, v in _colmap(g, j).items() if lct.get(k, 0) == 1}
+                sib_data.setdefault((stmt, sc), []).append(
+                    (end, end == cur_end, _uniq_stemmed(cm)))
+
+    notes, new_rows, changed = [], [], 0
+    for r in rows:
+        page, n, title, scope, section, grid = r
+        s = f"{section} {title}".lower()
+        stmt = statement_of(section, title)
+        if "ifrs" in s or scope not in ("standalone", "consolidated") \
+                or stmt not in ("income", "balance", "cashflow") \
+                or (stmt, scope) not in sib_data:
+            new_rows.append(r)
+            continue
+        base_fail = sum(1 for _c, ok in run_checks(section, title, grid) if not ok)
+        # BLAST-RADIUS GUARD: a statement whose printed arithmetic already ties
+        # is never a candidate — there is nothing to fix and the strictly-better
+        # gate below could not adopt a change anyway. This makes the whole
+        # reconciliation a hard no-op for every healthy statement (the working
+        # digital filings), so it can only ever act on a demonstrably-broken
+        # comparative — the case it exists for.
+        if base_fail == 0:
+            new_rows.append(r)
+            continue
+        cols, cur_end, _ends = _pcols(grid)
+        g2 = [list(row) for row in grid]
+        stmt_changes = []
+        sib_reads_all = sib_data[(stmt, scope)]
+        # unique stemmed labels of THIS grid (drop labels repeated across
+        # sections, e.g. a balance sheet's two 'other financial assets')
+        cur_label_ct = {}
+        for row in grid:
+            cur_label_ct[_stem(_norm(row[0]))] = cur_label_ct.get(_stem(_norm(row[0])), 0) + 1
+        for j, span, end in cols:
+            if end == cur_end:               # never touch the current period
+                continue
+            cur_col = {}
+            for row in grid:
+                lab = _stem(_norm(row[0]))
+                v = _num(row[j]) if j < len(row) else None
+                if lab and v is not None and cur_label_ct.get(lab, 0) == 1:
+                    cur_col[lab] = v
+            # DATA-DRIVEN period matching: a sibling column reports the SAME
+            # period only when it ENDS on the same date AND most of its shared
+            # line-items already AGREE in value. This proves period identity
+            # from the data itself, so an ambiguous '?' span (a Mar-25 column
+            # that could be the quarter or the year) can no longer be matched to
+            # the wrong period — a quarter's values never agree with a year's.
+            matched = []
+            for sib_end, is_cur, cmap in sib_reads_all:
+                if sib_end != end:
+                    continue
+                shared = [k for k in cur_col if k in cmap]
+                if len(shared) < 5:
+                    continue
+                agree = sum(1 for k in shared
+                            if abs(cur_col[k] - cmap[k]) <= max(1.0, 0.005 * abs(cmap[k])))
+                if agree >= 0.6 * len(shared):
+                    matched.append((is_cur, cmap))
+            if not matched:
+                continue
+            for ri, row in enumerate(grid):
+                lab = _stem(_norm(row[0]))
+                cur = _num(row[j]) if j < len(row) else None
+                if not lab or cur is None or cur_label_ct.get(lab, 0) != 1:
+                    continue
+                votes = {}
+                for is_cur, cmap in matched:
+                    if lab in cmap:
+                        v = round(cmap[lab], 2)
+                        votes[v] = votes.get(v, 0) + (2 if is_cur else 1)
+                if not votes:
+                    continue
+                best, w = max(votes.items(), key=lambda it: it[1])
+                if w >= 2 and abs(best - cur) > 1.0 and votes.get(round(cur, 2), 0) < w:
+                    orig = str(row[j])
+                    g2[ri][j] = f"({abs(best):g})" if best < 0 else f"{best:g}"
+                    stmt_changes.append((row[0][:40], span, end, orig, best))
+        if stmt_changes:
+            new_fail = sum(1 for _c, ok in run_checks(section, title, g2) if not ok)
+            # adopt ONLY when the correction makes the statement's arithmetic
+            # STRICTLY better — i.e. a printed identity that was broken now
+            # ties. A comparative that already reconciles internally is left
+            # alone (a disagreement there is a restatement or a wash, and the
+            # cross-quarter check still flags it); this is what keeps the
+            # reconciliation from rewriting correctly-read digital comparatives.
+            if new_fail < base_fail:
+                changed += len(stmt_changes)
+                for lbl, span, end, orig, best in stmt_changes:
+                    ex = f"'{lbl}' {orig}→{best:g} ({span} ended {end})"
+                    if log:
+                        log(f"{raw_name}: [{scope[:4]}] {stmt} comparative reconciled — {ex}")
+                    notes.append({"stmt": stmt, "scope": scope,
+                                  "note": (f"comparative {ex} — corrected from the company's "
+                                           "other filings (prior-period misread on this scan)")})
+                r = (page, n, title, scope, section, g2)
+        new_rows.append(r)
+    return new_rows, notes
+
 
 def _grid(name, kind, scope):
     for _p, _n, title, sc, section, grid in _load(name):
