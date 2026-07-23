@@ -858,6 +858,39 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         for f_ in _findings:
             log(f"POST-WRITE ⚠ [{f_['kind']}] {f_['stmt']}/{f_['scope']}: {f_['detail'][:140]}")
         _vd.annotate_findings(out, _findings)
+        # identity-driven vision re-read: when the DELIVERED file breaks a
+        # printed identity, that statement's text layer is likely garbled
+        # (e.g. Wipro's balance sheet: blank subtotal, '612,168' read as
+        # '168'). Re-read ONLY those pages from pixels and, when the pixel
+        # read reconciles better, re-map from it. Gated on an identity finding,
+        # so a clean statement is never re-read. (~$0.01-0.03/page, rare.)
+        if any(f_.get("kind") == "identity" for f_ in _findings):
+            rows2, vnotes = _rr.vision_reread(rows, _findings, pdf_path,
+                                              log=lambda m_: log(f"VISION: {m_}"))
+            if vnotes:
+                rows = rows2
+                pickle.dump(rows, open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), "wb"))
+                mapped = map_quarter(rows, template, taxonomy, default_unit=unit,
+                                     period_hint=hint, log=lambda m_: log(f"MAP: {m_}"))
+                for d in xq_flags + recon_notes:
+                    ms_ = mapped.get((d["stmt"], d["scope"]))
+                    if ms_ is not None:
+                        ms_.flag(d.get("note", ""))
+                for v in vnotes:
+                    ms_ = mapped.get((v["stmt"], v["scope"]))
+                    if ms_ is not None:
+                        ms_.flag(v["note"])
+                pickle.dump(mapped, open(cache, "wb"))
+                write_client_workbook_long(name.split("_")[0], mapped, template, long_out)
+                to_wide(long_out, out)
+                n_flags = annotate_flags(out, mapped)
+                _findings = _vd.verify_workbook(out, raw_rows=rows, template=template,
+                                                pdf_path=pdf_path)
+                for f_ in _findings:
+                    log(f"POST-VISION ⚠ [{f_['kind']}] {f_['stmt']}/{f_['scope']}: "
+                        f"{f_['detail'][:140]}")
+                _vd.annotate_findings(out, _findings)
+                log(f"VISION: re-read {len(vnotes)} statement(s) from pixels, re-mapped")
         annotate_review(out, suspects,
                         [{"stmt": _sof3(sec_, t_), "scope": sc_, "title": t_, "page": pg_}
                          for pg_, t_, sc_, sec_, _bad in failing] + broad

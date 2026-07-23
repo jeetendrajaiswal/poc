@@ -985,8 +985,16 @@ def map_statement(grid: list[list[str]], stmt: str, taxonomy: dict[str, list[dic
 
     rows = []
     section = ""
+    # Seed the section from the header region. A balance sheet's FIRST section
+    # ('Non-current assets') sits above the first data row, so it lands in the
+    # header — and with a leading enumerator column ('A | Non-current assets')
+    # its name is in column 1, not column 0. Scan the WHOLE header row's text so
+    # that section is caught; otherwise every non-current asset line item gets
+    # no section and duplicate labels (Investments, Loans, Other financial
+    # assets) collapse into their CURRENT sibling field.
     for hrow in header:
-        hl = re.sub(r"^\s*\d+[.)]\s*", "", str(hrow[0] or "").lower())
+        hl = re.sub(r"^\s*\d+[.)]\s*", "",
+                    " ".join(str(c) for c in hrow if str(c).strip()).lower())
         for pat, name in _SECTION_PAT:
             if re.search(pat, hl):
                 section = name

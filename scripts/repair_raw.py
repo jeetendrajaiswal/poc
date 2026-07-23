@@ -25,6 +25,7 @@ import os
 import pickle
 import re
 import sys
+import traceback as _tb
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pymupdf
@@ -39,7 +40,10 @@ PKL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 _PAGE_PAT = {
     "balance": r"balance sheet|assets and liabilit",
     "cashflow": r"cash flow",
-    "income": r"financial results|profit and loss",
+    # 'Statement of Consolidated Audited Results' (Infosys) says "Results", not
+    # "Financial Results" — match it the way statement_of() does, or the true
+    # P&L page is missed and vision re-reads the wrong pages.
+    "income": r"financial results|profit and loss|audited results|results (of|for)",
     "segment": r"segment",
 }
 
@@ -80,8 +84,11 @@ def _locate_pages(pdf_path, kind, scope):
             scans.append(i + 1)
             continue
         head = " ".join(text.split())[:400].lower()
-        nnum = len(re.findall(r"\d[\d,]*\.?\d*", text))
-        if nnum < 25 or not re.search(_PAGE_PAT[kind], head):
+        # a REAL statement page carries many GROUPED figures (24,688 / 46,402);
+        # an index/TOC or auditor-report page names the statement but prints only
+        # small page refs — require grouped-number density to exclude them.
+        ngrp = len(re.findall(r"\d{1,3}(?:,\d{3})+|\d{4,}", text))
+        if ngrp < 12 or not re.search(_PAGE_PAT[kind], head):
             continue
         if scope == "consolidated" and "consolidated" not in head:
             continue
@@ -97,6 +104,123 @@ def grid_of(rows, page, title):
         if r[0] == page and r[2] == title:
             return r[5]
     return []
+
+
+def vision_reread(rows, findings, pdf_path, log=print):
+    """Identity-driven vision re-read. When the POST-MAP verification
+    (verify_delivered, which checks reconciliation via the TAXONOMY-mapped fids)
+    reports a statement whose subtotals/totals do not reconcile, that
+    statement's text extraction is corrupt (e.g. Wipro's garbled balance sheet:
+    a blank 'Total non-current assets', '612,168' read as '168'). Re-read ONLY
+    those pages from pixels (vision consensus) and adopt the pixel read when its
+    printed identities reconcile better than the current grid. Triggered solely
+    by an identity finding, so clean statements are never re-read. The caller
+    re-maps the updated rows. Returns (rows, notes)."""
+    from src.engine.tables_llm import vision_tables_consensus
+    from src.engine.client_map import statement_of
+    bad = {(f["scope"], f["stmt"]) for f in findings if f.get("kind") == "identity"}
+    if not bad:
+        return rows, []
+    # the Ind-AS raw entry for each flagged (scope, statement)
+    target = {}
+    for i, (pg, n, ti, sc, sec, g) in enumerate(rows):
+        st = statement_of(sec, ti)
+        if "ifrs" not in f"{sec} {ti}".lower() and (sc, st) in bad and (sc, st) not in target:
+            target[(sc, st)] = i
+    out, notes = list(rows), []
+    for (scope, stmt), idx in target.items():
+        pg, n, ti, sc, sec, cur_g = out[idx]
+        kind = _stmt_kind(sec, ti)
+        pages = _locate_pages(pdf_path, kind, scope) if kind else []
+        if not pages:
+            log(f"VISION: [{scope[:4]}] {stmt} — could not locate pages; skipped")
+            continue
+        try:
+            vts = vision_tables_consensus(pdf_path, pages, log=lambda m: log("    " + str(m)))
+        except Exception:
+            log("VISION: crashed —\n" + _tb.format_exc())
+            continue
+        # match a vision table to this statement: same kind, compatible scope,
+        # most shared numbers (scope discriminator when labels alone can't)
+        cur_vals = {re.sub(r"\D", "", str(c)) for r in cur_g for c in r[1:]
+                    if re.search(r"\d", str(c))}
+        best = None
+        for t in vts:
+            if statement_of(t.section, t.title) != stmt:
+                continue
+            if t.scope not in (scope, "unknown"):
+                continue
+            vv = {re.sub(r"\D", "", str(c)) for r in t.grid for c in r[1:]
+                  if re.search(r"\d", str(c))}
+            ov = len(cur_vals & vv)
+            if best is None or ov > best[0]:
+                best = (ov, t)
+        if not best:
+            continue
+        t = best[1]
+        # Two ways to use the pixel read; keep whichever ties the most printed
+        # identities, preferring the LEAST invasive on ties:
+        #   (A) keep the text grid (baseline),
+        #   (B) reconcile the TEXT grid against the vision grid as a source —
+        #       a cell-level, identity-gated correction. Fixes isolated
+        #       duplicated/misread cells (e.g. a note-reference row whose Dec
+        #       column was copied from the adjacent quarter) that the text-layer
+        #       source could not reach because it does not print those rows,
+        #       while keeping the verified text structure everywhere else.
+        #   (C) replace the whole grid with the vision read — for a text grid
+        #       that is structurally broken (blank subtotal, dropped column).
+        from src.engine import source_align as _sa
+
+        def _bad(g):
+            return sum(1 for _n, ok in run_checks(sec, ti, g) if not ok)
+
+        def _ok(g):
+            return sum(1 for _n, ok in run_checks(sec, ti, g) if ok)
+
+        cur_bad, cur_ok = _bad(cur_g), _ok(cur_g)
+        try:
+            g_rec, _rep = _sa.reconcile(cur_g, _grid_as_source_lines(t.grid),
+                                        coverage=1.0)
+        except Exception:
+            g_rec = cur_g
+        cands = [("kept text", cur_g),
+                 ("cell-corrected from pixels", g_rec),
+                 ("re-read whole statement from pixels", t.grid)]
+        # rank by FEWEST failing identities, then MOST reconciling ones (a blank
+        # subtotal leaves a check inactive on the corrupt grid; the pixel read
+        # activates and passes it — same failing count, more ties), preferring
+        # the least-invasive candidate on an exact tie.
+        pick = min(range(len(cands)),
+                   key=lambda i: (_bad(cands[i][1]), -_ok(cands[i][1]), i))
+        if pick != 0 and (_bad(cands[pick][1]), -_ok(cands[pick][1])) < (cur_bad, -cur_ok):
+            how, newg = cands[pick]
+            nb, no = _bad(newg), _ok(newg)
+            out[idx] = ((t.page or pg) if pick == 2 else pg, n, ti, scope, sec, newg)
+            notes.append({"stmt": stmt, "scope": scope,
+                          "note": (f"pixel re-read ({how}); "
+                                   f"identities {no}/{no + nb} tie after re-read")})
+            log(f"VISION: [{scope[:4]}] {stmt} — {how} "
+                f"(failing {cur_bad}->{nb}, ties {cur_ok}->{no})")
+        else:
+            log(f"VISION: [{scope[:4]}] {stmt} — pixel read no better; kept text")
+    return out, notes
+
+
+def _grid_as_source_lines(vgrid):
+    """Turn a vision-read grid into synthetic (x, token) source lines so the
+    text→source reconcile machinery can use the PIXEL read as its source: the
+    row label lands at a small x, each value column at a fixed increasing x, so
+    reconcile clusters them into columns and applies its identity-gated,
+    column-mapped correction exactly as it does for a real page."""
+    lines = []
+    for row in vgrid:
+        toks = [(5.0, w) for w in str(row[0] or "").split()]
+        for j, c in enumerate(row[1:], start=1):
+            s = str(c or "").strip()
+            if s:
+                toks.append((100.0 * j, s))
+        lines.append(toks)
+    return lines
 
 
 def repair(name: str, cross: bool = False, pdf_path: str | None = None,
