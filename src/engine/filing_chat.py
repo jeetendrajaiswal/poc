@@ -149,6 +149,159 @@ def _page_number_forms(pdf_path: str) -> list:
     return forms
 
 
+_CONSOLIDATED_FINANCIAL_HEADING = re.compile(
+    r"\b(?:statement\s+of\s+)?(?:audited\s+|unaudited\s+)?consolidated\s+"
+    r"financial\s+(?:results|statements)\b",
+    re.IGNORECASE,
+)
+_SINGLE_ENTITY_DISCLOSURE = re.compile(
+    r"\b(?:does\s+not\s+have\s+any|has\s+no|no)\s+"
+    r"subsidiar(?:y|ies)\b.{0,180}\bassociate(?:s)?\b.{0,180}"
+    r"\bjoint\s+venture(?:s)?\b",
+    re.IGNORECASE,
+)
+
+
+def document_scope_from_text(text: str) -> str:
+    """Resolve filing-wide scope only from decisive document evidence.
+
+    Some single-entity result packages omit the word "standalone" from every
+    statement heading. A disclosure that the company has no subsidiary,
+    associate, or joint venture proves those statements are standalone.
+    Explicit consolidated-financial-statement headings take precedence.
+
+    Generic uses of "consolidation" (for example a share split/consolidation)
+    are intentionally ignored.
+    """
+    normalized = " ".join(str(text or "").split())
+    if _CONSOLIDATED_FINANCIAL_HEADING.search(normalized):
+        return "unknown"
+    if _SINGLE_ENTITY_DISCLOSURE.search(normalized):
+        return "standalone"
+    return "unknown"
+
+
+def filing_document_scope(pdf_path: str) -> str:
+    """Read the local PDF and return a proven filing-wide scope, if any."""
+    import pymupdf
+
+    doc = pymupdf.open(pdf_path)
+    text = "\n".join(page.get_text() for page in doc)
+    doc.close()
+    return document_scope_from_text(text)
+
+
+def _questions_for_document_scope(document_scope: str) -> list[tuple[str, str, str]]:
+    """Build extraction questions consistent with the proven filing scope."""
+    if document_scope != "standalone":
+        return list(_QUESTIONS)
+    questions = []
+    constraint = (
+        "\n\nThe filing explicitly states that the company has no subsidiary, "
+        "associate, or joint venture. Return the STANDALONE statement only; "
+        "do not invent or return a consolidated version."
+    )
+    for requested_scope, label, question in _QUESTIONS:
+        if requested_scope == "consolidated":
+            continue
+        if requested_scope == "unknown":
+            question += constraint
+        questions.append((requested_scope, label, question))
+    return questions
+
+
+def recover_missing_statements(
+    pdf_path: str,
+    missing: list[str],
+    *,
+    document_scope: str,
+    page_forms: list,
+    page_lines: list,
+    scans: set,
+    log=print,
+) -> list:
+    """Recover model-omitted statements from the local digital text layer.
+
+    `unextracted_statements` proves that a number-heavy statement page exists.
+    If the model nevertheless returns no parseable table, leaving only a
+    warning would still allow silent data loss. This fallback uses the existing
+    deterministic table extractor, then subjects every recovered grid to the
+    same source-position reconciliation and identity suite as model output.
+
+    It is intentionally limited to statement kinds already proven present by
+    the completeness detector; it never searches for or invents extra tables.
+    """
+    if not missing:
+        return []
+
+    from src.engine import identities, source_align
+    from src.engine.tables import RawTable, extract_tables
+
+    wanted = set(missing)
+    candidates = []
+    for table in extract_tables(pdf_path, financial_only=False):
+        text = f"{table.section} {table.title}".lower()
+        kinds = [
+            kind for kind, pattern in _STMT_HEADINGS.items()
+            if kind in wanted and re.search(pattern, text)
+        ]
+        if not kinds or len(table.grid) < 3:
+            continue
+        # Prefer the fullest local table if the same statement is printed more
+        # than once. Separate standalone/consolidated versions remain separate
+        # unless a filing-wide scope proves only one can exist.
+        scope = document_scope if document_scope in (
+            "standalone", "consolidated"
+        ) else table.scope
+        candidates.append((kinds[0], scope, len(table.grid), table))
+
+    best = {}
+    for kind, scope, size, table in candidates:
+        key = (kind, scope)
+        if key not in best or size > best[key][0]:
+            best[key] = (size, table)
+
+    recovered = []
+    for (kind, scope), (_size, table) in best.items():
+        grid, report = source_align.reconcile_with_source(
+            table.grid, table.section, table.title,
+            page_forms, page_lines, scan_pages=scans,
+        )
+        grid = source_align.repair_dropped_decimals(grid)
+        failures = identities.failing(table.section, table.title, grid)
+        title = table.title or kind
+        notes = ["deterministic completeness recovery"]
+        if report:
+            notes.append(
+                "source-reconciled p" + "/".join(map(str, report["pages"]))
+            )
+        if failures:
+            title += "  ⚠ verification failed — review"
+            notes.append("FAILED: " + "; ".join(failures))
+        else:
+            checks = identities.run_checks(table.section, table.title, grid)
+            if checks:
+                notes.append(
+                    f"{sum(ok for _name, ok in checks)}/{len(checks)} "
+                    "identities tie"
+                )
+        recovered.append(RawTable(
+            page=table.page,
+            n=table.n,
+            title=title,
+            scope=scope,
+            section=table.section or kind,
+            page_head="(" + "; ".join(notes) + ")",
+            units=table.units,
+            grid=grid,
+        ))
+        log(
+            f"  COMPLETENESS RECOVERY: {kind} -> local table p{table.page}, "
+            f"{len(grid)} rows, scope={scope}; {notes[-1]}"
+        )
+    return recovered
+
+
 # --------------------------------------------------------------------------- statement extraction
 
 def quarterly_statement_tables(pdf_path: str, model: str | None = None,
@@ -170,6 +323,14 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
     page_forms = _page_number_forms(pdf_path)
     page_lines = source_align.page_word_lines(pdf_path)
     scans = source_align.untrusted_text_pages(pdf_path)
+    document_scope = filing_document_scope(pdf_path)
+    questions = _questions_for_document_scope(document_scope)
+    if document_scope == "standalone":
+        log(
+            "  SCOPE: filing proves it is single-entity (no subsidiary, "
+            "associate, or joint venture) -> standalone-only extraction; "
+            "consolidated question skipped"
+        )
 
     def _finalize(label: str, answer: str):
         """markdown → grids → positional reconcile → residual decimal repair
@@ -237,8 +398,8 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                 if tables2 and sum(len(fl) for _h, _g, _r, fl in tables2) < len(fails):
                     tables, answer = tables2, answer2
             return scope, label, answer, tables, truncated
-        with ThreadPoolExecutor(max_workers=5) as ex:
-            results = list(ex.map(one, _QUESTIONS))
+        with ThreadPoolExecutor(max_workers=len(questions)) as ex:
+            results = list(ex.map(one, questions))
 
     for i, (scope, label, answer, tables, truncated) in enumerate(results, 1):
         if "NOT PRESENT" in answer[:400] and answer.count("|") < 10:
@@ -250,7 +411,15 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
         for k, (heading, grid, rep, fails) in enumerate(tables, 1):
             sc = scope
             head = (heading or label).lower()
-            if "consolidated" in head:
+            if document_scope == "standalone" and "consolidated" in head:
+                log(
+                    f"    · [skip] {heading or label}: consolidated table "
+                    "contradicts the filing's single-entity disclosure"
+                )
+                continue
+            if document_scope == "standalone":
+                sc = "standalone"
+            elif "consolidated" in head:
                 sc = "consolidated"
             elif "standalone" in head:
                 sc = "standalone"
@@ -291,6 +460,17 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
             + (f" — {sum(len(fl) for _h, _g, _r, fl in tables)} check(s) failing ⚠"
                if any(fl for _h, _g, _r, fl in tables) else ""))
     missing = unextracted_statements(pdf_path, out)
+    if missing:
+        out.extend(recover_missing_statements(
+            pdf_path,
+            missing,
+            document_scope=document_scope,
+            page_forms=page_forms,
+            page_lines=page_lines,
+            scans=scans,
+            log=log,
+        ))
+        missing = unextracted_statements(pdf_path, out)
     for kind in missing:
         log(f"  ⚠ COMPLETENESS: the filing prints a {kind} heading on a "
             "number-heavy page, but NO such table was extracted")
@@ -299,7 +479,9 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
 
 _STMT_HEADINGS = {
     "balance sheet": r"balance sheet|assets and liabilit",
-    "cash flow statement": r"cash flow",
+    # OCR commonly turns the final "w" into "v", "vv", or punctuation
+    # ("Cash Flov.~"). The stable stem is enough and remains specific.
+    "cash flow statement": r"cash\s+flo",
     "segment information": r"segment",
     "financial results (P&L)": r"financial results|profit and loss",
 }

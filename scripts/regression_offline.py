@@ -64,15 +64,19 @@ def _reconciled(name):
 
 
 print("== 1. named decimal / wrong-column repairs (infosys_q4 standalone) ==")
-rec = _reconciled("infosys_q4FY2026")
-for title, scope, section, g0, g2, rep in rec:
-    if scope == "standalone" and "Results" in section and "IFRS" not in section:
-        travel = next((r for r in g2 if any("ravel" in str(c) for c in r)), None)
-        check("Travelling Cost 15.96 corrected to 1,596",
-              travel is not None and "1,596" in travel, str(travel))
-        check("standalone results identities tie after reconcile",
-              not identities.failing(section, title, g2),
-              str(identities.failing(section, title, g2)))
+_infosys_pdf = _pdf_for("infosys_q4FY2026")
+if os.path.exists(_infosys_pdf):
+    rec = _reconciled("infosys_q4FY2026")
+    for title, scope, section, g0, g2, rep in rec:
+        if scope == "standalone" and "Results" in section and "IFRS" not in section:
+            travel = next((r for r in g2 if any("ravel" in str(c) for c in r)), None)
+            check("Travelling Cost 15.96 corrected to 1,596",
+                  travel is not None and "1,596" in travel, str(travel))
+            check("standalone results identities tie after reconcile",
+                  not identities.failing(section, title, g2),
+                  str(identities.failing(section, title, g2)))
+else:
+    print(f"  SKIP  Infosys Q4 source PDF is not present: {_infosys_pdf}")
 
 print("== 2. corpus-wide: reconciliation never worsens identities ==")
 tot_before = tot_after = 0
@@ -412,6 +416,29 @@ check("completeness tripwire: stripped balance sheet is reported missing",
           os.path.join(PDF, "techm_q2FY2026.pdf"), stripped))
 check("completeness tripwire: full extraction reports nothing missing",
       _fc.unextracted_statements(os.path.join(PDF, "techm_q2FY2026.pdf"), tabs) == [])
+
+print("== 10b. filing-level scope is resolved before extraction and mapping ==")
+_single_entity = """
+The Company confirms that it does not have any subsidiary, associate, or
+joint venture company as of March 31, 2026.
+The board also approved a split/consolidation of equity shares.
+"""
+check("single-entity disclosure resolves the filing to standalone",
+      _fc.document_scope_from_text(_single_entity) == "standalone")
+check("share split/consolidation wording is not treated as consolidated financials",
+      _fc.document_scope_from_text(
+          "The company approved split/consolidation of its equity shares."
+      ) == "unknown")
+check("an explicit consolidated-financial heading prevents a global override",
+      _fc.document_scope_from_text(
+          _single_entity + "\nStatement of Consolidated Financial Results"
+      ) == "unknown")
+_scoped_questions = _fc._questions_for_document_scope("standalone")
+check("standalone-only filing never makes a consolidated extraction call",
+      not any(sc == "consolidated" for sc, _lab, _q in _scoped_questions))
+check("combined statement questions are constrained to standalone",
+      all("STANDALONE statement only" in q
+          for sc, _lab, q in _scoped_questions if sc == "unknown"))
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)
