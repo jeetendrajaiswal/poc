@@ -483,6 +483,30 @@ def vision_tables_consensus(pdf_path: str, pages: list[int],
     return sorted(out, key=lambda t: (t.page, t.n))
 
 
+_STATEMENT_PAGE_HEADING = re.compile(
+    r"\bstatement\s+of\b.{0,80}\b(?:financial\s+)?"
+    r"(?:results|profit\s+and\s+loss|assets\s+and\s+liabilit(?:y|ies)|"
+    r"cash\s+flows?)\b|"
+    r"\bbalance\s+sheet\b|\bfinancial\s+results\b|"
+    r"\bsegment\s+(?:information|report(?:ing)?)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_statement_page_text(text: str) -> bool:
+    """Return whether text is a number-heavy primary-statement page.
+
+    Filing titles do not use one fixed word order. For example, a primary
+    quarterly statement may be titled ``Statement of Consolidated Audited
+    Results`` without the adjacent phrase "financial results".
+    """
+    normalized = " ".join(str(text or "").split())
+    return (
+        len(re.findall(r"\d[\d,]*\.?\d*", normalized)) >= 25
+        and bool(_STATEMENT_PAGE_HEADING.search(normalized[:1500]))
+    )
+
+
 def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
                              log=print) -> str:
     """Disclosure PACKAGES (100+ pages) waste upload cost on non-statement
@@ -497,9 +521,6 @@ def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
     if n <= max_pages:
         doc.close()
         return pdf_path
-    pat = re.compile(r"statement of .{0,30}(financial results|profit and loss"
-                     r"|assets and liabilit|cash flow)|balance sheet"
-                     r"|financial results|segment information|segment report", re.I)
     keep = {0}                                   # cover page: banner/units context
     drop = re.compile(r"\bifrs\b|dollars in millions", re.I)
     for i in range(n):
@@ -511,7 +532,7 @@ def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
             continue                             # IFRS variants are excluded downstream
         # heading window is generous: filings open with long registered-office
         # preambles before the statement title
-        if len(re.findall(r"\d[\d,]*\.?\d*", t)) >= 25 and pat.search(t[:1500].lower()):
+        if _is_statement_page_text(t):
             keep.add(i)
             if i + 1 < n and not drop.search(" ".join(doc[i+1].get_text().split())[:600].lower()):
                 keep.add(i + 1)                  # statements span page breaks

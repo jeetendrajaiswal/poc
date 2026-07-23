@@ -43,6 +43,67 @@ _PAGE_PAT = {
     "segment": r"segment",
 }
 
+_PAGE_ANCHORS = {
+    "balance": (
+        r"\bnon-current assets\b", r"\bcurrent assets\b", r"\btotal assets\b",
+        r"\bequity and liabilities\b", r"\btotal equity\b",
+    ),
+    "cashflow": (
+        r"\boperating activities\b", r"\binvesting activities\b",
+        r"\bfinancing activities\b", r"\bcash and cash equivalents\b",
+    ),
+    "income": (
+        r"\brevenue from operations\b", r"\btotal income\b",
+        r"\btotal expenses\b", r"\bprofit before tax\b",
+        r"\bprofit (?:for|after tax)\b", r"\bearnings per (?:equity )?share\b",
+    ),
+    "segment": (
+        r"\brevenue by (?:business )?segment\b", r"\bsegment (?:profit|results)\b",
+        r"\binter-segment revenue\b", r"\bprofit before tax\b",
+    ),
+}
+
+
+def _statement_page_score(text: str, kind: str, scope: str) -> float:
+    """Rank actual statement tables above references to those statements.
+
+    Quarterly packages often put a long company/address banner before the
+    statement heading, so the heading window is deliberately wider than the
+    old 400-character prefix.  Strong row anchors and numeric density prevent
+    an auditor-report paragraph mentioning "consolidated financial results"
+    from being selected for pixel repair.
+    """
+    norm = " ".join((text or "").split()).lower()
+    if not norm or kind not in _PAGE_PAT:
+        return 0.0
+    heading = norm[:2000]
+    nnum = len(re.findall(r"(?<![a-z])\(?-?\d[\d,]*\.?\d*\)?", norm))
+    anchors = sum(bool(re.search(pat, norm)) for pat in _PAGE_ANCHORS[kind])
+    if nnum < 25 or anchors < 2:
+        return 0.0
+
+    has_con = "consolidated" in heading
+    has_std = "standalone" in heading
+    if scope == "consolidated" and has_std and not has_con:
+        return 0.0
+    if scope == "standalone" and has_con and not has_std:
+        return 0.0
+
+    score = anchors * 20.0 + min(nnum, 250) / 10.0
+    if re.search(_PAGE_PAT[kind], heading):
+        score += 15.0
+    if scope == "consolidated" and has_con:
+        score += 12.0
+    elif scope == "standalone" and has_std:
+        score += 12.0
+    # Auditor pages can contain many numbers in annexures.  They remain
+    # eligible only with very strong table evidence, and rank below the table.
+    if re.search(r"\bindependent auditor(?:'s|s)? report\b", heading):
+        if anchors < 4:
+            return 0.0
+        score -= 30.0
+    return score
+
 
 def _failing_statements(rows):
     """Statements failing ANY check — identity suites AND the duplicate-column
@@ -67,29 +128,49 @@ def _stmt_kind(section, title):
     return None
 
 
-def _locate_pages(pdf_path, kind, scope):
+def _locate_pages(pdf_path, kind, scope, grid=None):
     """Pages whose heading names this statement (and scope when stated).
     Scanned pages have no text to match — when text-locate finds nothing,
     fall back to ALL scanned pages (consensus sorts out which tables are
     which; the caller matches replacements by label overlap)."""
     doc = pymupdf.open(pdf_path)
+    def _digits(value):
+        return "".join(re.findall(r"\d", str(value)))
+
+    grid_digits = {
+        _digits(c) for row in (grid or []) for c in row
+        if len(_digits(c)) >= 3
+    }
     hits, scans = [], []
     for i in range(len(doc)):
         text = doc[i].get_text()
         if len(text.strip()) < 100:
             scans.append(i + 1)
             continue
-        head = " ".join(text.split())[:400].lower()
-        nnum = len(re.findall(r"\d[\d,]*\.?\d*", text))
-        if nnum < 25 or not re.search(_PAGE_PAT[kind], head):
-            continue
-        if scope == "consolidated" and "consolidated" not in head:
-            continue
-        if scope == "standalone" and "consolidated" in head and "standalone" not in head:
-            continue
-        hits.append(i + 1)
+        score = _statement_page_score(text, kind, scope)
+        if score:
+            if grid_digits:
+                page_digits = {
+                    _digits(tok) for tok in
+                    re.findall(r"\(?-?\d[\d, ]*\.?\d*\)?", text)
+                    if len(_digits(tok)) >= 3
+                }
+                coverage = len(grid_digits & page_digits) / len(grid_digits)
+                # The failing read's digits may sit on the wrong rows, but they
+                # still come from the correct table page.  This is a powerful
+                # discriminator when a package embeds multiple annual reports.
+                score += 200.0 * coverage
+            hits.append((score, i + 1))
     doc.close()
-    return hits or scans
+    if not hits:
+        return scans
+    hits.sort(key=lambda x: (-x[0], x[1]))
+    best = hits[0][0]
+    # Keep near-best continuation/alternate-layout pages, but bound a paid
+    # repair call.  Low-scoring prose references are excluded by the anchor
+    # threshold above.
+    threshold = 0.90 if grid_digits else 0.60
+    return [page for score, page in hits[:4] if score >= threshold * best]
 
 
 def grid_of(rows, page, title):
@@ -167,13 +248,13 @@ def repair(name: str, cross: bool = False, pdf_path: str | None = None,
                 continue
             kind = _stmt_kind(section, title)
             log(f"{name}: REPAIRING [{scope[:4]}] '{title[:44]}' ({'; '.join(bad)[:70]})")
-            pages = _locate_pages(pdf, kind, scope) if kind else []
+            old_grid = grid_of(rows, page, title)
+            pages = _locate_pages(pdf, kind, scope, old_grid) if kind else []
             if not pages:
                 log(f"   could not locate pages — statement stays ⚠-flagged")
                 continue
             vt = vision_tables_consensus(pdf, pages, log=lambda m: log("    " + str(m)))
             best = None
-            old_grid = grid_of(rows, page, title)
             labs_old = {str(r[0]).strip().lower() for r in old_grid if str(r[0]).strip()}
             vals_old = {str(c).strip() for r in old_grid for c in r[1:]
                         if re.search(r"\d", str(c))}

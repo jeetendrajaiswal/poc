@@ -43,13 +43,30 @@ import statistics
 
 _TRAIL = "*^#@;:"           # footnote marks / stray punctuation on numbers
 
+_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})+,\d{3}|\d+)"
+    r"(?:\.\d+)?$"
+)
+_SPACE_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:\s+\d{3})+|\d{1,2}(?:\s+\d{2})+\s+\d{3})"
+    r"(?:\.\d+)?$"
+)
+
 
 def _digits(s) -> str:
     return re.sub(r"\D", "", str(s or ""))
 
 
 def _clean_token(w: str) -> str:
-    return str(w or "").strip().strip(_TRAIL).rstrip(",").strip()
+    s = str(w or "").strip().strip(_TRAIL).rstrip(",").strip()
+    wrapped = s.startswith("(") and s.endswith(")")
+    core = s[1:-1].strip() if wrapped else s
+    punct = re.sub(r"\s*([,.])\s*", r"\1", core)
+    if punct != core and _GROUPED_NUMBER.fullmatch(punct):
+        core = punct
+    elif _SPACE_GROUPED_NUMBER.fullmatch(core):
+        core = re.sub(r"\s+", "", core)
+    return f"({core})" if wrapped else core
 
 
 _NUM_FORM = re.compile(r"\(?-?[\d,.]*\d\)?$")
@@ -128,6 +145,28 @@ def _merge_fragments(words):
     return out
 
 
+def _visual_lines(words, tolerance: float = 3.0):
+    """Cluster PDF words that share a visual baseline.
+
+    Bold labels and regular-weight amounts in the same table row can have
+    slightly different y coordinates. Fixed rounding buckets split a row when
+    those coordinates happen to fall on opposite sides of a bucket boundary
+    (for example 513.7 vs 515.1). Greedy center-line clustering has no such
+    boundary and remains far below normal statement line spacing.
+    """
+    groups = []
+    for y, x0, x1, word in sorted(words):
+        if groups and abs(y - groups[-1][0]) <= tolerance:
+            groups[-1][1].append((x0, x1, word))
+            groups[-1][0] = statistics.median(
+                item[0] for item in groups[-1][2] + [(y, x0, x1, word)]
+            )
+            groups[-1][2].append((y, x0, x1, word))
+        else:
+            groups.append([y, [(x0, x1, word)], [(y, x0, x1, word)]])
+    return [group[1] for group in groups]
+
+
 def page_word_lines(pdf_path: str) -> list:
     """Per page: printed visual lines as [(x_right, word), ...] sorted by x,
     lines in top-to-bottom order. RIGHT edges, because statement numbers are
@@ -138,11 +177,11 @@ def page_word_lines(pdf_path: str) -> list:
     doc = pymupdf.open(pdf_path)
     out = []
     for pg in doc:
-        groups: dict = {}
+        words = []
         for x0, y0, x1, y1, w, *_ in pg.get_text("words"):
-            groups.setdefault(round(y0 / 2), []).append((x0, x1, w))
+            words.append(((y0 + y1) / 2, x0, x1, w))
         page = []
-        for _k, v in sorted(groups.items()):
+        for v in _visual_lines(words):
             page.append([(x1, w) for _x0, x1, w in _merge_fragments(v)])
         out.append(page)
     doc.close()
@@ -452,8 +491,14 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
                     report["corrections"].append((ri, j, g, new))
                     out[ri][j] = new
             elif not conservative:
-                report["corrections"].append((ri, j, g, pf))
-                out[ri][j] = pf
+                # The text token's digits may themselves be corrupt (custom
+                # fonts can drop a leading parenthesized digit). Apply the
+                # same clean-form arbitration used above: a malformed print
+                # token must not overwrite a clean model reading.
+                new = _pick_form(pf, g)
+                if new != g:
+                    report["corrections"].append((ri, j, g, new))
+                    out[ri][j] = new
     return out, report
 
 

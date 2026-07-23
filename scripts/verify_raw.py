@@ -129,7 +129,8 @@ def cross_quarter_flags(raw_name: str, rows) -> list[dict]:
     from src.engine.client_map import _parse_period
     comp = raw_name.split("_")[0]
     sibs = [f[:-4] for f in os.listdir(PKL_DIR)
-            if f.endswith(".pkl") and f.startswith(comp + "_") and f[:-4] != raw_name]
+            if f.endswith(".pkl") and f.startswith(comp + "_") and f[:-4] != raw_name
+            and not os.path.exists(os.path.join(PKL_DIR, f"{f[:-4]}.review"))]
     if not sibs:
         return []
 
@@ -170,6 +171,12 @@ def cross_quarter_flags(raw_name: str, rows) -> list[dict]:
         try:
             rws = pickle.load(open(os.path.join(PKL_DIR, f"{sib}.pkl"), "rb"))
         except Exception:
+            continue
+        # Cross-quarter evidence is useful only from a verified sibling.  An
+        # internally failing extraction must not make a clean current filing
+        # look wrong merely because the same period appears in both.
+        if any(not ok for _p, _n, t, _sc, sec, g in rws
+               for _name, ok in run_checks(sec, t, g)):
             continue
         theirs = grids(rws)
         for (stmt, sc), g in mine.items():

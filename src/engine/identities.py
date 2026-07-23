@@ -14,6 +14,7 @@ Checks are derived from what the statement itself PRINTS:
   balance     : assets = equity + liabilities; nc + current = totals (both sides)
   cash flow   : op + inv + fin (+fx) = net change; opening + net (+fx+adj) =
                 closing; PBT + adjustments = operating profit before WC changes
+  segment     : total segment revenue − inter-segment revenue = net revenue
   all         : no period column may repeat a neighbour (a transcription that
                 copies one period's values into another is internally
                 consistent, so only this structural check can see it)
@@ -25,13 +26,29 @@ import re
 
 # ---------------------------------------------------------------- parsing
 
+_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})+,\d{3}|\d+)"
+    r"(?:\.\d+)?$"
+)
+_SPACE_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:\s+\d{3})+|\d{1,2}(?:\s+\d{2})+\s+\d{3})"
+    r"(?:\.\d+)?$"
+)
+
+
 def _num(c):
     s = str(c).strip()
     # a value in parentheses is negative; tolerate an OCR-mangled CLOSING paren
     # ('(2,705' or '(17,253`' for '(2,705)') so the cell still parses — mirrors
     # client_map._num so the identity suite and the delivered numbers agree.
     neg = s.startswith("(") and (s.endswith(")") or bool(re.search(r"\d[)'`\"]?$", s)))
-    s = s.strip("()'`\"").replace("₹", "").replace(",", "").strip()
+    s = s.strip("()'`\"").replace("₹", "").strip()
+    punct = re.sub(r"\s*([,.])\s*", r"\1", s)
+    if punct != s and _GROUPED_NUMBER.fullmatch(punct):
+        s = punct
+    elif _SPACE_GROUPED_NUMBER.fullmatch(s):
+        s = re.sub(r"\s+", "", s)
+    s = s.replace(",", "")
     try:
         v = float(s)
     except ValueError:
@@ -204,6 +221,66 @@ def check_balance(grid):
         checks.append(("nc + current liabilities = total",
                        _eq([tncl[i] + tcl[i] for i in range(n)], tl[:n])))
     return checks
+
+
+# ---------------------------------------------------------------- segment
+
+def check_segment(grid):
+    """Validate the printed segment-revenue bridge.
+
+    Inter-segment revenue is commonly printed as dashes.  Cell positions are
+    retained so those dashes mean zero in the corresponding period rather than
+    shifting later values left.
+    """
+    ncol = max((len(r) for r in grid), default=0)
+
+    def _label(row):
+        return " ".join(str(c) for c in row if str(c).strip()
+                        and _num(c) is None).lower()
+
+    def _aligned(row):
+        li = next((j for j, c in enumerate(row)
+                   if str(c).strip() and _num(c) is None
+                   and re.search(r"[a-z]", str(c), re.IGNORECASE)), -1)
+        if li < 0:
+            return None
+        return [_num(row[j]) if j < len(row) else None
+                for j in range(li + 1, ncol)]
+
+    inter_i = next((i for i, r in enumerate(grid)
+                    if "inter segment revenue" in
+                    re.sub(r"[^a-z0-9]+", " ", _label(r))), None)
+    net_i = next((i for i, r in enumerate(grid)
+                  if ("net revenue from operations" in _label(r)
+                      or "net segment revenue" in _label(r))), None)
+    if inter_i is None or net_i is None or inter_i >= net_i:
+        return []
+
+    total_i = next(
+        (i for i in range(inter_i - 1, -1, -1)
+         if (_label(grid[i]).strip() == "total"
+             or "total segment revenue" in _label(grid[i]))
+         and any(_num(c) is not None for c in grid[i])),
+        None,
+    )
+    if total_i is None:
+        return []
+
+    total = _aligned(grid[total_i])
+    inter = _aligned(grid[inter_i])
+    net = _aligned(grid[net_i])
+    if total is None or inter is None or net is None:
+        return []
+    cols = [j for j in range(min(len(total), len(net)))
+            if total[j] is not None and net[j] is not None]
+    if not cols:
+        return []
+    ok = all(
+        abs(total[j] - abs(inter[j] or 0.0) - net[j])
+        <= max(2.0, 0.005 * abs(net[j]))
+        for j in cols
+    )
+    return [("segment total - intersegment = net revenue", ok)]
 
 
 # ---------------------------------------------------------------- cash flow
@@ -385,6 +462,8 @@ def dup_columns(grid) -> bool:
 
 def suite_for(section, title):
     s = f"{section} {title}".lower()
+    if "segment" in s:
+        return check_segment
     if "cash flow" in s:
         return check_cashflow
     if "assets and liabilities" in s or "balance" in s:

@@ -420,6 +420,138 @@ def compare_reads(rows, tables2, keys) -> tuple[list[dict], list[str], list[dict
     return suspects, notes, broad
 
 
+def adopt_verified_second_reads(rows, tables2, keys, page_forms, page_lines,
+                                untrusted_pages) -> tuple[list, list[dict]]:
+    """Replace a failing first read with an independently verified second read.
+
+    This is intentionally stricter than :func:`compare_reads`: replacement is
+    allowed only when the first statement already fails a printed identity and
+    a same-scope/same-statement/accounting-basis candidate:
+
+      * has strictly fewer identity failures;
+      * is fully grounded in a trusted PDF text layer;
+      * has the same number and identity of reporting periods;
+      * has the same numeric width and substantial row-label overlap.
+
+    Healthy statements are never replaced.  A clean-looking but ungrounded
+    second model response is never adopted.  These gates make the recovery
+    generic while preventing a standalone/consolidated or short/wide table
+    swap.
+    """
+    from collections import Counter
+    from src.engine import identities, source_align
+
+    def _clean_title(title: str) -> str:
+        return re.sub(
+            r"\s+⚠\s+(?:verification failed|arithmetic does not tie)"
+            r"\s+—\s+review\s*$", "", title or "", flags=re.IGNORECASE,
+        ).strip()
+
+    def _numeric_width(grid) -> int:
+        return max((len(vals) for row in grid
+                    for _label, vals in [_label_and_vals(row)]), default=0)
+
+    def _labels(grid) -> Counter:
+        out: Counter = Counter()
+        for row in grid:
+            label, vals = _label_and_vals(row)
+            if not vals:
+                continue
+            norm = re.sub(r"[^a-z0-9]+", " ", label.lower()).strip()
+            # Enumeration prefixes vary harmlessly between independent reads.
+            norm = re.sub(r"^(?:[ivxlcdm]+|[a-z]|\d+)\s+", "", norm)
+            if norm:
+                out[norm] += 1
+        return out
+
+    def _period_signature(grid):
+        periods = parse_periods(grid)
+        if not periods or any(not p.end or p.span == "?" for p in periods):
+            return None
+        return tuple((p.span, p.end) for p in periods)
+
+    def _basis(*texts) -> str:
+        text = " ".join(str(t) for t in texts).upper()
+        if "IFRS" in text:
+            return "ifrs"
+        if re.search(r"\bIND[\s-]*AS\b", text):
+            return "ind_as"
+        return ""
+
+    candidates: dict[tuple[str, str], list] = {}
+    for table in tables2:
+        stmt = statement_of(table.section, table.title)
+        if stmt:
+            candidates.setdefault((table.scope, stmt), []).append(table)
+
+    out, notes = [], []
+    for row in rows:
+        page, n, title, scope, section, grid = row
+        stmt = statement_of(section, title)
+        key = (scope, stmt)
+        old_bad = identities.failing(section, title, grid)
+        if key not in keys or not stmt or not old_bad:
+            out.append(row)
+            continue
+
+        old_width = _numeric_width(grid)
+        old_labels = _labels(grid)
+        old_periods = _period_signature(grid)
+        old_basis = _basis(section, title)
+        old_label_count = sum(old_labels.values())
+        best = None
+        for table in candidates.get(key, []):
+            if "truncated" in f"{table.title} {table.page_head}".lower():
+                continue
+            candidate_basis = _basis(table.section, table.title)
+            if (old_basis or candidate_basis) and old_basis != candidate_basis:
+                continue
+            if not source_align.has_text_authority(
+                    table.grid, page_forms, untrusted_pages):
+                continue
+            grid2, report = source_align.reconcile_with_source(
+                table.grid, table.section, table.title, page_forms, page_lines,
+                scan_pages=untrusted_pages)
+            if (not report or report["abstained"] or report["conservative"]
+                    or report["structure_mismatch"] or report["unverified_cols"]):
+                continue
+            new_checks = identities.run_checks(table.section, table.title, grid2)
+            new_bad = [name for name, ok in new_checks if not ok]
+            if not new_checks or len(new_bad) >= len(old_bad):
+                continue
+            if _numeric_width(grid2) != old_width:
+                continue
+            new_periods = _period_signature(grid2)
+            # A replacement must prove the column identity, not merely width.
+            if old_periods is None or new_periods is None or new_periods != old_periods:
+                continue
+            new_labels = _labels(grid2)
+            overlap = sum((old_labels & new_labels).values())
+            required = max(5, int(0.80 * old_label_count + 0.999))
+            if (overlap < required
+                    or sum(new_labels.values()) < 0.90 * old_label_count):
+                continue
+            score = (len(old_bad) - len(new_bad), overlap, len(new_labels))
+            if best is None or score > best[0]:
+                best = (score, table, grid2, new_bad, overlap)
+
+        if best is None:
+            out.append(row)
+            continue
+
+        _score, table, grid2, new_bad, overlap = best
+        clean = _clean_title(table.title or title)
+        if new_bad:
+            clean += "  ⚠ verification failed — review"
+        out.append((page, n, clean, scope, table.section or section, grid2))
+        notes.append({
+            "scope": scope, "stmt": stmt, "title": clean, "page": page,
+            "old_failures": old_bad, "new_failures": new_bad,
+            "label_overlap": overlap,
+        })
+    return out, notes
+
+
 def verify_mapped(ms: "MappedStatement", template_fields: list[ClientField],
                   stmt: str) -> None:
     """Post-mapping CORRECTNESS check on the MAPPED numbers.
@@ -634,6 +766,32 @@ def infer_spans(periods: list[Period]) -> list[Period]:
     return periods
 
 
+_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})+,\d{3}|\d+)"
+    r"(?:\.\d+)?$"
+)
+_SPACE_GROUPED_NUMBER = re.compile(
+    r"-?(?:\d{1,3}(?:\s+\d{3})+|\d{1,2}(?:\s+\d{2})+\s+\d{3})"
+    r"(?:\.\d+)?$"
+)
+
+
+def _normalize_numeric_spacing(value: str) -> str:
+    """Repair whitespace inserted *inside one printed numeric token*.
+
+    Accept only standard western/Indian thousands grouping, so OCR forms such
+    as ``11 ,778`` and ``90 828`` become ``11,778`` and ``90828`` while two
+    separate values accidentally sharing a cell (``2026 2025``) stay invalid.
+    """
+    s = str(value)
+    punct = re.sub(r"\s*([,.])\s*", r"\1", s)
+    if punct != s and _GROUPED_NUMBER.fullmatch(punct):
+        return punct
+    if _SPACE_GROUPED_NUMBER.fullmatch(s):
+        return re.sub(r"\s+", "", s)
+    return s
+
+
 def _num(cell, mode: str = "clean") -> float | None:
     """Parse a numeric cell. mode='clean' is the original behaviour (commas are
     thousands separators). mode='repair' is used ONLY for statements whose text
@@ -648,6 +806,7 @@ def _num(cell, mode: str = "clean") -> float | None:
     # silently dropping — the opening '(' plus a digits body is unambiguous.
     neg = s.startswith("(") and (s.endswith(")") or bool(re.search(r"\d[)'`\"]?$", s)))
     s = s.strip("()'`\"").replace("₹", "").replace("`", "").strip()
+    s = _normalize_numeric_spacing(s)
     if mode == "repair":
         v = _num_repair(s)
         return None if v is None else (-v if neg else v)

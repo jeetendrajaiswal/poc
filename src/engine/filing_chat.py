@@ -80,6 +80,9 @@ _DETAIL = ("for ALL periods shown, detailed, row by row, exactly as printed "
            "each as its own SEPARATE table with a heading naming its GAAP (e.g. "
            "'Consolidated Financial Results — Ind AS' / '— IFRS'). NEVER mix rows from the two; "
            "every table must reproduce ONE printed statement from ONE page range only. "
+           "When the same statement is printed once as the main quarterly results table and "
+           "again later as a condensed/annual statement with fewer period columns, transcribe "
+           "the MAIN quarterly results table with the widest printed set of period columns. "
            "Return ONLY markdown table(s), each preceded by a bold heading line. "
            "If the document does not contain it, reply exactly: NOT PRESENT")
 
@@ -126,6 +129,23 @@ def _md_tables(answer: str) -> list[tuple[str, list[list[str]]]]:
     if grid:
         tables.append((heading, grid))
     return [(h, g) for h, g in tables if len(g) >= 2 and len(g[0]) >= 2]
+
+
+def _widest_numeric_row(tables) -> int:
+    """Maximum numeric-cell count carried by any row in one attempt.
+
+    This measures value-column capacity while ignoring label and note
+    columns. A verification retry may correct values, but must not win merely
+    by switching to a shorter twin printing and deleting a reporting period.
+    """
+    return max(
+        (
+            sum(bool(re.search(r"\d", str(cell or ""))) for cell in row)
+            for _heading, grid, *_rest in tables
+            for row in grid
+        ),
+        default=0,
+    )
 
 
 _NUM_TOK = re.compile(r"\d[\d,.]*\d|\d")
@@ -399,7 +419,16 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                     "period's own values exactly as printed, from ONE statement only.")
                 tables2 = _finalize(label, answer2)
                 if tables2 and sum(len(fl) for _h, _g, _r, fl in tables2) < len(fails):
-                    tables, answer = tables2, answer2
+                    before_width = _widest_numeric_row(tables)
+                    after_width = _widest_numeric_row(tables2)
+                    if after_width >= before_width:
+                        tables, answer = tables2, answer2
+                    else:
+                        log(
+                            f"  {label}: retry reduced numeric columns "
+                            f"{before_width}->{after_width}; keeping the wider "
+                            "source table and its review flag"
+                        )
             return scope, label, answer, tables, truncated
         with ThreadPoolExecutor(max_workers=len(questions)) as ex:
             results = list(ex.map(one, questions))

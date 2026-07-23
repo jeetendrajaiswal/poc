@@ -219,6 +219,21 @@ check("period header with a trailing bare year still parses (>=3 resolved period
       sum(1 for p in _hp if p.end) >= 3,
       f"periods={[(p.span, p.end, p.col) for p in _hp]}")
 
+print("== 2g. OCR whitespace inside grouped numbers is safe and lossless ==")
+from src.engine.client_map import _num as _cm_num
+from src.engine.source_align import _clean_token as _sat, _is_numeric_form as _sanf
+_spaced_amounts = {"11 ,778": 11778, "90 828": 90828,
+                   "21 ,483": 21483, "11 ,765": 11765}
+check("mapping parser recovers comma/space-split thousands",
+      all(_cm_num(raw) == expected for raw, expected in _spaced_amounts.items()))
+check("identity parser uses the same grouped-number interpretation",
+      all(identities._num(raw) == expected
+          for raw, expected in _spaced_amounts.items()))
+check("source alignment recognizes the repaired forms as numeric",
+      all(_sanf(_sat(raw)) for raw in _spaced_amounts))
+check("two separate years are never merged into one amount",
+      _cm_num("2026 2025") is None and not _sanf(_sat("2026 2025")))
+
 print("== 3. structural detection (duplicate period columns) ==")
 # synthetic fixtures — independent of the mutable cached pkls (a fresh run may
 # legitimately fix a filing's dup column, which must not fail the harness)
@@ -481,6 +496,127 @@ check("standalone-only filing never makes a consolidated extraction call",
 check("combined statement questions are constrained to standalone",
       all("STANDALONE statement only" in q
           for sc, _lab, q in _scoped_questions if sc == "unknown"))
+
+print("== 10c. large-package trimming and retries preserve quarterly periods ==")
+from src.engine import tables_llm as _tllm
+_infosys_primary_heading = """
+Statement of Consolidated Audited Results of Infosys Limited and its
+subsidiaries for the quarter and year ended March 31, 2026
+Revenue from operations 46,402 45,479 40,925 178,650 162,990
+Other income 1,159 1,139 1,190 4,322 3,600
+""" + " ".join(str(i) for i in range(1, 30))
+check("large-file locator retains 'Statement of Consolidated Audited Results'",
+      _tllm._is_statement_page_text(_infosys_primary_heading))
+_wide_attempt = [("results", [
+    ["Particulars", "Mar-26", "Dec-25", "Mar-25", "FY26", "FY25"],
+    ["Revenue", "46,402", "45,479", "40,925", "178,650", "162,990"],
+], None, ["duplicate"])]
+_short_attempt = [("results", [
+    ["Particulars", "Mar-26", "Mar-25", "FY26", "FY25"],
+    ["Revenue", "46,402", "40,925", "178,650", "162,990"],
+], None, [])]
+check("retry-quality width detects a silently shortened twin statement",
+      _fc._widest_numeric_row(_wide_attempt) >
+      _fc._widest_numeric_row(_short_attempt))
+_split_baseline = sa._visual_lines([
+    (520.0, 10.0, 90.0, "Profit before tax"),
+    (518.6, 200.0, 240.0, "39,995"),
+    (518.6, 260.0, 300.0, "37,608"),
+])
+check("same-row bold label and amounts survive a PDF baseline offset",
+      len(_split_baseline) == 1 and len(_split_baseline[0]) == 3)
+
+print("== 10d. failed-read recovery is source-grounded and statement-safe ==")
+from src.engine.client_map import adopt_verified_second_reads
+from scripts.repair_raw import _locate_pages, _statement_page_score
+
+_bad_income = [
+    ["Particulars", "Year ended March 31, 2026", "Year ended March 31, 2025"],
+    ["Revenue from operations", "1,000", "900"],
+    ["Other income", "100", "90"],
+    ["Total income", "1,100", "990"],
+    ["Expenses", "", ""],
+    ["Employee benefit expenses", "500", "450"],
+    ["Subcontractor expenses", "200", "180"],
+    ["Travel expenses", "100", "90"],
+    ["Total expenses", "900", "810"],       # deliberately wrong
+]
+_good_income = [list(r) for r in _bad_income]
+_good_income[-1] = ["Total expenses", "800", "720"]
+_bad_rows = [(1, 1, "Consolidated Financial Results  ⚠ verification failed — review",
+              "consolidated", "Consolidated Financial Results", _bad_income)]
+_good_table = RawTable(
+    page=1, n=1, title="Consolidated Financial Results",
+    scope="consolidated", section="Consolidated Financial Results",
+    page_head="", units="", grid=_good_income,
+)
+_forms = {}
+for _r in _good_income:
+    for _c in _r:
+        _d = "".join(ch for ch in str(_c) if ch.isdigit())
+        if len(_d) >= 3:
+            _forms.setdefault(_d, set()).add(str(_c))
+_synthetic_lines = [[
+    [(100.0, str(_r[0])), (300.0, str(_r[1])), (400.0, str(_r[2]))]
+    for _r in _good_income if any(str(c).strip() for c in _r[1:])
+]]
+_adopted_rows, _adopted_notes = adopt_verified_second_reads(
+    _bad_rows, [_good_table], {("consolidated", "income")},
+    [_forms], _synthetic_lines, set())
+check("failing first read adopts a grounded, period-compatible clean read",
+      len(_adopted_notes) == 1
+      and not identities.failing(_adopted_rows[0][4], _adopted_rows[0][2],
+                                 _adopted_rows[0][5]))
+_healthy_rows, _healthy_notes = adopt_verified_second_reads(
+    [(1, 1, "Consolidated Financial Results", "consolidated",
+      "Consolidated Financial Results", _good_income)],
+    [_good_table], {("consolidated", "income")},
+    [_forms], _synthetic_lines, set())
+check("a healthy first read is never replaced", not _healthy_notes)
+
+_long_banner = ("Example Limited registered office " + "address " * 90
+                + " Statement of Consolidated Financial Results "
+                + "Revenue from operations 100 90 Total income 110 99 "
+                + "Total expenses 80 72 Profit before tax 30 27 "
+                + "Profit for the year 25 22 Earnings per equity share 2 2 "
+                + " ".join(str(i) for i in range(30, 90)))
+_auditor_reference = (
+    "Independent Auditor's Report on consolidated financial results. "
+    "We refer to total income and total expenses in our opinion. "
+    + " ".join(str(i) for i in range(1, 80))
+)
+check("page locator sees a statement heading beyond the old 400-char prefix",
+      _statement_page_score(_long_banner, "income", "consolidated") > 0)
+check("page locator rejects a numeric auditor-report reference",
+      _statement_page_score(_auditor_reference, "income", "consolidated") == 0)
+
+_bad_segment = [
+    ["Particulars", "March 31, 2026", "March 31, 2025"],
+    ["Revenue by business segment", "", ""],
+    ["Services", "1,000", "900"],
+    ["Products", "200", "180"],
+    ["Total", "1,200", "1,080"],
+    ["Less: Inter-segment revenue", "1,200", "1,080"],
+    ["Net revenue from operations", "1,200", "1,080"],
+]
+_good_segment = [list(r) for r in _bad_segment]
+_good_segment[-2] = ["Less: Inter-segment revenue", "-", "-"]
+check("segment identity catches a copied-total inter-segment row",
+      "segment total - intersegment = net revenue" in
+      identities.failing("Segment Information", "Consolidated Segment Information",
+                         _bad_segment))
+check("segment identity treats printed dashes as zero",
+      not identities.failing("Segment Information", "Consolidated Segment Information",
+                             _good_segment))
+
+_infosys_direct = os.path.expanduser("~/Downloads/infosys_q4FY2026.pdf")
+_infosys_bad_raw = os.path.join(PKL, "infosys_new_q4FY2026.pkl")
+if os.path.exists(_infosys_direct) and os.path.exists(_infosys_bad_raw):
+    _ir = pickle.load(open(_infosys_bad_raw, "rb"))
+    _ig = next(g for _p, _n, t, sc, sec, g in _ir
+               if sc == "consolidated" and statement_of(sec, t) == "income")
+    check("repair locator selects the actual Infosys consolidated-results page",
+          _locate_pages(_infosys_direct, "income", "consolidated", _ig) == [25])
 
 print(f"\n{PASS} passed, {FAIL} failed")
 sys.exit(1 if FAIL else 0)

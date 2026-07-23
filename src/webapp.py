@@ -9,6 +9,9 @@ wide-format results (output/results_wide.xlsx) are rebuilt and shown on the page
 from __future__ import annotations
 
 import csv
+import glob
+import hashlib
+import json
 import os
 import re
 import threading
@@ -49,6 +52,122 @@ JOBS_FILE = os.path.join(OUT_DIR, ".jobs.json")
 # but it is no longer persisted to disk or mirrored to S3. Set EMIT_LONG=1 to
 # re-enable the long deliverable later.
 EMIT_LONG = os.getenv("EMIT_LONG", "").lower() in ("1", "true", "yes", "on")
+
+# Re-processing the same filing must not ask probabilistic extractors to make
+# the same decisions again.  A content-addressed manifest locks a verified
+# report to the exact PDF + extraction code + client configuration that
+# produced it.  Any change to any of those inputs invalidates the manifest.
+_REPORT_LOCKS: dict[str, threading.Lock] = {}
+_REPORT_LOCKS_GUARD = threading.Lock()
+
+
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _pipeline_sha256() -> str:
+    """Fingerprint every local input capable of changing report contents."""
+    paths = [TEMPLATE, TAXONOMY, os.path.join(ROOT, "requirements.txt"),
+             os.path.join(ROOT, "src", "webapp.py")]
+    paths += glob.glob(os.path.join(ROOT, "src", "engine", "*.py"))
+    paths += [
+        os.path.join(ROOT, "scripts", name)
+        for name in ("repair_raw.py", "verify_raw.py", "verify_delivered.py")
+    ]
+    h = hashlib.sha256()
+    for path in sorted(set(paths)):
+        if not os.path.isfile(path):
+            continue
+        h.update(os.path.relpath(path, ROOT).encode("utf-8"))
+        h.update(b"\0")
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+    return h.hexdigest()
+
+
+def _determinism_manifest(raw_name: str) -> str:
+    return os.path.join(CLIENT_DIR, ".cache",
+                        f"{raw_name}.determinism.json")
+
+
+def _report_fingerprint(pdf_path: str, name: str, mode: str,
+                        fin_only: bool, vision: bool) -> dict:
+    return {
+        "version": 1,
+        "name": name,
+        "mode": mode,
+        "financial_only": bool(fin_only),
+        "vision": bool(vision),
+        "pdf_sha256": _sha256_file(pdf_path),
+        "pipeline_sha256": _pipeline_sha256(),
+    }
+
+
+def _report_artifacts(name: str, raw_name: str) -> dict[str, str]:
+    return {
+        "workbook": os.path.join(CLIENT_DIR, f"{name}.xlsx"),
+        "mapped": os.path.join(CLIENT_DIR, ".cache", f"{raw_name}.pkl"),
+        "raw": os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"),
+    }
+
+
+def _deterministic_cache_hit(name: str, raw_name: str,
+                             fingerprint: dict) -> bool:
+    """True only for an intact, review-free artifact set for this exact input."""
+    manifest_path = _determinism_manifest(raw_name)
+    review = os.path.join(QTR_RAW_DIR, f"{raw_name}.review")
+    if os.path.exists(review) or not os.path.exists(manifest_path):
+        return False
+    try:
+        with open(manifest_path, encoding="utf-8") as fh:
+            manifest = json.load(fh)
+        if manifest.get("fingerprint") != fingerprint:
+            return False
+        artifacts = _report_artifacts(name, raw_name)
+        expected = manifest.get("artifact_sha256", {})
+        return all(
+            os.path.isfile(path)
+            and expected.get(kind) == _sha256_file(path)
+            for kind, path in artifacts.items()
+        )
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def _write_determinism_manifest(name: str, raw_name: str,
+                                fingerprint: dict) -> str | None:
+    """Atomically publish the fingerprint after all verified artifacts exist."""
+    review = os.path.join(QTR_RAW_DIR, f"{raw_name}.review")
+    if os.path.exists(review):
+        return None
+    artifacts = _report_artifacts(name, raw_name)
+    if not all(os.path.isfile(path) for path in artifacts.values()):
+        return None
+    path = _determinism_manifest(raw_name)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    payload = {
+        "fingerprint": fingerprint,
+        "artifact_sha256": {
+            kind: _sha256_file(artifact)
+            for kind, artifact in artifacts.items()
+        },
+    }
+    tmp = path + f".{uuid.uuid4().hex}.tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=2, sort_keys=True)
+        fh.write("\n")
+    os.replace(tmp, path)
+    return path
+
+
+def _report_lock(raw_name: str) -> threading.Lock:
+    with _REPORT_LOCKS_GUARD:
+        return _REPORT_LOCKS.setdefault(raw_name, threading.Lock())
 
 
 def _s3():
@@ -647,6 +766,7 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                     mode: str = "auto"):
     jobs[job_id] = {"state": "running", "company": name, "message": "Processing…"}
     _save_jobs()
+    run_lock = None
     try:
         if mode == "mdna":
             from src.engine.mdna import summarize_mdna
@@ -672,6 +792,24 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
         m = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
         raw_name = f"{m.group(1).lower()}_{m.group(2).lower()}{m.group(3)}" if m else name.lower()
         log, log_path = _job_logger(raw_name)
+        # Serialise same-report jobs and re-check the fingerprint only after
+        # acquiring the lock.  If two requests arrive together, the second one
+        # waits for the first to publish its verified artifacts, then reuses
+        # those exact bytes instead of starting another probabilistic read.
+        run_lock = _report_lock(raw_name)
+        run_lock.acquire()
+        fingerprint = _report_fingerprint(
+            pdf_path, name, mode, fin_only, vision)
+        if _deterministic_cache_hit(name, raw_name, fingerprint):
+            out = os.path.join(CLIENT_DIR, f"{name}.xlsx")
+            log("CACHE: exact PDF/config/pipeline fingerprint hit — "
+                "reusing verified report byte-for-byte")
+            jobs[job_id] = {
+                "state": "done", "company": name,
+                "message": f"<b>{os.path.basename(out)}</b> is ready.",
+            }
+            _save_jobs()
+            return
         import time as _time
         import traceback as _tb
         _t0 = _time.time()
@@ -737,15 +875,17 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
 
         # TARGETED double-read (DOUBLE_READ=0 disables). The file-upload Q&A
         # already reads pages provider-side, and statements printed on DIGITAL
-        # pages are verified cell-by-cell against the text layer — paying for
-        # a second independent read is justified ONLY for statements with no
-        # text authority (scans), where optical misreads are random and a
-        # cross-read disagreement is the only per-cell error signal.
+        # pages are verified cell-by-cell against the text layer. A second
+        # independent read is reserved for statements with no text authority,
+        # or statements that still fail after deterministic repair: repeated
+        # values can appear elsewhere on a digital page and therefore pass
+        # digit-coverage authority while occupying the wrong row.
         suspects, xread_notes, broad = [], [], []
         if os.getenv("DOUBLE_READ", "1") != "0":
             try:
                 from src.engine import source_align as _sa
-                from src.engine.client_map import compare_reads
+                from src.engine.client_map import (adopt_verified_second_reads,
+                                                   compare_reads)
                 from src.engine.client_map import statement_of as _sof
                 from src.engine.filing_chat import _page_number_forms as _pnf
                 _forms = _pnf(pdf_path)
@@ -754,14 +894,28 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                               for _pg2, _t3, _sc2, _sec2, _b2 in failing}
                 _needs = {(_sc, _sof(_sec, _tt))
                           for _pg, _n, _tt, _sc, _sec, _g in rows
-                          if _sof(_sec, _tt) and (_sc, _sof(_sec, _tt)) not in _still_bad
-                          and not _sa.has_text_authority(_g, _forms, _untrusted)}
+                          if _sof(_sec, _tt)
+                          and ((_sc, _sof(_sec, _tt)) in _still_bad
+                               or not _sa.has_text_authority(
+                                   _g, _forms, _untrusted))}
                 if _needs:
-                    log(f"DOUBLE-READ: {len(_needs)} statement(s) lack text "
-                        f"authority -> paid cross-read: {sorted(_needs)}")
+                    log(f"DOUBLE-READ: {len(_needs)} failing or source-unverified "
+                        f"statement(s) -> paid cross-read: {sorted(_needs)}")
                     jobs[job_id]["message"] = "Processing…"
                     _t2 = extract_tables_smart(pdf_in, mode="quarterly",
                                                log=lambda m_: log(f"XREAD: {m_}"))
+                    _lines = _sa.page_word_lines(pdf_path)
+                    rows, _adopted = adopt_verified_second_reads(
+                        rows, _t2, _needs, _forms, _lines, _untrusted)
+                    if _adopted:
+                        with open(os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"),
+                                  "wb") as _raw_fh:
+                            pickle.dump(rows, _raw_fh)
+                        failing = _rr._failing_statements(rows)
+                        for _a in _adopted:
+                            log("DOUBLE-READ: adopted source-grounded "
+                                f"[{_a['scope'][:4]}] {_a['stmt']} "
+                                f"({_a['old_failures']} -> {_a['new_failures']})")
                     suspects, xread_notes, broad = compare_reads(rows, _t2, _needs)
                     log(f"DOUBLE-READ: {len(suspects)} unproven cell "
                         f"disagreement(s), {len(broad)} statement(s) disagree broadly")
@@ -863,6 +1017,8 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                          for pg_, t_, sc_, sec_, _bad in failing] + broad
                         + [{"stmt": k, "scope": "?", "title": k, "page": ""}
                            for k in missing_stmts])
+        determinism_path = _write_determinism_manifest(
+            name, raw_name, fingerprint)
         log(f"DONE: {os.path.basename(out)} written | {n_flags} statement flag(s), "
             f"{len(_findings)} post-write finding(s), {len(suspects)} review cell(s) "
             f"| {_time.time() - _t0:.0f}s")
@@ -870,7 +1026,8 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                         "message": f"<b>{os.path.basename(out)}</b> is ready.{note}"}
         _save_jobs()
         s3_upload(out, cache,
-                  os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review, log_path)
+                  os.path.join(QTR_RAW_DIR, f"{raw_name}.pkl"), review, log_path,
+                  determinism_path)
         if EMIT_LONG:
             s3_upload(long_out)
         else:
@@ -889,6 +1046,8 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool, visio
                         "message": "Processing failed. Please try again."}
         _save_jobs()
     finally:
+        if run_lock is not None and run_lock.locked():
+            run_lock.release()
         # Privacy: the uploaded report is deleted as soon as processing ends.
         try:
             os.remove(pdf_path)
@@ -993,8 +1152,14 @@ def tables_process():
     pdf_path = os.path.join(UPLOAD_DIR, f"tables_{name}.pdf")
     pdf.save(pdf_path)
     if mode != "mdna" and os.path.exists(existing):
+        m_raw = re.match(r"(.+)_(Q[1-4])(FY\d+)$", name)
+        raw = (f"{m_raw.group(1).lower()}_{m_raw.group(2).lower()}{m_raw.group(3)}"
+               if m_raw else name.lower())
+        flagged = os.path.exists(os.path.join(QTR_RAW_DIR, f"{raw}.review"))
         missing = _cached_workbook_missing_statements(existing, pdf_path)
-        if not missing:
+        # A review sidecar means the existing workbook is explicitly
+        # unresolved.  Never let that stale artifact bypass a newer extractor.
+        if not flagged and not missing:
             try:
                 os.remove(pdf_path)
             except OSError:
@@ -1061,6 +1226,7 @@ def tables_delete(name):
         os.path.join(CLIENT_DIR, name),                              # wide deliverable
         os.path.join(CLIENT_DIR, "long", f"{stem}_long.xlsx"),       # long companion
         os.path.join(CLIENT_DIR, ".cache", f"{raw}.pkl"),            # mapped-data cache
+        _determinism_manifest(raw),                                  # input/artifact hashes
         os.path.join(QTR_RAW_DIR, f"{raw}.pkl"),                     # raw extracted tables
         os.path.join(QTR_RAW_DIR, f"{raw}.review"),                  # review sidecar
     ]
