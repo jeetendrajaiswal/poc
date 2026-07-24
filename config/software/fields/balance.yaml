@@ -1,0 +1,3037 @@
+statement: balance
+items:
+- fid: '13770'
+  name: Tangible Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Aggregate carrying amount of tangible non-current assets.
+    includes:
+    - all physical productive assets reported as separate components such as investment property, property plant and equipment,
+      right-of-use assets, biological assets other than bearer plants, and any other tangible asset categories that are meant
+      to roll into this subtotal.
+    excludes:
+    - Excludes intangible assets, capital work in progress if shown separately, impairments/provisions, and any printed total
+      line for the entire fixed-asset block only if this field is used as a component; if a report prints a subtotal for tangible
+      assets, that printed subtotal maps here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Tangible Assets
+    - Tangible fixed assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '25736'
+          sign: 1
+        - fid: '20222'
+          sign: 1
+        - fid: '30342'
+          sign: 1
+        - fid: '20219'
+          sign: 1
+    consolidated:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '25736'
+          sign: 1
+        - fid: '20222'
+          sign: 1
+        - fid: '30342'
+          sign: 1
+        - fid: '20219'
+          sign: 1
+  evidence: template_inferred
+- fid: '25736'
+  name: Investment Property
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Investment property held to earn rentals, for capital appreciation, or both, measured as a non-current asset.
+    includes:
+    - only the standalone investment property line.
+    excludes:
+    - Excludes owner-occupied property, property plant and equipment, right-of-use assets, and other tangible asset classes.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investment property
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 5
+      calculation:
+        type: reported
+    consolidated:
+      position: 5
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20222'
+  name: Property, Plant & Equipment
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Owner-occupied property, plant and equipment carried as a non-current asset.
+    includes:
+    - land, buildings, plant, machinery, furniture, fixtures, equipment, and similar physical operating assets.
+    excludes:
+    - Excludes investment property, right-of-use assets, capital work in progress, assets under development, and any impairment/provision
+      lines.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Property plant and equipment
+    - Property, plant & equipment
+    - Property and plant equipment
+    - PPE
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 6
+      calculation:
+        type: reported
+    consolidated:
+      position: 6
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30342'
+  name: Right-of-use asset
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Right-of-use assets recognized under lease accounting for leased property or equipment.
+    includes:
+    - the carrying amount of leased assets capitalized on the balance sheet, whether presented as a separate line or within
+      lease-related assets.
+    excludes:
+    - Excludes lease liabilities, owned property plant and equipment, and investment property.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Right-of-Use assets
+    - ROU assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 7
+      calculation:
+        type: reported
+    consolidated:
+      position: 7
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20219'
+  name: Biological Assets other than bearer plants
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Living assets other than bearer plants, measured as a non-current asset.
+    includes:
+    - biological assets that are not bearer plants and are not inventories.
+    excludes:
+    - Excludes bearer plants, agricultural produce held as inventory, and all other fixed-asset classes.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Biological assets other than bearer plants
+    - Biological assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 8
+      calculation:
+        type: reported
+    consolidated:
+      position: 8
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13735'
+  name: Intangible Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Computed aggregate of goodwill + other intangibles — NEVER map a printed 'Intangible assets' line here; use 20221.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '20221'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - NON-CURRENT-ASSETS
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 10
+      calculation:
+        type: sum
+        terms:
+        - fid: '20220'
+          sign: 1
+        - fid: '20221'
+          sign: 1
+    consolidated:
+      position: 10
+      calculation:
+        type: sum
+        terms:
+        - fid: '20220'
+          sign: 1
+        - fid: '13734'
+          sign: 1
+        - fid: '20221'
+          sign: 1
+  evidence: template_inferred
+- fid: '20220'
+  name: Goodwill
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Residual purchase premium arising on acquisition, recognized as goodwill.
+    includes:
+    - only goodwill, whether standalone or as part of a business-combination asset block.
+    excludes:
+    - Excludes other intangible assets, acquired customer relationships, brands, software, and any total line.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '13734'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - NON-CURRENT-ASSETS
+    rules:
+    - id: standalone-goodwill
+      status: reviewed
+      aliases:
+      - Goodwill
+      scopes:
+      - standalone
+      locations:
+      - non-current-assets
+    mode: rules_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 11
+      calculation:
+        type: reported
+    consolidated:
+      position: 11
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20221'
+  name: Other Intangible Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: A filing's 'Intangible assets' / 'Other intangible assets' LINE maps HERE.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - 13735 is the computed aggregate — never map a printed line to it.
+    distinguish_from:
+    - '13735'
+  mapping:
+    aliases:
+    - Intangible assets
+    - Other Intangible assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 12
+      calculation:
+        type: reported
+    consolidated:
+      position: 13
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13757'
+  name: Producing Properties
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Biological assets that are bearer plants used in production over multiple periods.
+    includes:
+    - productive plantations or similar producing biological assets when separately disclosed.
+    excludes:
+    - Excludes agricultural produce, inventory, and non-bearer biological assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Producing Properties
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 13
+      calculation:
+        type: reported
+    consolidated:
+      position: 14
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13756'
+  name: PreProducing Properties
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Biological assets or plantations not yet capable of producing output and not yet in productive use.
+    includes:
+    - pre-producing plantations or similar assets under establishment.
+    excludes:
+    - Excludes producing properties, inventories, and other fixed assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - PreProducing Properties
+    - Pre-producing properties
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 14
+      calculation:
+        type: reported
+    consolidated:
+      position: 15
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13720'
+  name: Capital Work-In-Progress
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Accumulated cost of tangible or intangible assets that are being built, installed, or developed and are not yet
+      ready for intended use.
+    includes:
+    - capital work in progress and similar construction-in-progress balances.
+    excludes:
+    - Excludes completed property plant and equipment, intangible assets under development, and any total line.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Capital work in progress
+    - CWIP
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 15
+      calculation:
+        type: reported
+    consolidated:
+      position: 16
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13736'
+  name: Intangible Assets Under Development
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Internally developed or acquired intangible projects that are not yet ready for use and remain under development.
+    includes:
+    - software under development and other intangible assets under construction.
+    excludes:
+    - Excludes completed intangible assets, goodwill, and capital work in progress.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Intangible assets under development
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 16
+      calculation:
+        type: reported
+    consolidated:
+      position: 17
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13758'
+  name: Provision For Impairment Of Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Allowance or provision for impairment of assets, reducing gross asset carrying amounts.
+    includes:
+    - explicit impairment reserves or write-down allowances reported as a separate contra-asset.
+    excludes:
+    - Excludes the gross asset balances themselves and any depreciation or amortization expense.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - If a printed line shows the provision as a negative deduction, it maps here with negative sign convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Provision for impairment of assets
+    - Provision for impairment
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 17
+      calculation:
+        type: reported
+    consolidated:
+      position: 18
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13772'
+  name: Total Fixed Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Total carrying amount of fixed assets and fixed-asset-type non-current assets after deducting impairment/provision
+      lines.
+    includes:
+    - tangible assets, intangible assets, and other fixed assets that are combined into a gross fixed-asset subtotal, minus
+      explicit impairment provisions if separately shown.
+    excludes: []
+    mapping_notes:
+    - The printed total/subtotal line for fixed assets maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total Fixed Assets
+    - Fixed assets, net
+    - Net fixed assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 18
+      calculation:
+        type: sum
+        terms:
+        - fid: '13770'
+          sign: 1
+        - fid: '13735'
+          sign: 1
+        - fid: '13757'
+          sign: 1
+        - fid: '13756'
+          sign: 1
+        - fid: '13720'
+          sign: 1
+        - fid: '13736'
+          sign: 1
+        - fid: '13758'
+          sign: -1
+    consolidated:
+      position: 19
+      calculation:
+        type: sum
+        terms:
+        - fid: '13770'
+          sign: 1
+        - fid: '13735'
+          sign: 1
+        - fid: '13757'
+          sign: 1
+        - fid: '13756'
+          sign: 1
+        - fid: '13720'
+          sign: 1
+        - fid: '13736'
+          sign: 1
+        - fid: '13758'
+          sign: -1
+  evidence: template_inferred
+- fid: '13748'
+  name: Non-Current Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Investments that are expected to be held for more than one year or are otherwise non-current.
+    includes:
+    - equity shares, preference shares, debt instruments, mutual fund units, and equity-method investments when presented
+      under non-current investments.
+    excludes:
+    - Excludes current investments, cash equivalents, and loans/advances.
+    - Never map a printed total/subtotal line here unless it is the non-current investment subtotal.
+    mapping_notes: []
+    distinguish_from:
+    - '13724'
+  mapping:
+    aliases:
+    - Investments
+    - Non-current investments
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 20
+      calculation:
+        type: reported
+    consolidated:
+      position: 21
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13726'
+  name: Deferred Tax Assets (Net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Deferred tax asset balance after offsetting deferred tax liabilities where net presentation is used.
+    includes:
+    - only deferred tax assets, whether arising from timing differences, carry-forwards, or remeasurement items.
+    excludes:
+    - Excludes current tax receivables, deferred tax liabilities, and income tax expense.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deferred tax assets (net)
+    - Deferred tax assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 21
+      calculation:
+        type: reported
+    consolidated:
+      position: 22
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13733'
+  name: Foreign Currency Monetary Item Translation Difference Asset Account
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Foreign-currency translation difference asset arising from monetary item translation or similar accounting treatment.
+    includes:
+    - only this specialized accumulated asset balance when separately disclosed.
+    excludes:
+    - Excludes generic foreign exchange gains/losses in profit and loss, deferred tax items, and other reserves.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Foreign Currency Monetary Item Translation Difference Asset Account
+    - Foreign currency monetary item translation difference asset
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 22
+      calculation:
+        type: reported
+    consolidated:
+      position: 23
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13742'
+  name: Long-Term Loans And Advances
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: All non-current loan and advance balances recoverable beyond one year.
+    includes:
+    - loans, advances, deposits, and similar long-term receivables that are not trade receivables or tax assets.
+    excludes:
+    - Excludes current loans and advances, trade receivables, current tax assets, and other current assets.
+    mapping_notes:
+    - May aggregate multiple line items such as loans, deposits, other long-term advances, and other recoverable balances.
+    - The printed subtotal line for long-term loans and advances maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Long-Term Loans And Advances
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 23
+      calculation:
+        type: sum
+        terms:
+        - fid: '20218'
+          sign: 1
+        - fid: '20215'
+          sign: 1
+        - fid: '20217'
+          sign: 1
+        - fid: '20216'
+          sign: 1
+    consolidated:
+      position: 24
+      calculation:
+        type: sum
+        terms:
+        - fid: '20218'
+          sign: 1
+        - fid: '20215'
+          sign: 1
+        - fid: '20217'
+          sign: 1
+        - fid: '20216'
+          sign: 1
+  evidence: template_inferred
+- fid: '20218'
+  name: Trade Receivables
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Trade receivables in the NON-CURRENT assets section, INCLUDING 'Billed'/'Unbilled' sub-lines printed under it
+      (summed).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '13779'
+    - '13780'
+    - '20227'
+  mapping:
+    aliases:
+    - Trade receivables
+    - Billed
+    - Unbilled
+    - Trade receivables - unbilled
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 24
+      calculation:
+        type: reported
+    consolidated:
+      position: 25
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20215'
+  name: Income Tax assets (net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Income tax assets (net)'' under NON-CURRENT assets map HERE.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Current-section tax assets map to 20228.
+    distinguish_from:
+    - '20228'
+  mapping:
+    aliases:
+    - Income tax assets (net)
+    - Non-current tax assets (net)
+    - Income tax assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 25
+      calculation:
+        type: reported
+    consolidated:
+      position: 26
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20217'
+  name: Loans Non-Current
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Loan balances recoverable beyond one year, presented within non-current assets.
+    includes:
+    - term loans, advances classified as loans, and similar lending balances.
+    excludes:
+    - Excludes trade receivables, investments, tax assets, and current loans.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - If multiple long-term loan sub-lines are shown, they are summed here.
+    distinguish_from:
+    - '20230'
+  mapping:
+    aliases:
+    - Loans
+    - Loans Non-Current
+    - Non-current loans
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 26
+      calculation:
+        type: reported
+    consolidated:
+      position: 27
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20216'
+  name: Other Non-Current Financial Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Other non-current financial assets that do not belong to investments, loans, trade receivables, cash, or tax
+      assets.
+    includes:
+    - derivative assets, deposits, restricted balances, claims receivable, and other financial receivables classified as non-current.
+    excludes:
+    - Excludes non-financial assets and all current financial assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - May require summing multiple sub-lines.
+    distinguish_from:
+    - '20214'
+    - '20226'
+    - '20231'
+  mapping:
+    aliases:
+    - Other financial assets
+    - Other Non-Current Financial Assets
+    - Derivative assets
+    - Others
+    - Other financiaI assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 27
+      calculation:
+        type: reported
+    consolidated:
+      position: 28
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13753'
+  name: Other Non-Current Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Other non-current assets that are not financial assets, tax assets, inventories, receivables, or fixed assets.
+    includes:
+    - contract assets, advances, prepaid expenses, long-term deposits, and other miscellaneous non-current operating assets.
+    excludes:
+    - Excludes other non-current financial assets and all current assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - May aggregate multiple miscellaneous sub-lines.
+    distinguish_from:
+    - '13750'
+  mapping:
+    aliases:
+    - Other non-current assets
+    - Other assets
+    - Contract assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 28
+      calculation:
+        type: reported
+    consolidated:
+      position: 29
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13777'
+  name: Total Non-Current Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Total of all non-current asset balances.
+    includes:
+    - every non-current asset component such as fixed assets, intangible assets, investments, deferred tax assets, non-current
+      loans and advances, other non-current financial assets, and other non-current assets, net of any explicit deductions
+      included in those components.
+    excludes: []
+    mapping_notes:
+    - The printed total/non-current assets line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total non-current assets
+    - Non-current assets
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 29
+      calculation:
+        type: sum
+        terms:
+        - fid: '13772'
+          sign: 1
+        - fid: '13748'
+          sign: 1
+        - fid: '13726'
+          sign: 1
+        - fid: '13733'
+          sign: 1
+        - fid: '13742'
+          sign: 1
+        - fid: '13753'
+          sign: 1
+    consolidated:
+      position: 30
+      calculation:
+        type: sum
+        terms:
+        - fid: '13772'
+          sign: 1
+        - fid: '13748'
+          sign: 1
+        - fid: '13726'
+          sign: 1
+        - fid: '13733'
+          sign: 1
+        - fid: '13742'
+          sign: 1
+        - fid: '13753'
+          sign: 1
+  evidence: client_mapping
+- fid: '13737'
+  name: Inventories
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Inventory held for sale, raw materials, work in progress, finished goods, traded goods, and similar stock on
+      hand.
+    includes:
+    - all inventory categories unless separately broken out.
+    excludes:
+    - Excludes contract assets, receivables, and other current assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Inventories
+    - Inventory
+    - Stock-in-trade
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 31
+      calculation:
+        type: reported
+    consolidated:
+      position: 32
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13724'
+  name: Current Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Investments'' lines under CURRENT assets map HERE (Current Investments).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current 'Investments' map to the non-current investments field.
+    distinguish_from:
+    - '13748'
+  mapping:
+    aliases:
+    - Investments
+    - Current investments
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 33
+      calculation:
+        type: reported
+    consolidated:
+      position: 34
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13780'
+  name: Trade Receivables
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Trade receivables in the CURRENT assets section, INCLUDING 'Billed' and 'Unbilled' sub-lines printed under trade
+      receivables (sum them here).
+    includes: []
+    excludes: []
+    mapping_notes:
+    - A standalone 'Unbilled receivables' line outside the trade-receivables block maps to 20232.
+    distinguish_from:
+    - '13779'
+    - '20218'
+    - '20227'
+  mapping:
+    aliases:
+    - Trade receivables
+    - Billed
+    - Unbilled
+    - Trade receivables - unbilled
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 34
+      calculation:
+        type: reported
+    consolidated:
+      position: 35
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13722'
+  name: Cash And Cash Equivalents
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Cash on hand and demand deposits that are immediately available and treated as cash equivalents.
+    includes:
+    - cash, bank balances qualifying as cash equivalents, and similar highly liquid items with insignificant risk of change
+      in value.
+    excludes:
+    - Excludes bank balances restricted or not readily available, other bank balances, and investments.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cash and cash equivalents
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 35
+      calculation:
+        type: reported
+    consolidated:
+      position: 36
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '29788'
+  name: Bank balance other than cash and cash equivalents
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Bank balances not included in cash and cash equivalents because they are restricted, earmarked, or otherwise
+      not immediately available.
+    includes:
+    - margin money, deposits with banks, escrow balances, and similar other bank balances.
+    excludes:
+    - Excludes ordinary cash and cash equivalents and investments.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Bank balance other than cash and cash equivalents
+    - Bank Balances other than above
+    - Other balances with banks
+    - Other bank balances
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 36
+      calculation:
+        type: reported
+    consolidated:
+      position: 37
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13769'
+  name: Short Term Loans And Advances
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Aggregate of current loan and advance balances recoverable within one year.
+    includes:
+    - current loans, advances, deposits, prepaid expenses, current receivables not classified as trade receivables, and other
+      short-term recoverable balances that are not financial assets or tax assets as separately classified.
+    excludes:
+    - Excludes inventories, cash, investments, tax assets, trade receivables, and other current assets if those are separately
+      identified.
+    mapping_notes:
+    - The printed subtotal line for short-term loans and advances maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Short Term Loans And Advances
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 37
+      calculation:
+        type: sum
+        terms:
+        - fid: '20232'
+          sign: 1
+        - fid: '20229'
+          sign: 1
+        - fid: '20228'
+          sign: 1
+        - fid: '20230'
+          sign: 1
+        - fid: '20231'
+          sign: 1
+    consolidated:
+      position: 38
+      calculation:
+        type: sum
+        terms:
+        - fid: '20232'
+          sign: 1
+        - fid: '20229'
+          sign: 1
+        - fid: '20228'
+          sign: 1
+        - fid: '20230'
+          sign: 1
+        - fid: '20231'
+          sign: 1
+  evidence: template_inferred
+- fid: '20232'
+  name: Unbilled Revenue
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: A standalone 'Unbilled receivables'/'Unbilled revenue' line printed OUTSIDE a trade-receivables block.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - '''Billed''/''Unbilled'' sub-lines inside trade receivables map to that section''s trade receivables field instead.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Unbilled Revenue
+    - Unbilled receivables
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 38
+      calculation:
+        type: reported
+    consolidated:
+      position: 39
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20229'
+  name: Deposit Under Site Restoration Fund
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Deposits or funds set aside to restore a site or asset at the end of its useful life.
+    includes:
+    - site restoration fund deposits and similar earmarked restoration balances.
+    excludes:
+    - Excludes provisions for restoration obligations, bank deposits, and other current or non-current financial assets unless
+      explicitly classified here.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deposit Under Site Restoration Fund
+    - Site restoration fund deposit
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 39
+      calculation:
+        type: reported
+    consolidated:
+      position: 40
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20228'
+  name: Current Tax Assets (Net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Current tax assets (net)'' / ''Income tax assets (net)'' lines in the CURRENT assets section map HERE.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current income-tax assets map to 20215.
+    distinguish_from:
+    - '20215'
+  mapping:
+    aliases:
+    - Current Tax Assets (Net)
+    - Income tax assets (net)
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 40
+      calculation:
+        type: reported
+    consolidated:
+      position: 41
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20230'
+  name: Loans, Current
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Loan balances recoverable within one year or otherwise classified as current.
+    includes:
+    - short-term loans, advances treated as loans, and similar current lending balances.
+    excludes:
+    - Excludes trade receivables, investments, tax assets, and non-current loans.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - If multiple current loan sub-lines are shown, they are summed here.
+    distinguish_from:
+    - '20217'
+  mapping:
+    aliases:
+    - Loans
+    - Loans, Current
+    - Current loans
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 41
+      calculation:
+        type: reported
+    consolidated:
+      position: 42
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20231'
+  name: Other Current Financial Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Other current financial assets that do not belong to cash and cash equivalents, investments, loans, trade receivables,
+      tax assets, or other current non-financial assets.
+    includes:
+    - derivative assets, restricted deposits, claims receivable, accrued financial income, and similar current financial balances.
+    excludes:
+    - Excludes non-financial current assets and all non-current financial assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - May aggregate multiple sub-lines.
+    distinguish_from:
+    - '20214'
+    - '20216'
+    - '20226'
+  mapping:
+    aliases:
+    - Other financial assets
+    - Other Current Financial Assets
+    - Derivative assets
+    - Others
+    - Other financiaI assets
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 42
+      calculation:
+        type: reported
+    consolidated:
+      position: 43
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13750'
+  name: Other Current Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Other current assets that are not financial assets, tax assets, inventories, or trade receivables.
+    includes:
+    - contract assets, prepaid expenses, advances recoverable within one year, accrued income, deposits, and other miscellaneous
+      current operating assets.
+    excludes:
+    - Excludes other current financial assets and current tax assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - May aggregate multiple sub-lines.
+    distinguish_from:
+    - '13753'
+  mapping:
+    aliases:
+    - Other current assets
+    - Other assets
+    - Contract assets
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 43
+      calculation:
+        type: reported
+    consolidated:
+      position: 44
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13774'
+  name: Total Current Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Sum of all assets expected to be realized, sold, consumed, or otherwise used up within the normal operating cycle
+      or within twelve months, whichever is longer.
+    includes:
+    - cash and cash equivalents, bank balances, trade receivables, inventories, current financial assets, current tax assets,
+      other current assets, and any other balance-sheet items classified as current assets.
+    excludes:
+    - Excludes non-current assets such as property, plant and equipment, intangible assets, right-of-use assets, investments,
+      deferred tax assets, and other non-current assets.
+    mapping_notes:
+    - 'This is a TOTAL line: printed total current assets maps here.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total current assets
+    - Current assets
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 44
+      calculation:
+        type: sum
+        terms:
+        - fid: '13737'
+          sign: 1
+        - fid: '13724'
+          sign: 1
+        - fid: '13780'
+          sign: 1
+        - fid: '13722'
+          sign: 1
+        - fid: '29788'
+          sign: 1
+        - fid: '13769'
+          sign: 1
+        - fid: '13750'
+          sign: 1
+    consolidated:
+      position: 45
+      calculation:
+        type: sum
+        terms:
+        - fid: '13737'
+          sign: 1
+        - fid: '13724'
+          sign: 1
+        - fid: '13780'
+          sign: 1
+        - fid: '13722'
+          sign: 1
+        - fid: '29788'
+          sign: 1
+        - fid: '13769'
+          sign: 1
+        - fid: '13750'
+          sign: 1
+  evidence: client_mapping
+- fid: '20208'
+  name: Assets classified as held for sale
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Assets or asset groups separately presented because they are intended to be recovered mainly through sale rather
+      than continuing use, and meet the accounting criteria for held-for-sale classification.
+    includes:
+    - only the held-for-sale carrying amount of such assets, whether individual assets or disposal groups.
+    excludes:
+    - Excludes ordinary current assets, non-current operating assets, and discontinued operations profit/loss lines.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Assets classified as held for sale
+    - Held for sale assets
+    - Non-current assets held for sale
+    - Assets held for sale
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 45
+      calculation:
+        type: reported
+    consolidated:
+      position: 46
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '33087'
+  name: Regulatory Deferral Account Debit Balances and Related Deferred Tax Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Debit-side regulatory deferral balances created under rate-regulated accounting, together with the associated
+      deferred tax asset portion when shown in the same caption.
+    includes:
+    - only such regulatory asset/deferred-tax balances that are specifically classified as a debit balance.
+    excludes:
+    - Excludes ordinary deferred tax assets that are reported separately, and excludes general receivables, prepaid expenses,
+      and other current/non-current assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Regulatory Deferral Account Debit Balances and Related Deferred Tax Assets
+    locations:
+    - CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 46
+      calculation:
+        type: reported
+    consolidated:
+      position: 47
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13771'
+  name: Total Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Sum of all assets presented on the balance sheet, combining current assets, non-current assets, assets classified
+      as held for sale, and any other asset categories included in the statement.
+    includes:
+    - the printed total assets line.
+    excludes:
+    - Excludes liabilities and equity.
+    mapping_notes:
+    - 'This is a TOTAL line: printed total assets maps here.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - TOTAL ASSETS
+    - Assets
+    - ASSETS / EQUITY AND LIABILITIES
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 47
+      calculation:
+        type: sum
+        terms:
+        - fid: '13777'
+          sign: 1
+        - fid: '13774'
+          sign: 1
+        - fid: '20208'
+          sign: 1
+        - fid: '33087'
+          sign: 1
+    consolidated:
+      position: 48
+      calculation:
+        type: sum
+        terms:
+        - fid: '13777'
+          sign: 1
+        - fid: '13774'
+          sign: 1
+        - fid: '20208'
+          sign: 1
+        - fid: '33087'
+          sign: 1
+  evidence: client_mapping
+- fid: '13765'
+  name: Share Capital
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Issued and paid-up equity share capital representing the par value of equity shares outstanding.
+    includes:
+    - ordinary equity shares and, where presented under this caption, analogous equity-share capital amounts.
+    excludes:
+    - Excludes preference share capital unless explicitly presented as equity share capital, share application money pending
+      allotment, and reserves or other equity.
+    - Do not map share premium or retained earnings here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Equity share capital
+    - Share capital
+    locations:
+    - EQUITY
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 50
+      calculation:
+        type: reported
+    consolidated:
+      position: 51
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13762'
+  name: Reserves And Surplus/Other Equity
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Residual equity not forming part of share capital, including retained earnings, securities premium, general reserve,
+      other reserves, foreign currency translation reserve, remeasurement reserves, and other OCI/equity components.
+    includes:
+    - positive and negative balances that are part of shareholders’ equity under 'other equity'.
+    excludes:
+    - Excludes share capital, non-controlling interest, share application money pending allotment, and warrant proceeds.
+    - Do not map total equity here; this is only the other-equity component.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other equity
+    - Other components of equity
+    - Reserves and surplus
+    locations:
+    - EQUITY
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 51
+      calculation:
+        type: reported
+    consolidated:
+      position: 52
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13745'
+  name: Money Received Against Share Warrants
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Consideration received for share warrants that are not yet converted into equity shares, when presented as a
+      separate equity-like line item.
+    includes:
+    - only warrant money outstanding pending conversion/allotment.
+    excludes:
+    - Excludes share capital, share application money pending allotment, and any premium or reserves already recognized.
+    - Do not map a total equity line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Money received against share warrants
+    - Share warrants money received
+    locations:
+    - EQUITY
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 53
+      calculation:
+        type: reported
+    consolidated:
+      position: 54
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13773'
+  name: Total Share Holder's Funds
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Total equity attributable to owners/shareholders, equal to share capital plus reserves and surplus/other equity,
+      and including any other equity components presented in the same subtotal.
+    includes:
+    - the printed total equity line and equivalent captions such as equity attributable to owners/shareholders/equity holders.
+    excludes:
+    - Excludes non-controlling interests if those are shown separately, and excludes liabilities.
+    mapping_notes:
+    - 'This is a TOTAL line: printed total equity maps here.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Equity attributable to owners of the Company
+    - Equity attributable to shareholders of the Company
+    - Equity attributable to the equity holders of the Company
+    locations:
+    - EQUITY
+    rules:
+    - id: standalone-total-equity
+      status: reviewed
+      aliases:
+      - TOTAL EQUITY
+      scopes:
+      - standalone
+    - id: consolidated-total-equity-without-owner-split
+      status: reviewed
+      aliases:
+      - TOTAL EQUITY
+      scopes:
+      - consolidated
+      labels_absent:
+      - Equity attributable to owners of the Company
+      - Equity attributable to shareholders of the Company
+      - Equity attributable to the equity holders of the Company
+      - Non-controlling interest
+      - Non-controlling interests
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 54
+      calculation:
+        type: sum
+        terms:
+        - fid: '13765'
+          sign: 1
+        - fid: '13762'
+          sign: 1
+        - fid: '13745'
+          sign: 1
+    consolidated:
+      position: 55
+      calculation:
+        type: sum
+        terms:
+        - fid: '13765'
+          sign: 1
+        - fid: '13762'
+          sign: 1
+        - fid: '13745'
+          sign: 1
+  evidence: client_mapping
+- fid: '13768'
+  name: Share application money pending allotment
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Share application money received and pending allotment of shares.
+    includes:
+    - funds received from applicants before share capital is issued or allotted.
+    excludes:
+    - Excludes share capital, share warrants money, reserves, and any other equity component.
+    mapping_notes:
+    - If the printed line is combined with capital reserve or similar items, only the application-money portion maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Share application money pending allotment
+    - Application money pending allotment
+    locations:
+    - EQUITY
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 55
+      calculation:
+        type: reported
+    consolidated:
+      position: 56
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13725'
+  name: Deferred government grants
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Government assistance related to assets or income that is recognized on a deferred basis and classified as non-current.
+    includes:
+    - deferred grant balances outstanding after initial recognition.
+    excludes:
+    - Excludes current grants, government subsidies already recognized in profit or loss, and ordinary liabilities or provisions.
+    - Do not map a total liabilities line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deferred government grants
+    - Government grants deferred
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 56
+      calculation:
+        type: reported
+    consolidated:
+      position: 57
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13740'
+  name: Long-Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Legacy long-term borrowings field — DO NOT map printed 'Borrowings' lines here; use 20209 (non-current) / 20223
+      (current).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - NON-CURRENT-LIABILITIES
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 60
+      calculation:
+        type: sum
+        terms:
+        - fid: '20223'
+          sign: 1
+        - fid: '20224'
+          sign: 1
+        - fid: '20225'
+          sign: 1
+    consolidated:
+      position: 62
+      calculation:
+        type: sum
+        terms:
+        - fid: '20223'
+          sign: 1
+        - fid: '20224'
+          sign: 1
+        - fid: '20225'
+          sign: 1
+  evidence: template_inferred
+- fid: '20223'
+  name: Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Borrowings'' under NON-CURRENT liabilities (template group: Long-Term Borrowings).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Current borrowings map to 20209.
+    distinguish_from:
+    - '20209'
+  mapping:
+    aliases:
+    - Borrowings
+    - Loans and borrowings
+    - Loans, borrowings and bank overdrafts
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 61
+      calculation:
+        type: reported
+    consolidated:
+      position: 63
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20224'
+  name: Current Maturities of Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: The portion of long-term borrowings, loans, debentures, or other debt that becomes payable within the next twelve
+      months and is classified as current.
+    includes:
+    - current maturities of term loans and similar debt repayments.
+    excludes:
+    - Excludes the non-current principal balance itself, short-term borrowings taken as fresh current debt, and lease liabilities.
+    - Do not map a generic borrowings total here.
+    mapping_notes: []
+    distinguish_from:
+    - '20210'
+  mapping:
+    aliases:
+    - Current maturities of borrowings
+    - Current maturities of long-term debt
+    - Current portion of borrowings
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 62
+      calculation:
+        type: reported
+    consolidated:
+      position: 64
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20225'
+  name: Deposit Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Deposits received from customers, suppliers, tenants, or other parties that are held as liabilities, generally
+      refundable or adjustable in future.
+    includes:
+    - security deposits and other received deposits when shown as a liability.
+    excludes:
+    - Excludes trade payables, contract liabilities, advances from customers that are better classified as contract liabilities,
+      and borrowings.
+    mapping_notes: []
+    distinguish_from:
+    - '20212'
+  mapping:
+    aliases:
+    - Deposit received
+    - Deposits received
+    - Security deposits received
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 63
+      calculation:
+        type: reported
+    consolidated:
+      position: 65
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20227'
+  name: Trade Payables
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Trade payables explicitly under NON-CURRENT liabilities only.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - When section is unclear, trade payables default to 13779 (current).
+    distinguish_from:
+    - '13779'
+    - '13780'
+    - '20218'
+  mapping:
+    aliases:
+    - Trade payables
+    - Billed
+    - Dues of creditors other than micro enterprises and small enterprises
+    - Dues of micro enterprises and small enterprises
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 64
+      calculation:
+        type: reported
+    consolidated:
+      position: 66
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30340'
+  name: Lease liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Lease liabilities'' under NON-CURRENT liabilities (template group: Long-Term Liabilities).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Current-section lease liabilities map to 25716.
+    distinguish_from:
+    - '25716'
+  mapping:
+    aliases:
+    - Lease liabilities
+    - Lease liability
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 65
+      calculation:
+        type: reported
+    consolidated:
+      position: 67
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20226'
+  name: Other Non Current Financial Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Non-current financial liabilities not covered by a more specific caption, including derivatives, payable balances,
+      accrued financial obligations, and other miscellaneous long-term financial liabilities.
+    includes:
+    - items such as derivative liabilities or other financial liabilities when classified as non-current.
+    excludes:
+    - Excludes borrowings, lease liabilities, trade payables, provisions, and non-financial liabilities.
+    mapping_notes:
+    - Multiple printed sub-lines may legitimately map here and should be summed if this is the only non-current financial-liability
+      bucket.
+    distinguish_from:
+    - '20214'
+    - '20216'
+    - '20231'
+  mapping:
+    aliases:
+    - Other financial liabilities
+    - Other non-current financial liabilities
+    - Others
+    - Derivative liabilities
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 66
+      calculation:
+        type: reported
+    consolidated:
+      position: 68
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13741'
+  name: Long-Term Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Computed intermediate for legacy long-term financial-liability components.
+    includes: []
+    excludes:
+    - Do not map a printed total non-current liabilities line here; that authoritative printed total maps to 13778.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - NON-CURRENT-LIABILITIES
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 67
+      calculation:
+        type: sum
+        terms:
+        - fid: '20227'
+          sign: 1
+        - fid: '30340'
+          sign: 1
+        - fid: '20226'
+          sign: 1
+    consolidated:
+      position: 69
+      calculation:
+        type: sum
+        terms:
+        - fid: '20227'
+          sign: 1
+        - fid: '30340'
+          sign: 1
+        - fid: '20226'
+          sign: 1
+  evidence: template_inferred
+- fid: '26449'
+  name: Other Non-Current Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Other non-current liabilities'' / non-current ''Contract liabilities'' lines map HERE.'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '26450'
+  mapping:
+    aliases:
+    - Other non-current liabilities
+    - Contract liabilities
+    - Unearned and deferred revenue
+    - Non-current liabilities
+    - Non-current tax liabilities (net)
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 68
+      calculation:
+        type: reported
+    consolidated:
+      position: 70
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13727'
+  name: Deferred Tax Liability (Net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: DEFERRED tax liability (net) — ONLY lines explicitly worded 'deferred tax'.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current INCOME-tax liabilities ('non-current tax liabilities (net)') are NOT deferred tax and map to 26449 (other
+      non-current liabilities residual).
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deferred tax liabilities (net)
+    - Deferred tax liability (net)
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 69
+      calculation:
+        type: reported
+    consolidated:
+      position: 71
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '33070'
+  name: Deferred government grants, Non-current
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Government grant liability balances classified as non-current and deferred over future periods.
+    includes:
+    - deferred government grants shown under non-current liabilities.
+    excludes:
+    - Excludes current deferred grants, other non-current liabilities, and any grant income recognized in profit or loss.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deferred government grants, Non-current
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 70
+      calculation:
+        type: reported
+    consolidated:
+      position: 72
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13732'
+  name: Foreign Currency Monetary Item Translation Difference Liability Account
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Foreign-currency translation or restatement difference recognized as a liability rather than equity, typically
+      arising from foreign currency monetary items under specific accounting treatment.
+    includes:
+    - the liability-side translation difference amount only when presented separately.
+    excludes:
+    - Excludes foreign exchange gains/losses in profit or loss, equity translation reserves, borrowings, and ordinary provisions.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Foreign Currency Monetary Item Translation Difference Liability Account
+    - FCMITDA liability
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 71
+      calculation:
+        type: reported
+    consolidated:
+      position: 73
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13743'
+  name: Long-Term Provisions
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Provisions / 'Employee benefit obligations' lines under NON-CURRENT liabilities map HERE (Long-Term Provisions)
+      by convention, never 20213.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '13767'
+  mapping:
+    aliases:
+    - Employee benefit obligations
+    - Provisions
+    - Long-term provisions
+    - employee benefit obiigations
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 72
+      calculation:
+        type: reported
+    consolidated:
+      position: 74
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13778'
+  name: Total Non-Current Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Sum of all liabilities not due within the current operating cycle or twelve months, including long-term borrowings,
+      deferred tax liabilities, other non-current liabilities, long-term provisions, lease liabilities and any other non-current
+      liability categories in the statement.
+    includes: []
+    excludes:
+    - Excludes current liabilities and equity.
+    mapping_notes:
+    - 'This is a TOTAL line: printed total non-current liabilities maps here.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total non-current liabilities
+    locations:
+    - NON-CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 73
+      calculation:
+        type: sum
+        terms:
+        - fid: '13740'
+          sign: 1
+        - fid: '13741'
+          sign: 1
+        - fid: '26449'
+          sign: 1
+        - fid: '13727'
+          sign: 1
+        - fid: '33070'
+          sign: 1
+        - fid: '13732'
+          sign: 1
+        - fid: '13743'
+          sign: 1
+    consolidated:
+      position: 75
+      calculation:
+        type: sum
+        terms:
+        - fid: '13740'
+          sign: 1
+        - fid: '13741'
+          sign: 1
+        - fid: '26449'
+          sign: 1
+        - fid: '13727'
+          sign: 1
+        - fid: '33070'
+          sign: 1
+        - fid: '13732'
+          sign: 1
+        - fid: '13743'
+          sign: 1
+  evidence: client_mapping
+- fid: '13766'
+  name: Short-Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Borrowings contractually due within the current operating cycle or twelve months, including current working-capital
+      loans, short-term bank facilities and other current debt.
+    includes: []
+    excludes:
+    - Excludes long-term borrowings, current maturities disclosed in a separate field, lease liabilities, trade payables and
+      provisions.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - CURRENT-LIABILITIES
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 76
+      calculation:
+        type: sum
+        terms:
+        - fid: '20209'
+          sign: 1
+        - fid: '20210'
+          sign: 1
+        - fid: '20212'
+          sign: 1
+        - fid: '20213'
+          sign: 1
+    consolidated:
+      position: 78
+      calculation:
+        type: sum
+        terms:
+        - fid: '20209'
+          sign: 1
+        - fid: '20210'
+          sign: 1
+        - fid: '20212'
+          sign: 1
+        - fid: '20213'
+          sign: 1
+  evidence: template_inferred
+- fid: '20209'
+  name: Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Borrowings'' under CURRENT liabilities (template group: Short-Term Borrowings).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current borrowings map to 20223.
+    distinguish_from:
+    - '20223'
+  mapping:
+    aliases:
+    - Borrowings
+    - Loans and borrowings
+    - Loans, borrowings and bank overdrafts
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 77
+      calculation:
+        type: reported
+    consolidated:
+      position: 79
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20210'
+  name: Current Maturities of Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: The current portion of long-term borrowings and similar debt obligations payable within twelve months.
+    includes:
+    - current maturities of term loans, debentures, or similar borrowings.
+    excludes:
+    - Excludes fresh short-term borrowings, lease liabilities, and the non-current principal balance.
+    mapping_notes: []
+    distinguish_from:
+    - '20224'
+  mapping:
+    aliases:
+    - Current maturities of borrowings
+    - Current maturities of long-term debt
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 78
+      calculation:
+        type: reported
+    consolidated:
+      position: 80
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20212'
+  name: Deposit Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Deposits received that are due within the current period or presented as a current liability.
+    includes:
+    - refundable security deposits and similar received amounts classified as current.
+    excludes:
+    - Excludes trade payables, contract liabilities, borrowings, and other current liabilities.
+    mapping_notes: []
+    distinguish_from:
+    - '20225'
+  mapping:
+    aliases:
+    - Deposit received
+    - Deposits received
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 79
+      calculation:
+        type: reported
+    consolidated:
+      position: 81
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20213'
+  name: Employee  Retirement benefit obligations
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Legacy retirement-benefit field — DO NOT map 'employee benefit obligations' lines here; use 13743 (non-current)
+      / 13767 (current).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - CURRENT-LIABILITIES
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 80
+      calculation:
+        type: reported
+    consolidated:
+      position: 82
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13779'
+  name: Trade Payables
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Trade payables in the CURRENT liabilities section, INCLUDING the micro/small-enterprises and other-creditors
+      dues sub-lines (summed) and 'unbilled and accruals'.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - 'DEFAULT: a trade-payables dues block maps HERE unless it is explicitly inside the non-current section.'
+    distinguish_from:
+    - '13780'
+    - '20218'
+    - '20227'
+  mapping:
+    aliases:
+    - Billed
+    - Dues of creditors other than micro enterprises and small enterprises
+    - Dues of micro enterprises and small enterprises
+    - Total outstanding dues of creditors other than micro and small enterprises
+    - dues of creditors other than small enterprises and micro enterprises
+    - dues of small enterprises and micro enterprises
+    - total outstanding dues of creditors other than micro enterprises and small enterprises
+    - total outstanding dues of micro and small enterprises
+    - total outstanding dues of micro enterprises and small enterprises
+    - trade payables
+    - Unbilled
+    - unbilled and accruals
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 81
+      calculation:
+        type: reported
+    consolidated:
+      position: 83
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '25716'
+  name: Lease liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Lease liabilities'' under CURRENT liabilities (template group: Other Current Liabilities).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current lease liabilities map to 30340.
+    distinguish_from:
+    - '30340'
+  mapping:
+    aliases:
+    - Lease liabilities
+    - Lease liability
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 82
+      calculation:
+        type: reported
+    consolidated:
+      position: 84
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20214'
+  name: Other Current Financial Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Current financial liabilities not specifically covered by borrowings, lease liabilities, or trade payables, including
+      derivative liabilities and other miscellaneous financial obligations due within one year.
+    includes:
+    - all balances placed in an 'other financial liabilities' current bucket.
+    excludes:
+    - Excludes contract liabilities, provisions, current tax liabilities, borrowings, and lease liabilities.
+    mapping_notes:
+    - Multiple current financial-liability sublines may be summed here.
+    distinguish_from:
+    - '20216'
+    - '20226'
+    - '20231'
+  mapping:
+    aliases:
+    - Other financial liabilities
+    - Other current financial liabilities
+    - Others
+    - Derivative liabilities
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 83
+      calculation:
+        type: reported
+    consolidated:
+      position: 85
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20211'
+  name: Current Tax Liabilities (Net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Income tax payable or current tax liability net of any advance tax, tax credits, or tax receivable offset, classified
+      as current.
+    includes:
+    - the net current tax obligation only.
+    excludes:
+    - Excludes deferred tax liabilities, tax assets, and uncertain tax positions unless explicitly reported as current tax
+      liability.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Current tax liabilities (net)
+    - Income tax liabilities (net)
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 84
+      calculation:
+        type: reported
+    consolidated:
+      position: 86
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '26450'
+  name: Other liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Other liabilities'' / ''Other current liabilities'' / ''Contract liabilities'' lines in the CURRENT liabilities
+      section map HERE by convention (never 13751).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Non-current equivalents map to 26449.
+    distinguish_from:
+    - '13751'
+    - '26449'
+  mapping:
+    aliases:
+    - Contract liabilities
+    - Other current liabilities
+    - Other liabilities
+    - Contract liability
+    - Unearned and deferred revenue
+    - other iiabiiities
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 85
+      calculation:
+        type: reported
+    consolidated:
+      position: 87
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13751'
+  name: Other Current Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Legacy other-current-liabilities field — DO NOT map printed 'other current liabilities' lines here; use 26450.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '26450'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - CURRENT-LIABILITIES
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 86
+      calculation:
+        type: sum
+        terms:
+        - fid: '25716'
+          sign: 1
+        - fid: '20214'
+          sign: 1
+        - fid: '20211'
+          sign: 1
+        - fid: '26450'
+          sign: 1
+    consolidated:
+      position: 88
+      calculation:
+        type: sum
+        terms:
+        - fid: '25716'
+          sign: 1
+        - fid: '20214'
+          sign: 1
+        - fid: '20211'
+          sign: 1
+        - fid: '26450'
+          sign: 1
+  evidence: template_inferred
+- fid: '13767'
+  name: Short-Term Provisions
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Provisions / 'Employee benefit obligations' lines under CURRENT liabilities map HERE by convention, never 20213.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '13743'
+  mapping:
+    aliases:
+    - Provisions
+    - Employee benefit obligations
+    - Short-term provisions
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 87
+      calculation:
+        type: reported
+    consolidated:
+      position: 89
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '33069'
+  name: Deferred government grants, Current
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Current portion of government grants received or recognized as deferred income that remains outstanding as a
+      liability within one year; includes only the balance shown as deferred government grants.
+    includes: []
+    excludes:
+    - Excludes deferred tax liabilities, other deferred income, and non-current government grants.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 88
+      calculation:
+        type: reported
+    consolidated:
+      position: 90
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13775'
+  name: Total Current Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Aggregate of all obligations classified as current liabilities on the balance sheet, including items such as
+      trade payables, borrowings due within one year, lease liabilities, contract liabilities, current tax liabilities, provisions,
+      other current liabilities, and any other current liability sub-lines.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is a total/aggregate field, so the printed total current liabilities line maps here; do not map individual component
+      lines here unless they are separately summed into this total.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total current liabilities
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 89
+      calculation:
+        type: sum
+        terms:
+        - fid: '13766'
+          sign: 1
+        - fid: '13779'
+          sign: 1
+        - fid: '13751'
+          sign: 1
+        - fid: '13767'
+          sign: 1
+        - fid: '33069'
+          sign: 1
+    consolidated:
+      position: 91
+      calculation:
+        type: sum
+        terms:
+        - fid: '13766'
+          sign: 1
+        - fid: '13779'
+          sign: 1
+        - fid: '13751'
+          sign: 1
+        - fid: '13767'
+          sign: 1
+        - fid: '33069'
+          sign: 1
+  evidence: client_mapping
+- fid: '25685'
+  name: Liabilities directly associated with assets in disposal group classified as held for sale
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Liabilities that are part of a disposal group classified as held for sale and expected to be transferred/disposed
+      together with the related assets.
+    includes:
+    - only liabilities specifically linked to the held-for-sale disposal group; excludes ordinary operating, financing, or
+      other current/non-current liabilities that are not part of that disposal group.
+    excludes:
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Liabilities directly associated with assets held for sale
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 90
+      calculation:
+        type: reported
+    consolidated:
+      position: 92
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '33088'
+  name: Regulatory deferral account credit balances and related deferred tax liability
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Regulatory deferral account credit balances recognized under rate-regulated accounting, together with the associated
+      deferred tax liability shown against them.
+    includes:
+    - only the credit-balance/regulatory deferral liability component and its related deferred tax liability; excludes ordinary
+      deferred tax liabilities, other provisions, and unrelated deferred income or regulatory assets.
+    excludes:
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - CURRENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 91
+      calculation:
+        type: reported
+    consolidated:
+      position: 93
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '13776'
+  name: Total Equity And Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Aggregate of total equity plus all liabilities on the balance sheet.
+    includes:
+    - shareholders’ equity items and every liability class, current and non-current, as components of the balance-sheet total.
+    excludes: []
+    mapping_notes:
+    - This is a total/aggregate field, so the printed total equity and liabilities line maps here; do not map component lines
+      here unless they are being summed into this total.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - TOTAL EQUITY AND LIABILITIES
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 93
+      calculation:
+        type: sum
+        terms:
+        - fid: '13773'
+          sign: 1
+        - fid: '13768'
+          sign: 1
+        - fid: '13725'
+          sign: 1
+        - fid: '13778'
+          sign: 1
+        - fid: '13775'
+          sign: 1
+        - fid: '25685'
+          sign: 1
+        - fid: '33088'
+          sign: 1
+    consolidated:
+      position: 95
+      calculation:
+        type: sum
+        terms:
+        - fid: '13773'
+          sign: 1
+        - fid: '13768'
+          sign: 1
+        - fid: '13725'
+          sign: 1
+        - fid: '13744'
+          sign: 1
+        - fid: '13778'
+          sign: 1
+        - fid: '13775'
+          sign: 1
+        - fid: '25685'
+          sign: 1
+        - fid: '33088'
+          sign: 1
+  evidence: client_mapping
+- fid: '13734'
+  name: Goodwill On Consolidation
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Goodwill arising only on consolidation from business combinations, representing the excess of purchase consideration
+      over the fair value of identifiable net assets acquired.
+    includes: []
+    excludes:
+    - Excludes other intangible assets, investment goodwill, self-generated goodwill, and any printed total/subtotal line.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '20220'
+  mapping:
+    aliases:
+    - Goodwill
+    locations:
+    - NON-CURRENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 12
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '13744'
+  name: Minority Interest
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: The portion of subsidiary equity attributable to shareholders other than the parent, also called non-controlling
+      interest.
+    includes:
+    - the minority owners’ share of equity in consolidated subsidiaries; excludes parent equity, share capital, reserves,
+      and any liability items.
+    excludes:
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Non-controlling interest
+    - Non-controlling interests
+    locations:
+    - EQUITY
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 58
+      calculation:
+        type: reported
+  evidence: client_mapping

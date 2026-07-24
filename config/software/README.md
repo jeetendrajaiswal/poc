@@ -1,13 +1,26 @@
 # Software taxonomy
 
-`taxonomy.yaml` is the only runtime source for software-sector client fields.
-It combines semantic mapping metadata, output presentation, and calculations.
+`taxonomy.yaml` is a small deterministic manifest. It declares the ordered
+field files plus the statement-structure and identity files used by the
+software sector:
+
+- `fields/income.yaml`
+- `fields/balance.yaml`
+- `fields/cashflow.yaml`
+- `fields/segment.yaml`
+- `statement_structure.yaml`
+- `identities.yaml`
+
+Every field file declares one `statement`; its items inherit that statement.
+The loader rejects missing references, paths outside this sector directory,
+duplicate statement files, embedded per-item statement overrides, and
+inconsistent statement names.
 
 Each field defines:
 
 - `fid`: stable client field identifier.
 - `name`: client-facing display name.
-- `statement`: income, balance, cashflow, or segment.
+- statement membership: inherited from the containing field file.
 - `value_type`: amount, percentage, count, per_share, or text.
 - `unit`: statement_currency, percent, shares/count, currency_per_share, or
   text; validated against `value_type`.
@@ -60,13 +73,13 @@ Calculations never use Excel row addresses. The runtime validates field counts,
 scope positions, formula references, calculation types, and taxonomy structure
 before processing a report.
 
-The sector-level mapping grammar is declarative too:
+`statement_structure.yaml` contains the sector-level mapping grammar:
 
 - `location_vocabulary` defines the only location labels fields may use.
 - `statement_sections` identifies printed section headings and explicitly
   assigns each heading a mapping `location`; the engine never infers location
   from the heading or section name.
-- `identities` defines reported-value cross-checks entirely by FID. Each check
+`identities.yaml` defines reported-value cross-checks entirely by FID. Each check
   has a stable `id`, applicable `scopes`, one `result_fid`, and signed
   `terms`. A term's `presence` is either `required` or `optional`; a check is
   skipped if a required printed value is absent.
@@ -74,8 +87,14 @@ The sector-level mapping grammar is declarative too:
   - `presence: required` means the check needs that reported field.
     `presence: optional` means use the field only when the report prints it.
 
-`src/engine/client_map.py` interprets this contract. It contains no
-software-sector captions or software-sector FIDs.
+`src/engine/client_map.py` merges and interprets this manifest. It contains no
+software-sector captions, software-sector FIDs, or hardcoded field filenames.
+
+`extraction.yaml` is deliberately separate from field taxonomy. It contains
+only reviewed `statement_exclusions`, each with a stable ID, a short
+description, and header-only regex patterns. The generic extraction engine
+uses those exclusions during page selection, source reconciliation, and
+completeness recovery; it contains no software-sector framework vocabulary.
 
 Only exact reviewed aliases/rules can populate reported facts. Semantic model
 output is written separately under `output/client/.proposals/` with

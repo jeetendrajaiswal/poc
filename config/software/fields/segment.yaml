@@ -1,0 +1,1397 @@
+statement: segment
+items:
+- fid: '8920'
+  name: Segment Revenue
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'Gross/leaf segment-revenue total — ONLY when the statement has a SINGLE revenue section: its bare ''Total''
+      row (or the gross total printed before ''Less: Inter segment revenue'') maps here.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - If the filing prints multiple revenue sub-sections ([EXTERNAL-REVENUE], [INTER-SEGMENT], [SEGMENT-REVENUE]), leave their
+      totals unmapped except the final segment-revenues total (8931).
+    - Individual segment rows are NEVER mapped.
+    distinguish_from:
+    - '8931'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - SEGMENT-REVENUE
+    rules:
+    - id: single-section-gross-segment-revenue-total
+      status: reviewed
+      aliases:
+      - Total
+      locations:
+      - segment-revenue
+      occurrence: only
+    mode: rules_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 1
+      calculation:
+        type: reported
+    consolidated:
+      position: 1
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8925'
+  name: Unallocated Income (Expenses)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income or expense items that are not attributable to any reportable segment and are presented as a residual/unallocated
+      corporate amount in the segment note.
+    includes:
+    - unallocated corporate income or expenses that are not assigned to a segment.
+    excludes:
+    - Excludes segment-specific operating revenue, operating expenses, finance cost, tax, depreciation, assets, liabilities,
+      and eliminations presented separately.
+    mapping_notes:
+    - Positive expenses and negative income follow the filing’s sign convention when stated as a net residual.
+    distinguish_from:
+    - '8918'
+    - '8929'
+    - '18570'
+    - '18574'
+    - '18580'
+    - '18581'
+  mapping:
+    aliases:
+    - Unallocated
+    locations:
+    - SEGMENT-REVENUE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 2
+      calculation:
+        type: reported
+    consolidated:
+      position: 2
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8924'
+  name: 'Less: Inter Segment Revenue'
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'An explicit ''Less: Inter segment revenue'' deduction line printed INSIDE the main revenue section (between
+      gross and net totals).'
+    includes: []
+    excludes:
+    - Do NOT map a separate '[INTER-SEGMENT]' sub-section or its total, and do NOT map '[EXTERNAL-REVENUE]' totals.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Inter-segment elimination
+    - 'Less : Inter segment revenue'
+    - Inter-segment revenue
+    locations:
+    - SEGMENT-REVENUE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 3
+      calculation:
+        type: reported
+    consolidated:
+      position: 3
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8931'
+  name: Total Segment Revenue
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'FINAL net total segment revenue: a row explicitly labelled ''Total segment revenue'', the total printed AFTER
+      a ''Less: Inter segment revenue'' or elimination line, or the ''Total'' of the [SEGMENT-REVENUE] section when the filing
+      also prints separate external-customer/inter-segment sub-sections.'
+    includes: []
+    excludes:
+    - NEVER sum multiple totals here.
+    mapping_notes: []
+    distinguish_from:
+    - '8920'
+  mapping:
+    aliases:
+    - Total segment revenue
+    - Segment revenue
+    locations:
+    - SEGMENT-REVENUE
+    rules:
+    - id: net-total-after-inline-intersegment-deduction
+      status: reviewed
+      aliases:
+      - Total
+      locations:
+      - inter-segment
+      locations_absent:
+      - external-revenue
+      occurrence: last
+    - id: net-total-after-separate-revenue-blocks
+      status: reviewed
+      aliases:
+      - Total
+      locations:
+      - segment-revenue
+      locations_present:
+      - external-revenue
+      - inter-segment
+      occurrence: only
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '8920'
+          sign: 1
+        - fid: '8925'
+          sign: 1
+        - fid: '8924'
+          sign: -1
+    consolidated:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '8920'
+          sign: 1
+        - fid: '8925'
+          sign: 1
+        - fid: '8924'
+          sign: -1
+  evidence: client_mapping
+- fid: '8919'
+  name: Segment Results
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The printed 'Total segment result(s)' line maps HERE.
+    includes: []
+    excludes:
+    - Do NOT map individual segment result rows — the template has no per-segment member fields; leave them unmapped.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total
+    - Total segment result
+    - Segment Result
+    - Segment Results
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 5
+      calculation:
+        type: reported
+    consolidated:
+      position: 5
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8929'
+  name: Unallocated Income (Expenses)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: ALL unallocated/unallocable/reconciling expense rows WITHIN THE SEGMENT RESULTS section — 'Unallocated', 'Other
+      un-allocable expenditure', 'Other unallocable expenses', 'Unallocable depreciation and amortisation', 'Reconciling items'
+      — SUMMED.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - 'Exceptions with their own fields: unallocable other income → 14859, unallocable finance cost/interest → 8927, interest
+      income → 8928.'
+    - NOT the unallocated rows of assets/liabilities sections (18580/18581).
+    distinguish_from:
+    - '8918'
+    - '8925'
+    - '18570'
+    - '18574'
+    - '18580'
+    - '18581'
+  mapping:
+    aliases:
+    - Other un-allocable expenditure (net off)
+    - Other unallocable expenses
+    - Reconciling Items
+    - Unallocable depreciation and amortisation expenses
+    - Unallocable expenses
+    - Unallocated
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 6
+      calculation:
+        type: reported
+    consolidated:
+      position: 6
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '14859'
+  name: Other Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-operating income not assigned to any segment, typically corporate other income shown in the segment reconciliation.
+    includes:
+    - unallocable other income and other income credited at the corporate/unallocated level.
+    excludes:
+    - Excludes finance income if separately classified as interest income, segment revenue, and any expense items.
+    mapping_notes:
+    - Negative values may appear if the filing nets this against expenses in a residual line, but the economic meaning remains
+      other income.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other income
+    - Unallocable other income
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 7
+      calculation:
+        type: reported
+    consolidated:
+      position: 7
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8928'
+  name: Interest Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Finance income or interest income earned by the group and shown separately in the segment reconciliation.
+    includes:
+    - interest income, finance and other income, and similar financing-related income when that is the line used.
+    excludes:
+    - Excludes other income not specifically finance-related if the filing separates it, and excludes finance cost/interest
+      expense.
+    - Do not map revenue from operations here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Finance and other income
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 8
+      calculation:
+        type: reported
+    consolidated:
+      position: 8
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8927'
+  name: Interest Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Finance cost or interest expense incurred by the group and shown in the segment reconciliation.
+    includes:
+    - finance costs, interest expenses, borrowing costs, and related unallocable finance charges.
+    excludes:
+    - Excludes interest income, other income, and operating expenses.
+    mapping_notes:
+    - Expenses are normally positive in filings that present costs as debits, but may be shown with a minus sign or in parentheses
+      depending on presentation.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Finance costs
+    - Unallocable finance cost
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 9
+      calculation:
+        type: reported
+    consolidated:
+      position: 9
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8926'
+  name: Exceptional Item
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Material exceptional gain or loss recognized outside ordinary recurring operations and disclosed separately in
+      the segment reconciliation.
+    includes:
+    - one-off, unusual, non-recurring items that the filing explicitly labels as exceptional.
+    excludes:
+    - Excludes ordinary operating expenses, finance cost, tax, and extraordinary items.
+    - Never map a normal recurring profit or loss line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 10
+      calculation:
+        type: reported
+    consolidated:
+      position: 10
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '8911'
+  name: Profit/(Loss) from ordinary activities before tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss before tax after combining segment result, finance income, other income, unallocated corporate
+      items, and exceptional items, but before current tax and deferred tax.
+    includes:
+    - the printed profit before tax line.
+    excludes:
+    - Excludes tax expense, extraordinary items, and post-tax profit measures.
+    mapping_notes:
+    - This is the pre-tax profit reconciliation subtotal.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - PROFIT BEFORE TAX
+    - Total profit before tax
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 11
+      calculation:
+        type: sum
+        terms:
+        - fid: '8919'
+          sign: 1
+        - fid: '8929'
+          sign: 1
+        - fid: '14859'
+          sign: 1
+        - fid: '8928'
+          sign: 1
+        - fid: '8927'
+          sign: -1
+        - fid: '8926'
+          sign: 1
+    consolidated:
+      position: 11
+      calculation:
+        type: sum
+        terms:
+        - fid: '8919'
+          sign: 1
+        - fid: '8929'
+          sign: 1
+        - fid: '14859'
+          sign: 1
+        - fid: '8928'
+          sign: 1
+        - fid: '8927'
+          sign: -1
+        - fid: '8926'
+          sign: 1
+  evidence: client_mapping
+- fid: '8901'
+  name: Current Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Current-period income tax charge or credit recognized for the period, before deferred tax.
+    includes:
+    - tax expense, tax provision, and tax expense/credit shown as current tax.
+    excludes:
+    - Excludes deferred tax and any prior-period tax adjustments unless the filing explicitly includes them in current tax.
+    mapping_notes:
+    - Expenses are positive; tax credits/benefits may appear as negative values depending on sign convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Tax expense
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 12
+      calculation:
+        type: reported
+    consolidated:
+      position: 12
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8902'
+  name: Deferred Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Deferred income tax charge or credit arising from temporary differences and tax timing items.
+    includes:
+    - deferred tax expense, deferred tax provision, and deferred tax credit/benefit.
+    excludes:
+    - Excludes current tax and total tax expense.
+    mapping_notes:
+    - Write-backs or benefits are negative when the filing uses signed amounts.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 13
+      calculation:
+        type: reported
+    consolidated:
+      position: 13
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '8907'
+  name: Net Profit/(Loss) from ordinary activities after tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Intermediate 'net profit from ordinary activities after tax' BEFORE extraordinary items — map ONLY when the table
+      also prints a separate extraordinary-items line followed by a final net-profit row.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Otherwise the printed profit-after-tax row maps to 8908.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 14
+      calculation:
+        type: sum
+        terms:
+        - fid: '8911'
+          sign: 1
+        - fid: '8901'
+          sign: -1
+        - fid: '8902'
+          sign: -1
+    consolidated:
+      position: 14
+      calculation:
+        type: sum
+        terms:
+        - fid: '8911'
+          sign: 1
+        - fid: '8901'
+          sign: -1
+        - fid: '8902'
+          sign: -1
+  evidence: template_inferred
+- fid: '8903'
+  name: Extraordinary items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Extraordinary gains or losses that are separately disclosed and excluded from ordinary activities.
+    includes:
+    - items explicitly labeled extraordinary.
+    excludes:
+    - Excludes exceptional items unless the filing uses the terms interchangeably, ordinary operating results, and tax.
+    - Never map a normal operating or finance item here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 15
+      calculation:
+        type: reported
+    consolidated:
+      position: 15
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '8908'
+  name: Net Profit/(Loss) for the period
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The FINAL printed profit row of a segment table — 'Profit after tax', 'Net profit for the period', 'Profit for
+      the period/year' — ALWAYS maps here (the final total field).
+    includes: []
+    excludes: []
+    mapping_notes:
+    - 8907 is only for a separate before-extraordinary-items subtotal.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Profit after tax
+    - Profit for the period/year
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 16
+      calculation:
+        type: sum
+        terms:
+        - fid: '8907'
+          sign: 1
+        - fid: '8903'
+          sign: 1
+    consolidated:
+      position: 19
+      calculation:
+        type: sum
+        terms:
+        - fid: '8906'
+          sign: 1
+        - fid: '8921'
+          sign: 1
+        - fid: '8905'
+          sign: -1
+  evidence: template_inferred
+- fid: '18571'
+  name: Segment Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Identifiable assets allocated to a reportable segment, measured as the segment’s asset base.
+    includes:
+    - tangible and intangible assets, receivables, cash, and other assets explicitly assigned to the segment when the filing
+      provides segment assets.
+    excludes:
+    - Excludes unallocable or corporate assets reported separately, and excludes liabilities, capital expenditure, depreciation,
+      and profit measures.
+    - Never map a total asset line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Segment Assets
+    locations:
+    - SEGMENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 17
+      calculation:
+        type: reported
+    consolidated:
+      position: 20
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '18580'
+  name: Unallocable Corporate Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Unallocated''/''Unallocable'' row within the Segment ASSETS section.'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '8925'
+    - '8929'
+    - '18581'
+  mapping:
+    aliases:
+    - Other unallocable assets
+    - Unallocated
+    - Unallocable assets
+    locations:
+    - SEGMENT-ASSETS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 18
+      calculation:
+        type: reported
+    consolidated:
+      position: 21
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '18578'
+  name: Total Segment Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: The printed 'Total' row of the Segment ASSETS section maps here.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total assets
+    locations:
+    - SEGMENT-ASSETS
+    rules:
+    - id: segment-assets-total
+      status: reviewed
+      aliases:
+      - Total
+      locations:
+      - segment-assets
+      occurrence: only
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 19
+      calculation:
+        type: sum
+        terms:
+        - fid: '18571'
+          sign: 1
+        - fid: '18580'
+          sign: 1
+    consolidated:
+      position: 22
+      calculation:
+        type: sum
+        terms:
+        - fid: '18571'
+          sign: 1
+        - fid: '18580'
+          sign: 1
+  evidence: client_mapping
+- fid: '18573'
+  name: Segment Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Identifiable liabilities allocated to a reportable segment.
+    includes:
+    - borrowings, payables, provisions, and other obligations explicitly assigned to the segment.
+    excludes:
+    - Excludes unallocable corporate liabilities, total liabilities, and all asset or income statement items.
+    - Never map a printed total liabilities line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Segment Liabilities
+    locations:
+    - SEGMENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 20
+      calculation:
+        type: reported
+    consolidated:
+      position: 23
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '18581'
+  name: Unallocable Corporate Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: '''Unallocated''/''Unallocable'' row within the Segment LIABILITIES section.'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '8925'
+    - '8929'
+    - '18580'
+  mapping:
+    aliases:
+    - Other unallocable liabilities
+    - Unallocated
+    - Unallocable liabilities
+    locations:
+    - SEGMENT-LIABILITIES
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 21
+      calculation:
+        type: reported
+    consolidated:
+      position: 24
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '18579'
+  name: Total Segment Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: The printed 'Total' row of the Segment LIABILITIES section maps here.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total liabilities
+    locations:
+    - SEGMENT-LIABILITIES
+    rules:
+    - id: segment-liabilities-total
+      status: reviewed
+      aliases:
+      - Total
+      locations:
+      - segment-liabilities
+      occurrence: only
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 22
+      calculation:
+        type: sum
+        terms:
+        - fid: '18573'
+          sign: 1
+        - fid: '18581'
+          sign: 1
+    consolidated:
+      position: 25
+      calculation:
+        type: sum
+        terms:
+        - fid: '18573'
+          sign: 1
+        - fid: '18581'
+          sign: 1
+  evidence: client_mapping
+- fid: '18568'
+  name: Capital Expenditure
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Capital expenditure attributable to a reportable segment, meaning spending on acquisition or construction of
+      property, plant, equipment, intangible assets, or other capital items directly assigned to the segment.
+    includes: []
+    excludes:
+    - Excludes depreciation, amortisation, non-cash charges, operating expenses, and unallocated corporate capex.
+    - Never map a total capital expenditure line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 23
+      calculation:
+        type: reported
+    consolidated:
+      position: 26
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18582'
+  name: Unallocated Capital Expenditure
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Capital expenditure that cannot be allocated to an individual segment and is reported at the corporate/unallocated
+      level.
+    includes:
+    - unallocated capex or similar residual corporate investment spending.
+    excludes:
+    - Excludes segment capital expenditure and total capital expenditure.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 24
+      calculation:
+        type: reported
+    consolidated:
+      position: 27
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18575'
+  name: Total Capital Expenditure
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total capital expenditure, equal to segment capital expenditure plus unallocated capital expenditure.
+    includes:
+    - the printed aggregate capex line.
+    excludes:
+    - Excludes depreciation, non-cash expenses, assets, and liabilities.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 25
+      calculation:
+        type: sum
+        terms:
+        - fid: '18568'
+          sign: 1
+        - fid: '18582'
+          sign: 1
+    consolidated:
+      position: 28
+      calculation:
+        type: sum
+        terms:
+        - fid: '18568'
+          sign: 1
+        - fid: '18582'
+          sign: 1
+  evidence: template_inferred
+- fid: '18572'
+  name: Depreciation and Amortisation
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Depreciation and amortisation charged to a reportable segment.
+    includes:
+    - depreciation, amortisation, and impairment of intangibles when shown as a segment D&A measure.
+    excludes:
+    - Excludes unallocated corporate D&A, total D&A, and other non-cash expenses.
+    - Never map a printed total depreciation and amortisation line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 26
+      calculation:
+        type: reported
+    consolidated:
+      position: 29
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18570'
+  name: Unallocated Income (Expenses)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: '''Unallocated'' row ONLY inside a dedicated ''Depreciation and amortisation'' segment-disclosure block (a separate
+      table listing depreciation per segment).'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - A results-section 'unallocable depreciation' line maps to 8929 instead.
+    distinguish_from:
+    - '8918'
+    - '8925'
+    - '8929'
+    - '18574'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 27
+      calculation:
+        type: reported
+    consolidated:
+      position: 30
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18576'
+  name: Total Depreciation and Amortisation
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total depreciation and amortisation, equal to segment depreciation and amortisation plus unallocated depreciation
+      and amortisation.
+    includes:
+    - the printed aggregate D&A line.
+    excludes:
+    - Excludes capital expenditure, non-cash expenses other than D&A, and all balance-sheet items.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 28
+      calculation:
+        type: sum
+        terms:
+        - fid: '18572'
+          sign: 1
+        - fid: '18570'
+          sign: 1
+    consolidated:
+      position: 31
+      calculation:
+        type: sum
+        terms:
+        - fid: '18572'
+          sign: 1
+        - fid: '18570'
+          sign: 1
+  evidence: template_inferred
+- fid: '18569'
+  name: Non Cash Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash expenses attributable to a reportable segment, such as non-cash charges, impairment-like expenses, or
+      other non-cash operating costs when reported under this heading.
+    includes: []
+    excludes:
+    - Excludes depreciation and amortisation if that is reported separately, unallocated corporate non-cash expenses, and
+      total non-cash expenses.
+    - Never map a printed total non-cash expense line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 29
+      calculation:
+        type: reported
+    consolidated:
+      position: 32
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18574'
+  name: Unallocated Income (Expenses)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash expenses that are not allocated to a specific segment and are reported at the corporate/unallocated
+      level.
+    includes:
+    - residual unallocated non-cash expense lines.
+    excludes:
+    - Excludes segment non-cash expenses and total non-cash expenses.
+    mapping_notes: []
+    distinguish_from:
+    - '8918'
+    - '8925'
+    - '8929'
+    - '18570'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 30
+      calculation:
+        type: reported
+    consolidated:
+      position: 33
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '18577'
+  name: Total Non Cash Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total non-cash expenses, equal to segment non-cash expenses plus unallocated non-cash expenses.
+    includes:
+    - the printed aggregate non-cash expense line.
+    excludes:
+    - Excludes cash operating expenses, capex, and balance-sheet items.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 31
+      calculation:
+        type: sum
+        terms:
+        - fid: '18569'
+          sign: 1
+        - fid: '18574'
+          sign: 1
+    consolidated:
+      position: 34
+      calculation:
+        type: sum
+        terms:
+        - fid: '18569'
+          sign: 1
+        - fid: '18574'
+          sign: 1
+  evidence: template_inferred
+- fid: '8899'
+  name: Capital Employed
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Capital employed for the reportable segment, generally the net investment tied to the segment and computed as
+      segment assets minus segment liabilities.
+    includes:
+    - the segment’s capital base used in ROCE-style analysis.
+    excludes:
+    - Excludes unallocated corporate assets and liabilities, total capital employed, and all profit-and-loss measures.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 32
+      calculation:
+        type: sum
+        terms:
+        - fid: '18571'
+          sign: 1
+        - fid: '18573'
+          sign: -1
+    consolidated:
+      position: 35
+      calculation:
+        type: sum
+        terms:
+        - fid: '18571'
+          sign: 1
+        - fid: '18573'
+          sign: -1
+  evidence: template_inferred
+- fid: '8918'
+  name: Unallocated Income (Expenses)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Unallocated corporate capital employed or residual capital base not assigned to segments, generally computed
+      as unallocated corporate assets minus unallocated corporate liabilities.
+    includes:
+    - corporate unallocated net assets or net liabilities when shown as the balancing item.
+    excludes:
+    - Excludes segment capital employed and total capital employed.
+    mapping_notes:
+    - This is the residual corporate capital component, not an operating segment measure.
+    distinguish_from:
+    - '8925'
+    - '8929'
+    - '18570'
+    - '18574'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 33
+      calculation:
+        type: sum
+        terms:
+        - fid: '18580'
+          sign: 1
+        - fid: '18581'
+          sign: -1
+    consolidated:
+      position: 36
+      calculation:
+        type: sum
+        terms:
+        - fid: '18580'
+          sign: 1
+        - fid: '18581'
+          sign: -1
+  evidence: template_inferred
+- fid: '8930'
+  name: Total Capital Employed
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Total capital employed, equal to segment capital employed plus unallocated corporate capital employed.
+    includes:
+    - the printed aggregate capital employed line.
+    excludes:
+    - Excludes profit measures, revenue, capex, and D&A.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 34
+      calculation:
+        type: sum
+        terms:
+        - fid: '8899'
+          sign: 1
+        - fid: '8918'
+          sign: 1
+    consolidated:
+      position: 37
+      calculation:
+        type: sum
+        terms:
+        - fid: '8899'
+          sign: 1
+        - fid: '8918'
+          sign: 1
+  evidence: template_inferred
+- fid: '8906'
+  name: Net Profit/(Loss) After Taxes but before Share of Profit/(Loss) of associates and minority interest
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit after tax before considering share of profit or loss of associates and minority interest, i.e., the post-tax
+      operating profit available before equity-accounted associate results and non-controlling interests are applied.
+    includes:
+    - the after-tax subtotal just above associate share and minority-interest adjustments.
+    excludes:
+    - Excludes share of associates and minority interest itself; those belong to separate reconciliation lines.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 16
+      calculation:
+        type: sum
+        terms:
+        - fid: '8907'
+          sign: 1
+        - fid: '8903'
+          sign: 1
+  evidence: template_inferred
+- fid: '8921'
+  name: Share of Profit/(Loss) of Associates
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The group’s share of profit or loss from associates and joint ventures accounted for under the equity method.
+    includes:
+    - share of net profit or loss of associate and joint venture using the equity method.
+    excludes:
+    - Excludes operating segment profit, finance income, tax, minority interest, and dividends received.
+    mapping_notes:
+    - Negative values represent share of losses; positive values represent share of profits.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Share of net profit/ (loss) of associate and joint venture accounted for using the equity method
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 17
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '8905'
+  name: Minority Interest
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share of profit or loss attributable to non-controlling interests / minority shareholders.
+    includes:
+    - the portion of consolidated profit or loss that belongs to owners other than the parent, typically shown as a deduction
+      from profit after tax when arriving at profit attributable to the parent.
+    excludes:
+    - Excludes total profit before tax, tax expense/credit, finance items, other income/expenses, segment results, and any
+      equity balance of non-controlling interests on the balance sheet.
+    - Never map operating, segment, or subtotal/total lines here; only the minority-interest allocation line belongs here.
+    mapping_notes:
+    - Also includes a positive amount only when the non-controlling interest share is a loss.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 18
+      calculation:
+        type: reported
+  evidence: template_inferred

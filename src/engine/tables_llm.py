@@ -507,8 +507,12 @@ def _is_statement_page_text(text: str) -> bool:
     )
 
 
-def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
-                             log=print) -> str:
+def maybe_trim_large_filing(
+        pdf_path: str,
+        max_pages: int = 100,
+        log=print,
+        extraction_policy: dict | None = None,
+) -> str:
     """Disclosure PACKAGES (100+ pages) waste upload cost on non-statement
     content. For those — and only those — locate the statement pages by
     heading + digit density (the annual engine's locate step), write a
@@ -522,19 +526,26 @@ def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
         doc.close()
         return pdf_path
     keep = {0}                                   # cover page: banner/units context
-    drop = re.compile(r"\bifrs\b|dollars in millions", re.I)
+    from src.engine import source_align
     for i in range(n):
         t = " ".join(doc[i].get_text().split())
         if len(t.strip()) < 100:
             keep.add(i)                          # scanned page: text heuristics are
             continue                             # blind here — never drop it
-        if drop.search(t[:600].lower()):
-            continue                             # IFRS variants are excluded downstream
+        if source_align.is_excluded_statement_text(
+                t, extraction_policy):
+            continue
         # heading window is generous: filings open with long registered-office
         # preambles before the statement title
         if _is_statement_page_text(t):
             keep.add(i)
-            if i + 1 < n and not drop.search(" ".join(doc[i+1].get_text().split())[:600].lower()):
+            next_text = (
+                " ".join(doc[i + 1].get_text().split())
+                if i + 1 < n else ""
+            )
+            if (i + 1 < n
+                    and not source_align.is_excluded_statement_text(
+                        next_text, extraction_policy)):
                 keep.add(i + 1)                  # statements span page breaks
     out = pymupdf.open()
     for p in sorted(keep):
@@ -550,7 +561,8 @@ def maybe_trim_large_filing(pdf_path: str, max_pages: int = 100,
 
 def extract_tables_smart(pdf_path: str, financial_only: bool = True,
                          vision: bool = True, progress=None,
-                         log=print, mode: str = "auto") -> list[RawTable]:
+                         log=print, mode: str = "auto",
+                         extraction_policy: dict | None = None) -> list[RawTable]:
     """The verified hybrid.
 
     mode='annual': deterministic pipeline (TEXT pages, 100% faithful by
@@ -568,7 +580,9 @@ def extract_tables_smart(pdf_path: str, financial_only: bool = True,
         # statement (standalone + consolidated results, segments, BS, CF)
         from src.engine.filing_chat import quarterly_statement_tables
         log("  quarterly filing -> statement extraction (file upload + internal questions)")
-        return quarterly_statement_tables(pdf_path, log=log)
+        return quarterly_statement_tables(
+            pdf_path, log=log,
+            extraction_policy=extraction_policy)
     tables = extract_tables(pdf_path, progress=progress,
                             financial_only=financial_only and not small)
     if not vision:

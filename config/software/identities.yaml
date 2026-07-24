@@ -1,0 +1,169 @@
+identities:
+  balance:
+  - id: assets-equal-equity-and-liabilities
+    name: Assets = Equity + Liabilities
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '13776'
+    terms:
+    - fid: '13771'
+      coefficient: 1
+      presence: required
+  - id: total-assets-components
+    name: Non-current + current + separately presented assets = Total assets
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '13771'
+    terms:
+    - fid: '13777'
+      coefficient: 1
+      presence: required
+    - fid: '13774'
+      coefficient: 1
+      presence: required
+    - fid: '20208'
+      coefficient: 1
+      presence: optional
+    - fid: '33087'
+      coefficient: 1
+      presence: optional
+  income:
+  - id: standalone-pbt-to-net-profit
+    name: PBT, tax, discontinued operations and regulatory movement = Net Profit
+    scopes:
+    - standalone
+    result_fid: '269'
+    terms:
+    - fid: '296'
+      coefficient: 1
+      presence: required
+    - fid: '318'
+      coefficient: -1
+      presence: required
+    - fid: '231'
+      coefficient: -1
+      presence: required
+    - fid: '244'
+      coefficient: 1
+      presence: optional
+    - fid: '20016'
+      coefficient: 1
+      presence: optional
+    - fid: '20018'
+      coefficient: -1
+      presence: optional
+  - id: consolidated-pbt-to-net-profit
+    name: PBT, tax, discontinued operations, regulatory movement and attribution = Net Profit
+    scopes:
+    - consolidated
+    result_fid: '269'
+    terms:
+    - fid: '296'
+      coefficient: 1
+      presence: required
+    - fid: '318'
+      coefficient: -1
+      presence: required
+    - fid: '231'
+      coefficient: -1
+      presence: required
+    - fid: '244'
+      coefficient: 1
+      presence: optional
+    - fid: '20016'
+      coefficient: 1
+      presence: optional
+    - fid: '20018'
+      coefficient: -1
+      presence: optional
+    - fid: '292'
+      coefficient: 1
+      presence: optional
+    - fid: '264'
+      coefficient: -1
+      presence: optional
+  - id: net-profit-plus-oci
+    name: Net Profit + OCI = Total Comprehensive Income
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '20019'
+    terms:
+    - fid: '269'
+      coefficient: 1
+      presence: required
+    - fid: '16484'
+      coefficient: 1
+      presence: required
+  - id: owners-tci-attribution
+    name: Owners TCI attributable = Profit + OCI attributable
+    scopes:
+    - consolidated
+    result_fid: '22303'
+    terms:
+    - fid: '22299'
+      coefficient: 1
+      presence: required
+    - fid: '22291'
+      coefficient: 1
+      presence: required
+  - id: nci-tci-attribution
+    name: NCI TCI attributable = Profit + OCI attributable
+    scopes:
+    - consolidated
+    result_fid: '22302'
+    terms:
+    - fid: '22298'
+      coefficient: 1
+      presence: required
+    - fid: '22290'
+      coefficient: 1
+      presence: required
+  cashflow:
+  - id: cashflow-activity-total
+    name: Operating + Investing + Financing = Net change before exchange effect
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '30458'
+    terms:
+    - fid: '17538'
+      coefficient: 1
+      presence: required
+    - fid: '17537'
+      coefficient: 1
+      presence: required
+    - fid: '17536'
+      coefficient: 1
+      presence: required
+  - id: cashflow-net-change
+    name: Net change before exchange effect + exchange effect = Net change
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '17541'
+    terms:
+    - fid: '30458'
+      coefficient: 1
+      presence: required
+    - fid: '17529'
+      coefficient: 1
+      presence: optional
+  - id: cashflow-closing-balance
+    name: Opening + Net change + adjustments = Closing
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '30371'
+    terms:
+    - fid: '17519'
+      coefficient: 1
+      presence: required
+    - fid: '17541'
+      coefficient: 1
+      presence: required
+    - fid: '30513'
+      coefficient: 1
+      presence: optional

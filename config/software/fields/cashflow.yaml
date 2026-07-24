@@ -1,0 +1,6112 @@
+statement: cashflow
+items:
+- fid: '17539'
+  name: Net Profit Before Tax And Exceptional Item
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The cash flow statement's STARTING profit line under the indirect method — whether printed as 'Profit before
+      tax' or 'Profit for the period' — maps HERE by convention.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Profit before tax
+    - Profit for the period
+    - Profit for the year
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 2
+      calculation:
+        type: reported
+    consolidated:
+      position: 2
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30399'
+  name: Depreciation and Amortisation Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash charge for depreciation, amortisation, and similar wear-and-tear expense on tangible and intangible
+      assets, including combined printed lines that bundle depreciation, amortisation, and impairment only when the impairment
+      portion is separately not broken out.
+    includes: []
+    excludes:
+    - Exclude asset impairment losses that are identified as impairment of financial assets or other distinct impairment charges;
+      those belong to impairment-related fields.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - 'Expense sign convention applies: positive when shown as an add-back in cash-flow reconciliation, negative if the source
+      report presents it as income/credit.'
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Depreciation amortisation and impairment expense
+    - Depreciation and amortisation expense
+    - Depreciation and amortisation expenses
+    - Depreciation and amortization expense
+    - Depreciation and amortization
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 4
+      calculation:
+        type: reported
+    consolidated:
+      position: 4
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30420'
+  name: Impairment loss / (Reversal of Impairment Loss)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Adjustment lines WORDED as 'impairment loss' (on any asset class, including 'impairment loss on financial assets')
+      map HERE.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Lines worded as expected-credit-loss/doubtful-debt provisions map to 30631.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Impairment loss on financial assets
+    - Impairment loss recognized / (reversed) under expected credit loss model
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 5
+      calculation:
+        type: reported
+    consolidated:
+      position: 5
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30576'
+  name: Profit On Sale Of Fixed Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit/loss on sale of FIXED ASSETS incl. property, plant, equipment AND investment PROPERTY ('profit on sale
+      of investment property') — adjustment lines map HERE.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Gain on sale of property plant and equipment net
+    - Net gain on disposal of property, plant and equipment
+    - Profit on sale of investment property
+    - Profit on sale of property plant and equipment (net)
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 6
+      calculation:
+        type: reported
+    consolidated:
+      position: 6
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30502'
+  name: Loss On Sale Of Fixed Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Loss on disposal of property, plant and equipment, investment property, or similar fixed assets; include net
+      loss on sale of fixed assets and any clearly disclosed loss on disposal of such assets.
+    includes: []
+    excludes:
+    - Exclude losses on sale of investments, financial assets, or subsidiaries; those belong to investment-disposal fields.
+    mapping_notes:
+    - If a filing reports a single net gain/loss line, map only the loss portion when it is explicitly a loss line.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 7
+      calculation:
+        type: reported
+    consolidated:
+      position: 7
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30577'
+  name: Profit On Sale Of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit/gain on sale or fair-value gain of INVESTMENTS (securities, mutual funds) adjustments map HERE.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Gains on investment PROPERTY are fixed-asset gains -> 30576.
+    distinguish_from:
+    - '30459'
+  mapping:
+    aliases:
+    - Divestment in subsidiaries
+    - Gain on investments carried at fair value through profit and loss
+    - Income on investments carried at fair value through other comprehensive income
+    - Income on investments carried at fair value through profit and loss
+    - Net gain on disposal / fair valuation of investments
+    - Profit on sale of investments carried at fair value through other comprehensive income
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 8
+      calculation:
+        type: reported
+    consolidated:
+      position: 8
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30503'
+  name: Loss On Sale Of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Loss on sale, disposal, or fair-value remeasurement of investments and similar financial holdings, including
+      mutual funds, equity/debt investments, subsidiaries when presented as investment disposal, and losses on financial assets
+      measured at fair value through profit or loss or through other comprehensive income.
+    includes: []
+    excludes:
+    - Exclude losses on fixed assets; those belong to fixed-asset disposal fields.
+    mapping_notes:
+    - If a filing reports a net gain/loss line, map only the loss portion when it is explicitly a loss line.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 9
+      calculation:
+        type: reported
+    consolidated:
+      position: 9
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30481'
+  name: Interest Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest/finance income ADJUSTMENT lines within OPERATING activities (reversal of interest income, 'finance and
+      other income net of finance costs') map HERE.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Interest actually RECEIVED in INVESTING maps to 30485.
+    distinguish_from:
+    - '30485'
+  mapping:
+    aliases:
+    - Finance and other income net of finance costs
+    - Interest and dividend income
+    - Interest income
+    - Interest receivable on income tax refund
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 10
+      calculation:
+        type: reported
+    consolidated:
+      position: 10
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30479'
+  name: Interest Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest expense and other borrowing costs, including finance costs on loans, debt, lease liabilities, bank borrowings,
+      and similar funding arrangements.
+    includes:
+    - amount capitalised only if the filing presents it as part of finance costs.
+    excludes:
+    - Exclude bank charges not presented as interest, foreign-exchange losses, and lease rental/service costs that are not
+      financing costs.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Finance costs
+    - Finance cost
+    - Interest expense
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 11
+      calculation:
+        type: reported
+    consolidated:
+      position: 11
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30404'
+  name: Dividend Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Dividend income ADJUSTMENT lines in OPERATING activities (add-back/reversal, incl. from subsidiaries) map HERE.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '30402'
+    - '30403'
+  mapping:
+    match_name: false
+    aliases:
+    - Dividend income (Including exchange impact)
+    - Dividend income
+    - Dividend income from subsidiaries
+    locations:
+    - OPERATING
+    mode: aliases_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 12
+      calculation:
+        type: reported
+    consolidated:
+      position: 12
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30406'
+  name: Dividend Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash dividends distributed to shareholders or non-controlling interests.
+    includes:
+    - any printed dividend-paid line, dividend and tax paid line only to the extent the dividend component is identifiable,
+      and dividend paid to non-controlling interests when shown as a financing outflow.
+    excludes:
+    - Exclude dividend income and other investment returns.
+    mapping_notes:
+    - This is a cash outflow and is normally negative in cash-flow statements.
+    distinguish_from:
+    - '17528'
+    - '30401'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - OPERATING
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 13
+      calculation:
+        type: reported
+    consolidated:
+      position: 13
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30493'
+  name: Investment Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Write-off of investments, including permanent diminution or derecognition of investment value where the filing
+      explicitly treats it as an investment write-off rather than a fair-value loss.
+    includes: []
+    excludes:
+    - Exclude routine fair-value changes, impairment of receivables, and loss on sale of investments.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 14
+      calculation:
+        type: reported
+    consolidated:
+      position: 14
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30411'
+  name: Fin Lease & Rental Charges
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Pre-working-capital adjustment for finance-lease charges OR rental/lease income being backed out of profit —
+      e.g.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - '''rental income'' appearing among the adjustments before working capital changes (sign negative), ''finance lease charges''.'
+    - Rental income received within INVESTING activities maps to 17545 (others-investing).
+    distinguish_from:
+    - '17545'
+  mapping:
+    aliases:
+    - Rental income
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 15
+      calculation:
+        type: reported
+    consolidated:
+      position: 15
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30630'
+  name: Provision For Dimunition In Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Provision for diminution in value of investments, including impairment or allowance recorded against investments,
+      quoted or unquoted securities, mutual funds, or subsidiaries when presented as a provision rather than a disposal loss.
+    includes: []
+    excludes:
+    - Exclude realised loss on sale of investments and fair-value movements through profit or loss; those belong to investment-gain/loss
+      fields.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 16
+      calculation:
+        type: reported
+    consolidated:
+      position: 16
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30631'
+  name: Provision For Doubtful Debts
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Adjustment lines WORDED as credit-loss/doubtful-debt provisions — 'lifetime expected credit loss/(write-back)',
+      'provision for doubtful debts', 'bad and doubtful debts' — map HERE.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Expected credit loss and others adjustments
+    - Lifetime expected credit loss/(write-back)
+    locations:
+    - OPERATING
+    rules:
+    - id: standalone-combined-doubtful-debt-provision
+      status: reviewed
+      aliases:
+      - Provision for doubtful debts / bad debts written off (net)
+      scopes:
+      - standalone
+      locations:
+      - operating
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 17
+      calculation:
+        type: reported
+    consolidated:
+      position: 17
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30632'
+  name: Provision For Gratuity,Leave Encashment And Pensions
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Provision for employee benefits such as gratuity, leave encashment, pensions, and similar long-term or post-employment
+      benefit obligations.
+    includes:
+    - provision charges and reversals/write-backs when shown as net.
+    excludes:
+    - Exclude salaries, wages, and share-based payment expense; those are separate employee-cost or equity-compensation lines.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 18
+      calculation:
+        type: reported
+    consolidated:
+      position: 18
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30583'
+  name: Prior Year Adjustments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Adjustments relating to prior accounting periods, including prior-year income, expenses, reversals, tax adjustments,
+      or other one-time restatements that are explicitly identified as prior-period adjustments.
+    includes: []
+    excludes:
+    - Exclude current-period operational expenses and regular estimate changes.
+    mapping_notes:
+    - If the filing separately presents prior-year tax, map only the tax-related portion to tax fields, not here, unless the
+      entire line is a generic prior-year adjustment.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 19
+      calculation:
+        type: reported
+    consolidated:
+      position: 19
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30505'
+  name: Miscellaneous Expenditure Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Write-off of miscellaneous or non-recurring expenditures, including abandonment or write-off of property, plant
+      and equipment, intangible assets, preliminary expenses, and similar items not captured by a more specific asset or expense
+      field.
+    includes: []
+    excludes:
+    - Exclude depreciation, amortisation, and ordinary operating expenses.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '30506'
+  mapping:
+    aliases:
+    - Property plant and equipments and other intangible assets written off
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 20
+      calculation:
+        type: reported
+    consolidated:
+      position: 20
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30410'
+  name: Fee Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Fee-based charges and service fees paid for professional, statutory, administrative, banking, or platform services
+      when the filing groups them under fees.
+    includes: []
+    excludes:
+    - Exclude commission and brokerage, interest, and tax.
+    mapping_notes:
+    - If the report splits fee categories, only map the fee component here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 21
+      calculation:
+        type: reported
+    consolidated:
+      position: 21
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30383'
+  name: Commission & Brokerage
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Commission and brokerage expense, including selling commissions, dealer commissions, brokerage, and similar transaction-based
+      fees.
+    includes: []
+    excludes:
+    - Exclude general fees, interest, and taxes.
+    mapping_notes:
+    - If a filing combines commission with other selling or distribution expenses, map only the commission/brokerage component
+      when separable.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 22
+      calculation:
+        type: reported
+    consolidated:
+      position: 22
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30414'
+  name: Foreign Exchange Gain / Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Foreign exchange gain or loss arising from translation or remeasurement of foreign currency monetary items, cash,
+      loans, receivables, payables, or other foreign-currency exposures.
+    includes:
+    - unrealised and realised exchange differences when not separately broken out.
+    excludes:
+    - Exclude exchange differences embedded in revenue or procurement unless the filing explicitly presents them as FX gain/loss.
+    mapping_notes:
+    - Gains are negative in expense-style cash-flow adjustments and losses are positive; preserve the reported sign convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Net unrealised foreign exchange loss / (gain)
+    - Unrealised exchange (gain)/loss and net exchange (gain)/loss on loans to subsidiaries
+    - Unrealised exchange (gain)/loss, net
+    - Unrealised foreign exchange (gain)/ loss
+    - Unrealised foreign exchange gain
+    - Exchange differences on translation of assets and liabilities, net
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 23
+      calculation:
+        type: reported
+    consolidated:
+      position: 23
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30361'
+  name: Bad Debts Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Pure 'bad debts written off' standalone lines only.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Combined provision/write-off lines map to 30631.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Bad debts and advances written off, allowance for expected credit losses and doubtful advances
+    locations:
+    - OPERATING
+    rules:
+    - id: consolidated-combined-doubtful-debt-provision
+      status: reviewed
+      aliases:
+      - Provision for doubtful debts / bad debts written off (net)
+      scopes:
+      - consolidated
+      locations:
+      - operating
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 24
+      calculation:
+        type: reported
+    consolidated:
+      position: 24
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30520'
+  name: Other Provisions Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Write-back or reversal of provisions that are no longer required, and explicit provision write-off when the filing
+      nets those together.
+    includes:
+    - reversals of earlier provisions, contingencies, or accrued liabilities when the source line states they are no longer
+      required.
+    excludes:
+    - Exclude creation of new provisions and ordinary operating expenses.
+    mapping_notes:
+    - Negative sign may appear if the reversal is shown as income or a credit.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Provision no longer required/ written-off
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 25
+      calculation:
+        type: reported
+    consolidated:
+      position: 25
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30382'
+  name: Claims Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Claims written off, settled, or otherwise derecognised because they are no longer recoverable or enforceable,
+      including insurance claims, customer claims, warranty claims, or legal claims when explicitly written off.
+    includes: []
+    excludes:
+    - Exclude ordinary provisions for claims and settlements paid in cash.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 26
+      calculation:
+        type: reported
+    consolidated:
+      position: 26
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30421'
+  name: Income Tax Of Earlier Years
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income-tax expense ADD-BACK adjustment line in operating adjustments ('income tax expense') maps HERE by convention.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The actual 'income taxes PAID' outflow maps to 30422.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Income tax expense
+    - Tax expense
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 27
+      calculation:
+        type: reported
+    consolidated:
+      position: 27
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30407'
+  name: Employees Stock Options Grants
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share-based payment/ESOP expense add-back in operating adjustments ('share based payments to employees', 'share-based
+      payment expense') maps HERE.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Employee share based payment expenses
+    - Share based payments to employees
+    - Share-based payment expense
+    - Stock compensation expense
+    locations:
+    - OPERATING
+    rules:
+    - id: consolidated-share-based-compensation
+      status: reviewed
+      aliases:
+      - Share-based compensation expense
+      scopes:
+      - consolidated
+      locations:
+      - operating
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 28
+      calculation:
+        type: reported
+    consolidated:
+      position: 28
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30575'
+  name: Profit / Loss from Deployment in Mutual Funds
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss arising from deployment or investment in mutual funds and similar pooled investment vehicles,
+      including realised and unrealised fair-value changes when specifically tied to mutual funds.
+    includes: []
+    excludes:
+    - Exclude general investment gains on other securities and dividend income.
+    mapping_notes:
+    - If the filing reports only a net result, map the net amount here with its reported sign.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 29
+      calculation:
+        type: reported
+    consolidated:
+      position: 29
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30677'
+  name: Utilisation of Securities Premium
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Use, application, or transfer of amounts from securities premium reserve, including redemption of securities
+      premium or utilisation of premium against permitted purposes.
+    includes: []
+    excludes:
+    - Exclude fresh share premium received and other equity movements not explicitly described as utilisation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 30
+      calculation:
+        type: reported
+    consolidated:
+      position: 30
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30678'
+  name: Utilisation of Shelter Assistance Reserve
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Use, application, or transfer of amounts from shelter assistance reserve or a similarly named reserve.
+    includes: []
+    excludes:
+    - Exclude other capital reserves and provisions.
+    mapping_notes:
+    - Map only the reserve utilisation amount, not opening or closing reserve balances.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 31
+      calculation:
+        type: reported
+    consolidated:
+      position: 31
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17542'
+  name: Others-Before Working Capital Changes
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Catch-all other operating adjustments before working-capital changes, INCLUDING 'other non-cash charges (net)'
+      and miscellaneous non-cash adjustment lines without a specific field.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Share-based payment lines map to 30407.
+    distinguish_from:
+    - '30513'
+  mapping:
+    aliases:
+    - Change in fair value of contingent consideration
+    - Net gain on fair valuation of call option
+    - Net gain on lease modification
+    - Other non-cash charges (net)
+    - Other adjustments
+    - Provision for post sale client support
+    locations:
+    - OPERATING
+    rules:
+    - id: standalone-share-based-compensation
+      status: reviewed
+      aliases:
+      - Share-based compensation expense
+      scopes:
+      - standalone
+      locations:
+      - operating
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 32
+      calculation:
+        type: reported
+    consolidated:
+      position: 33
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30511'
+  name: Operating Profit Before Working Capital Changes
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Subtotal of cash-generating operating profit before working-capital movements, obtained by summing profit before
+      tax and all reconciling non-cash items and operating adjustments up to the point just before working-capital changes.
+    includes: []
+    excludes:
+    - Exclude tax paid and financing or investing cash flows.
+    mapping_notes:
+    - This is the printed operating-profit-before-working-capital-changes subtotal line and maps only to that subtotal, not
+      to any component line.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Operating profit before working capital changes
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 33
+      calculation:
+        type: sum
+        terms:
+        - fid: '17539'
+          sign: 1
+        - fid: '30399'
+          sign: 1
+        - fid: '30420'
+          sign: 1
+        - fid: '30576'
+          sign: 1
+        - fid: '30502'
+          sign: 1
+        - fid: '30577'
+          sign: 1
+        - fid: '30503'
+          sign: 1
+        - fid: '30481'
+          sign: 1
+        - fid: '30479'
+          sign: 1
+        - fid: '30404'
+          sign: 1
+        - fid: '30406'
+          sign: 1
+        - fid: '30493'
+          sign: 1
+        - fid: '30411'
+          sign: 1
+        - fid: '30630'
+          sign: 1
+        - fid: '30631'
+          sign: 1
+        - fid: '30632'
+          sign: 1
+        - fid: '30583'
+          sign: 1
+        - fid: '30505'
+          sign: 1
+        - fid: '30410'
+          sign: 1
+        - fid: '30383'
+          sign: 1
+        - fid: '30414'
+          sign: 1
+        - fid: '30361'
+          sign: 1
+        - fid: '30520'
+          sign: 1
+        - fid: '30382'
+          sign: 1
+        - fid: '30421'
+          sign: 1
+        - fid: '30407'
+          sign: 1
+        - fid: '30575'
+          sign: 1
+        - fid: '30677'
+          sign: 1
+        - fid: '30678'
+          sign: 1
+        - fid: '17542'
+          sign: 1
+    consolidated:
+      position: 34
+      calculation:
+        type: sum
+        terms:
+        - fid: '17539'
+          sign: 1
+        - fid: '30399'
+          sign: 1
+        - fid: '30420'
+          sign: 1
+        - fid: '30576'
+          sign: 1
+        - fid: '30502'
+          sign: 1
+        - fid: '30577'
+          sign: 1
+        - fid: '30503'
+          sign: 1
+        - fid: '30481'
+          sign: 1
+        - fid: '30479'
+          sign: 1
+        - fid: '30404'
+          sign: 1
+        - fid: '30406'
+          sign: 1
+        - fid: '30493'
+          sign: 1
+        - fid: '30411'
+          sign: 1
+        - fid: '30630'
+          sign: 1
+        - fid: '30631'
+          sign: 1
+        - fid: '30632'
+          sign: 1
+        - fid: '30583'
+          sign: 1
+        - fid: '30505'
+          sign: 1
+        - fid: '30410'
+          sign: 1
+        - fid: '30383'
+          sign: 1
+        - fid: '30414'
+          sign: 1
+        - fid: '30361'
+          sign: 1
+        - fid: '30520'
+          sign: 1
+        - fid: '30382'
+          sign: 1
+        - fid: '30421'
+          sign: 1
+        - fid: '30407'
+          sign: 1
+        - fid: '30575'
+          sign: 1
+        - fid: '30677'
+          sign: 1
+        - fid: '30678'
+          sign: 1
+        - fid: '30664'
+          sign: 1
+        - fid: '17542'
+          sign: 1
+  evidence: client_mapping
+- fid: '30487'
+  name: Inventories
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Change in inventories in working capital reconciliation, including increases or decreases in raw materials, work-in-progress,
+      finished goods, and other inventory balances.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Map the net movement line even if presented as increase/decrease or adjustments for decrease/increase.
+    - In cash-flow logic, an increase in inventories is usually negative cash flow and a decrease is positive; preserve the
+      filing’s sign convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Increase)/Decrease in Inventories
+    - Adjustments for decrease (increase) in inventories
+    - Inventories
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 35
+      calculation:
+        type: reported
+    consolidated:
+      position: 36
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30672'
+  name: Sundry Debtors
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Change in sundry debtors, i.e., trade receivables from customers and similar debtor balances, when the filing
+      uses the legacy label sundry debtors.
+    includes:
+    - only the working-capital movement in receivables, not bad-debt provisions or write-offs.
+    excludes:
+    - Exclude unbilled revenue, contract assets, and other financial/non-financial assets unless they are explicitly grouped
+      with debtors.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 36
+      calculation:
+        type: reported
+    consolidated:
+      position: 37
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30674'
+  name: Trade And Other Receivables
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Change in trade receivables and closely related contract assets in working capital reconciliation, including
+      billed receivables, unbilled receivables, and contract assets when the filing groups them together.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Map increases/decreases in receivables or adjustments for decrease/increase in trade receivables, and do not use this
+      field for provisions or write-offs.
+    - In cash-flow logic, an increase is typically negative cash flow and a decrease is positive; preserve reported sign.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Increase)/Decrease in trade receivables
+    - (Increase)/Decrease in unbilled receivables and contract assets
+    - Adjustments for decrease (increase) in trade receivables
+    - Billed
+    - Decrease in trade receivables
+    - trade receivables
+    - unbilled
+    - Trade receivables and unbilled revenue
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 37
+      calculation:
+        type: reported
+    consolidated:
+      position: 38
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30497'
+  name: Loans And Advances
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'Working-capital change in LOANS / loans and advances (generic, no maturity qualifier): ''(increase)/decrease
+      in loans'', ''increase in loans and advances''.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Lines explicitly worded SHORT-TERM loans/advances map to 30667 instead.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Increase in loans
+    - Loans and other financiaI assets
+    - Loans and otherfinanciaI assets
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 38
+      calculation:
+        type: reported
+    consolidated:
+      position: 39
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30504'
+  name: Long Term Loans And Advances
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Change in long-term loans and advances, meaning the non-current portion of loans, advances, or similar long-term
+      financial assets.
+    includes:
+    - working-capital-style movement only for the long-term subset when separately disclosed.
+    excludes:
+    - Exclude current loans and advances, trade receivables, and other current assets.
+    mapping_notes:
+    - In cash-flow logic, an increase is usually negative cash flow and a decrease is positive; preserve the filing’s sign.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 39
+      calculation:
+        type: reported
+    consolidated:
+      position: 40
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30667'
+  name: Short Term Loans And Advances
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Working-capital change in loans/advances ONLY when the line is explicitly worded 'short-term' (e.g.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - '''decrease in short-term loans and advances'').'
+    - Unqualified 'loans'/'loans and advances' lines map to 30497.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Decrease/ (Increase) in loans
+    - Decrease in loans
+    - Increase/ Decrease in loans
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 40
+      calculation:
+        type: reported
+    consolidated:
+      position: 41
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30671'
+  name: Sundry Creditors
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Sundry creditors legacy field — DO NOT map ordinary trade-payables working-capital lines here; use 30675.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 41
+      calculation:
+        type: reported
+    consolidated:
+      position: 42
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30675'
+  name: Trade Payables And Others
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Working-capital changes in trade payables INCLUDING combined lines ('trade payables', 'increase/(decrease) in
+      trade payables, other financial liabilities and provisions') map HERE by convention, NOT 30671.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Decrease)/ Increase in trade payables
+    - Adjustments for increase (decrease) in trade payables
+    - Increase/(Decrease) in trade payables other financial liabilities other liabilities and provisions
+    - Trade payables
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 42
+      calculation:
+        type: reported
+    consolidated:
+      position: 43
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30627'
+  name: Provisions
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for provisions, usually the net movement in current or total provisions recognized in operating
+      working capital.
+    includes:
+    - increases and reversals/utilizations of provisions when reported as a single net change; exclude other current liabilities,
+      financial liabilities, contract liabilities, accrued expenses, and tax provisions if separately disclosed.
+    excludes: []
+    mapping_notes:
+    - A printed movement in provisions maps here, and multiple provision sublines may be summed if the filing aggregates them.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Decrease)/ Increase in provisions
+    - Adjustments for increase (decrease) in provisions current
+    - Increase in provisions
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 43
+      calculation:
+        type: reported
+    consolidated:
+      position: 44
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30518'
+  name: Other Current and Non Current Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Working-capital adjustments for OTHER (non-financial) assets — 'increase in non-financial assets', 'other current
+      assets', 'other non-current assets', plain 'other assets'.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Lines explicitly worded FINANCIAL assets map to 30452.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Adjustments for decrease (increase) in other current assets
+    - Adjustments for decrease (increase) in other non-current assets
+    - Other assets
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 44
+      calculation:
+        type: reported
+    consolidated:
+      position: 45
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30452'
+  name: Adjustments for other financial assets, non-current
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Client working-capital field for changes in financial assets and the reviewed caption 'Increase in non-financial
+      assets'.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Other plain current/non-current asset movements map to 30518.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Increase)/Decrease in other financial assets and other assets
+    - (Increse/Decrcasc in other financial assets and other assets
+    - Adjustments for decrease (increase) in other financial non-current assets
+    - Increase in financial assets
+    - Increase in non-financial assets
+    - Other financial assets and other assets
+    - Loans, other financial assets and other assets
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 45
+      calculation:
+        type: reported
+    consolidated:
+      position: 46
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30451'
+  name: Adjustments for other financial assets, current
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Duplicate financial-assets adjustment field — DO NOT map ordinary financial-asset working-capital lines here;
+      use 30452.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Adjustments for decrease (increase) in other financial current assets
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 46
+      calculation:
+        type: reported
+    consolidated:
+      position: 47
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30519'
+  name: Other Current and Non Current Liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for other operating liabilities, current and non-current, when the filing groups miscellaneous
+      liability movements into one line.
+    includes:
+    - contract liabilities, deferred revenue, unearned revenue, other current liabilities, accrued operating liabilities,
+      and similar non-financial operating liabilities if they are not shown in more specific fields; exclude trade payables,
+      borrowings, financial liabilities, provisions, and tax liabilities.
+    excludes: []
+    mapping_notes:
+    - Multiple liability lines may be summed when presented together.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Adjustments for increase (decrease) in other current liabilities
+    - Increase in contract liabilities
+    - Increase/(Decrease) in contract liabilities
+    - Other liabilities and provisions
+    - Unearned and deferred revenue
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 47
+      calculation:
+        type: reported
+    consolidated:
+      position: 48
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30453'
+  name: Adjustments for other financial liabilities, current
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for other financial liabilities, current, including net movements in short-term financial
+      obligations not captured by dedicated borrowing or trade-payable lines.
+    includes:
+    - accrued interest payable, short-term lease liabilities, derivative liabilities, current portions of financial liabilities,
+      and similar current financial obligations; exclude trade payables, provisions, contract liabilities, taxes, and non-financial
+      liabilities.
+    excludes: []
+    mapping_notes:
+    - Only the financial-liability portion of any combined line belongs here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Adjustments for increase (decrease) in other financial current liabilities
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 48
+      calculation:
+        type: reported
+    consolidated:
+      position: 49
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30454'
+  name: Adjustments for other financial liabilities, non-current
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Working-capital adjustments for other financial liabilities AND '(decrease)/increase in financial liabilities'
+      AND 'decrease in other non-financial liabilities' lines map HERE by convention (not 30453, not 30519).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - (Decrease)/ Increase in financial liabilities
+    - Decrease in other non-financial liabilities
+    - Other financial liabilities
+    - Other financial liabilities, contract liabilities, provisions and other liabilities
+    - Other financial liabilities, other liabilities and provisions
+    - other financiai liabilities
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 49
+      calculation:
+        type: reported
+    consolidated:
+      position: 50
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30455'
+  name: Adjustments for undistributed profits of associates
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Adjustment for the company’s share of undistributed profits or losses of associates arising from equity-accounted
+      investments, to the extent it affects cash-flow reconciliation.
+    includes:
+    - only the non-cash equity-method result attributable to associates’ retained earnings; exclude current-period share of
+      profit already reported separately, dividends received from associates, goodwill, impairments, and any investing/financing
+      cash movements.
+    excludes:
+    - Never use this for ordinary operating expenses or revenues.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 50
+      calculation:
+        type: reported
+    consolidated:
+      position: 51
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30463'
+  name: Other adjustments for which cash effects are investing or financing cash flow
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Other reconciliation adjustment items whose cash effect belongs in investing or financing activities rather than
+      operating activities.
+    includes:
+    - non-cash items that must be reclassified to investing or financing cash flows, such as acquisition/divestment-related
+      adjustments, share buyback/issue effects, or other items explicitly routed outside operating cash flow; exclude ordinary
+      operating non-cash items, working-capital movements, and tax/interest/dividend items unless the filing specifically
+      classifies them as investing or financing.
+    excludes:
+    - Never use for generic operating reconciliation when a more specific field exists.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 51
+      calculation:
+        type: reported
+    consolidated:
+      position: 52
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30464'
+  name: Other adjustments to reconcile profit (loss)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Miscellaneous reconciliation adjustments used to bridge accounting profit to operating cash flow when no more
+      specific non-cash or working-capital category is available.
+    includes:
+    - small residual items that affect the profit-to-cash bridge but are not investing, financing, tax, interest, dividend,
+      or working-capital movements; exclude all specifically identified adjustments such as depreciation, impairments, foreign
+      exchange, provisions, and asset/liability changes.
+    excludes: []
+    mapping_notes:
+    - This is a catch-all residual and should absorb only uncategorized reconciliation items.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 52
+      calculation:
+        type: reported
+    consolidated:
+      position: 53
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30462'
+  name: Other adjustments for non-cash items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Specific non-cash adjustment field — DO NOT map generic 'other non-cash charges' here; use 17542.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 53
+      calculation:
+        type: reported
+    consolidated:
+      position: 54
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30475'
+  name: Share of profit and loss from partnership firm or association of persons or limited liability partnerships
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share of profit or loss recognized from a partnership firm, association of persons, or limited liability partnership
+      accounted for using equity or profit-sharing treatment.
+    includes:
+    - the company’s accounting share of results from these entities, whether positive or negative; exclude dividends/distributions
+      received in cash, interest, management fees, and share of profit from corporate subsidiaries or associates.
+    excludes: []
+    mapping_notes:
+    - This is an income-statement-to-cash-flow reconciliation item, not an investing cash flow by itself.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 54
+      calculation:
+        type: reported
+    consolidated:
+      position: 55
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30510'
+  name: Net Stock On Hire
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for net stock-on-hire assets or receivables, reflecting the change in assets given on hire
+      or similar financing/lease arrangements.
+    includes:
+    - increases or decreases in stock on hire when presented as a working-capital movement; exclude ordinary inventory, trade
+      receivables, loans, and lease assets unless the filing explicitly classifies them as stock on hire.
+    excludes: []
+    mapping_notes:
+    - Map the net movement, not the opening or closing balance.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 55
+      calculation:
+        type: reported
+    consolidated:
+      position: 56
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30496'
+  name: Lease Assets Of Sale
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for assets held for sale or disposal groups, including changes in assets classified as held
+      for sale and related sale/disposal adjustments.
+    includes:
+    - the movement in assets designated for sale when treated as part of operating reconciliation; exclude actual sale proceeds,
+      property, plant and equipment balances not held for sale, inventory, and regular investing cash flows from asset acquisition/disposal.
+    excludes: []
+    mapping_notes:
+    - Map only the working-capital or non-cash adjustment relating to assets held for sale.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 56
+      calculation:
+        type: reported
+    consolidated:
+      position: 57
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30673'
+  name: Trade Bills Purchased
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for trade bills purchased or discounted, representing the net movement in bills receivable/payable
+      financing linked to trade transactions.
+    includes:
+    - bills purchased, discounted, or settled when the filing treats them as operating working-capital or trade-finance movements;
+      exclude ordinary trade receivables/payables, bank borrowings, and long-term debt.
+    excludes: []
+    mapping_notes:
+    - If a net increase/decrease in trade bills is shown, map the net amount here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 57
+      calculation:
+        type: reported
+    consolidated:
+      position: 58
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30430'
+  name: Increase/Decrease In Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for borrowings, representing the net change in loans, bank borrowings, overdrafts, debentures,
+      and similar financing liabilities.
+    includes:
+    - proceeds from new borrowings and repayments of existing borrowings when shown as a single net movement; exclude trade
+      payables, deposits from customers, lease liabilities if separately shown, and all non-borrowing liabilities.
+    excludes: []
+    mapping_notes:
+    - A printed net increase/decrease in borrowings maps here.
+    distinguish_from:
+    - '17555'
+  mapping:
+    aliases:
+    - (Repayments)/ Proceeds from short-term borrowings (net)
+    - Decrease in financial liabilities
+    - Increase in borrowings
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 58
+      calculation:
+        type: reported
+    consolidated:
+      position: 59
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30431'
+  name: Increase/Decrease In Deposits
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for deposits, including customer deposits, inter-corporate deposits, bank deposits taken
+      or repaid, and other deposit liabilities when treated as financing cash flows.
+    includes:
+    - the net change in deposits received or returned; exclude trade payables, contract liabilities, borrowings, and bank
+      deposits placed as an investment asset.
+    excludes: []
+    mapping_notes:
+    - Only deposit-liability movements belong here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 59
+      calculation:
+        type: reported
+    consolidated:
+      position: 60
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17546'
+  name: Others-From Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Residual/other items within CASH GENERATED FROM OPERATIONS with no dedicated field.
+    includes: []
+    excludes:
+    - Do NOT use for rental income (pre-WC adjustment goes to 30411; investing receipt to 17545) or for lines that fit a named
+      working-capital field.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 60
+      calculation:
+        type: reported
+    consolidated:
+      position: 61
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30372'
+  name: Cash Generated From Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net cash generated from operating activities before taxes, after adjusting profit or loss for non-cash items
+      and working-capital changes but before income-tax payment/refund lines.
+    includes:
+    - the subtotal line that sums operating adjustments and working-capital movements up to the pre-tax operating cash figure;
+      exclude income taxes paid/refunded and any investing or financing cash flows.
+    excludes: []
+    mapping_notes:
+    - Printed subtotal lines for operating cash generated before taxes map here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cash flow from (used in) operating activities
+    - Cash flows generated from operations
+    - Cash generated from operating activities
+    - Cash generated from operating activities before taxes
+    - Cash generated from operations
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 61
+      calculation:
+        type: sum
+        terms:
+        - fid: '30511'
+          sign: 1
+        - fid: '30487'
+          sign: 1
+        - fid: '30672'
+          sign: 1
+        - fid: '30674'
+          sign: 1
+        - fid: '30497'
+          sign: 1
+        - fid: '30504'
+          sign: 1
+        - fid: '30667'
+          sign: 1
+        - fid: '30671'
+          sign: 1
+        - fid: '30675'
+          sign: 1
+        - fid: '30627'
+          sign: 1
+        - fid: '30518'
+          sign: 1
+        - fid: '30452'
+          sign: 1
+        - fid: '30451'
+          sign: 1
+        - fid: '30519'
+          sign: 1
+        - fid: '30453'
+          sign: 1
+        - fid: '30454'
+          sign: 1
+        - fid: '30455'
+          sign: 1
+        - fid: '30463'
+          sign: 1
+        - fid: '30464'
+          sign: 1
+        - fid: '30462'
+          sign: 1
+        - fid: '30475'
+          sign: 1
+        - fid: '30510'
+          sign: 1
+        - fid: '30496'
+          sign: 1
+        - fid: '30673'
+          sign: 1
+        - fid: '30430'
+          sign: 1
+        - fid: '30431'
+          sign: 1
+        - fid: '17546'
+          sign: 1
+    consolidated:
+      position: 62
+      calculation:
+        type: sum
+        terms:
+        - fid: '30511'
+          sign: 1
+        - fid: '30487'
+          sign: 1
+        - fid: '30672'
+          sign: 1
+        - fid: '30674'
+          sign: 1
+        - fid: '30497'
+          sign: 1
+        - fid: '30504'
+          sign: 1
+        - fid: '30667'
+          sign: 1
+        - fid: '30671'
+          sign: 1
+        - fid: '30675'
+          sign: 1
+        - fid: '30627'
+          sign: 1
+        - fid: '30518'
+          sign: 1
+        - fid: '30452'
+          sign: 1
+        - fid: '30451'
+          sign: 1
+        - fid: '30519'
+          sign: 1
+        - fid: '30453'
+          sign: 1
+        - fid: '30454'
+          sign: 1
+        - fid: '30455'
+          sign: 1
+        - fid: '30463'
+          sign: 1
+        - fid: '30464'
+          sign: 1
+        - fid: '30462'
+          sign: 1
+        - fid: '30475'
+          sign: 1
+        - fid: '30510'
+          sign: 1
+        - fid: '30496'
+          sign: 1
+        - fid: '30673'
+          sign: 1
+        - fid: '30430'
+          sign: 1
+        - fid: '30431'
+          sign: 1
+        - fid: '17546'
+          sign: 1
+  evidence: client_mapping
+- fid: '30422'
+  name: Income Tax Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash taxes paid during the period, net of refunds where the filing presents them together.
+    includes:
+    - direct taxes, income taxes, and net tax settlements actually paid to authorities; exclude tax expense on the income
+      statement, deferred tax, provisions for tax, and income-tax receivables unless the line specifically represents cash
+      payment/refund.
+    excludes: []
+    mapping_notes:
+    - If the filing shows tax paid net of refunds, map the net cash outflow/inflow here with the filing’s sign convention.
+    distinguish_from:
+    - '17545'
+  mapping:
+    aliases:
+    - Direct taxes paid (net of refunds)
+    - Income tax paid
+    - Income tax paid, net of refunds
+    - Income taxes paid (net of refunds)
+    - Income taxes paid
+    - Income taxes paid, net
+    - taxes paid net of refunds
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 62
+      calculation:
+        type: reported
+    consolidated:
+      position: 63
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30486'
+  name: Interest Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest received within OPERATING activities cash flows.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Investing-section interest received maps to 30485.
+    distinguish_from:
+    - '30485'
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 63
+      calculation:
+        type: reported
+    consolidated:
+      position: 64
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30483'
+  name: Interest Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash interest paid on borrowings, leases, and other financing obligations.
+    includes:
+    - all cash interest outflows and interest component payments when presented as a single cash-flow line; exclude dividends,
+      principal repayments, and non-cash finance costs such as accrued interest expense.
+    excludes: []
+    mapping_notes:
+    - If the filing shows interest paid net of capitalization or withholding, map the net cash paid here.
+    distinguish_from:
+    - '30484'
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 64
+      calculation:
+        type: reported
+    consolidated:
+      position: 65
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30403'
+  name: Dividend Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Dividend received within OPERATING activities cash flows.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Investing-section dividends map to 30402; pre-working-capital dividend-income adjustments map to 30404.
+    distinguish_from:
+    - '30402'
+    - '30404'
+  mapping:
+    aliases:
+    - Dividend received
+    - Dividends received
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 65
+      calculation:
+        type: reported
+    consolidated:
+      position: 66
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30401'
+  name: Dividend Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash dividends paid to equity shareholders and, where separately shown, dividend tax or distributions to non-controlling
+      interests if the filing combines them into one dividend-payment line.
+    includes:
+    - only cash dividend outflows or net settlements linked to declared dividends; exclude share buybacks, bonus issues, principal
+      repayments, and interest payments.
+    excludes: []
+    mapping_notes:
+    - Printed dividend-paid lines map here.
+    distinguish_from:
+    - '17528'
+    - '30406'
+  mapping:
+    aliases:
+    - Dividend paid
+    - Dividend paid to non-controlling interests
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 66
+      calculation:
+        type: reported
+    consolidated:
+      position: 67
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30423'
+  name: Income Tax Refunds
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income-tax refunds received in cash, including refunds of direct taxes and related interest if shown as part
+      of the refund line.
+    includes:
+    - only tax refund inflows; exclude tax payments, deferred-tax adjustments, and refund claims not yet received in cash.
+    excludes: []
+    mapping_notes:
+    - If the filing reports refunds net of tax paid, this field should capture the refund component only when separable.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 67
+      calculation:
+        type: reported
+    consolidated:
+      position: 68
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30498'
+  name: Loans Disbursed
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for loans disbursed or advances made as financing/investing uses of cash.
+    includes:
+    - new loans granted, inter-corporate loans, advances to subsidiaries or others, and other cash lending outflows; exclude
+      repayments received, trade receivables, inventory purchases, and bank deposits placed unless the filing classifies them
+      as loans.
+    excludes: []
+    mapping_notes:
+    - Map the disbursement portion only, not the closing balance of loans.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Loans disbursed
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 68
+      calculation:
+        type: reported
+    consolidated:
+      position: 69
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17544'
+  name: Other Adjustments-Before EOI
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Other pre-equity-or-investment operating adjustments that affect cash before exceptional operating items, used
+      when no more specific field exists.
+    includes:
+    - miscellaneous operating receipts/payments, minor non-cash reversals, and bridge items between operating cash generation
+      and exceptional/outside-operating items; exclude taxes, interest, dividends, and any investing/financing cash flow.
+    excludes: []
+    mapping_notes:
+    - This is a residual catch-all before EOI and should not absorb identified working-capital or non-cash categories.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 69
+      calculation:
+        type: reported
+    consolidated:
+      position: 70
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30508'
+  name: Net Cash From Operating Activities Before EOI
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Intermediate subtotal BEFORE extraordinary items — map ONLY when the filing prints a separate before-extraordinary-items
+      subtotal in this section.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The ordinary printed 'Net cash from/(used in) ...' section total maps to the final (after-EOI) total field, not here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 70
+      calculation:
+        type: sum
+        terms:
+        - fid: '30372'
+          sign: 1
+        - fid: '30422'
+          sign: 1
+        - fid: '30486'
+          sign: 1
+        - fid: '30483'
+          sign: 1
+        - fid: '30403'
+          sign: 1
+        - fid: '30401'
+          sign: 1
+        - fid: '30423'
+          sign: 1
+        - fid: '30498'
+          sign: 1
+        - fid: '17544'
+          sign: 1
+    consolidated:
+      position: 71
+      calculation:
+        type: sum
+        terms:
+        - fid: '30372'
+          sign: 1
+        - fid: '30422'
+          sign: 1
+        - fid: '30486'
+          sign: 1
+        - fid: '30483'
+          sign: 1
+        - fid: '30403'
+          sign: 1
+        - fid: '30401'
+          sign: 1
+        - fid: '30423'
+          sign: 1
+        - fid: '30498'
+          sign: 1
+        - fid: '17544'
+          sign: 1
+  evidence: template_inferred
+- fid: '30506'
+  name: Miscellaneous Expenditure Written Off
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash write-off of miscellaneous expenditure carried on the balance sheet, typically deferred revenue expenditure,
+      preliminary expenses, or other amortizable costs.
+    includes:
+    - the systematic write-off or amortization of such balances; exclude depreciation on fixed assets, impairment of assets,
+      and any actual cash payment.
+    excludes: []
+    mapping_notes:
+    - This is a non-cash expense adjustment in the profit-to-cash bridge.
+    distinguish_from:
+    - '30505'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - OPERATING
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 71
+      calculation:
+        type: reported
+    consolidated:
+      position: 72
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30679'
+  name: VRS Adjustment
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for voluntary retirement scheme or other employee separation compensation when recognized
+      as a non-cash or extraordinary operating item.
+    includes:
+    - VRS-related provisions, settlements, or write-offs to the extent they reconcile profit to cash flow; exclude normal
+      salaries, gratuity, pension service cost, and general employee expenses.
+    excludes: []
+    mapping_notes:
+    - Use only for VRS-specific adjustments.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 72
+      calculation:
+        type: reported
+    consolidated:
+      position: 73
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30416'
+  name: Gain/Loss On Cancellation Of Foreign Exchange
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Gain/loss on CANCELLATION of foreign-exchange contracts only.
+    includes: []
+    excludes:
+    - NEVER bank-balance components ('on current account', EEFC, deposits) — closing-cash breakdown maps nowhere.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - '- on current account'
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 73
+      calculation:
+        type: reported
+    consolidated:
+      position: 74
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30415'
+  name: Forward Exchange Contract
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash flows from FORWARD EXCHANGE / derivative CONTRACTS only.
+    includes: []
+    excludes:
+    - NEVER bank-balance components ('in EEFC accounts', 'on current account') — those are the closing-cash breakdown and
+      map nowhere.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - '- in EEFC accounts'
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 74
+      calculation:
+        type: reported
+    consolidated:
+      position: 75
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30450'
+  name: Income/Expenses Relating To Prior Years
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash-flow adjustment for income or expense items relating to prior periods, including prior-year corrections,
+      reversals, and late recognitions that are not current-period operating cash items.
+    includes:
+    - prior-period expenses, prior-year income, and retrospective adjustments when they are presented as a reconciliation
+      item; exclude current-period accruals, exceptional items, and tax adjustments.
+    excludes: []
+    mapping_notes:
+    - Map the net prior-year effect here, with credits as negative when the filing uses that sign convention.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 75
+      calculation:
+        type: reported
+    consolidated:
+      position: 76
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30398'
+  name: Depreciation On Revalued Fixed Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash depreciation relating to a previously revalued fixed asset.
+    includes:
+    - depreciation charged specifically on the revaluation increment or revalued portion of property, plant and equipment.
+    excludes:
+    - Excludes ordinary depreciation on historical cost assets, amortisation of intangibles, impairment, and any printed total/subtotal
+      line for all depreciation and amortisation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Depreciation on revalued fixed assets
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 76
+      calculation:
+        type: reported
+    consolidated:
+      position: 77
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30397'
+  name: Depreciation Prov/Written Back For Prev Year
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Depreciation or provision reversal written back for a prior year.
+    includes:
+    - prior-period depreciation adjustments, depreciation no longer required, and write-backs of earlier-year depreciation
+      provisions.
+    excludes:
+    - Excludes current-period depreciation expense, amortisation, impairment, and any total line for depreciation and amortisation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Depreciation prov/written back for prev year
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 77
+      calculation:
+        type: reported
+    consolidated:
+      position: 78
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30581'
+  name: Premium On Lease Of Land
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Premium paid for obtaining leasehold rights over land, treated as a cash outflow for lease premium or upfront
+      lease consideration.
+    includes:
+    - lease premium on land and similar upfront consideration for land lease rights.
+    excludes:
+    - Excludes rent, recurring lease payments, purchase of freehold land, and acquisition of other fixed assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Premium on lease of land
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 78
+      calculation:
+        type: reported
+    consolidated:
+      position: 79
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17547'
+  name: Other Extra-Ordinary Income/Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Exceptional or non-recurring cash item not classifiable within ordinary operating, investing, or financing line
+      items.
+    includes:
+    - unusual one-off receipts or payments and extraordinary cash effects when separately disclosed.
+    excludes:
+    - Excludes normal operating expenses, routine investing/financing flows, and total operating/investing/financing subtotals.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other extra-ordinary income/expense
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 79
+      calculation:
+        type: reported
+    consolidated:
+      position: 80
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17538'
+  name: Net Cash Flow From Operating Activities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'FINAL section total ''Net Cash Flow From Operating Activities'': the filing''s printed ''Net cash generated
+      from/(used in) ...'' line for this activity ALWAYS maps here (not to the before-extraordinary-items intermediate).'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Net cash flow from (used in) operating activities
+    - Net cash flow from operating activities
+    - Net cash flows generated from operating activities
+    - Net cash from operating activities
+    - Net cash generated from operating activities
+    - Net cash generated by operating activities
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 80
+      calculation:
+        type: sum
+        terms:
+        - fid: '30508'
+          sign: 1
+        - fid: '30506'
+          sign: 1
+        - fid: '30679'
+          sign: 1
+        - fid: '30416'
+          sign: 1
+        - fid: '30415'
+          sign: 1
+        - fid: '30450'
+          sign: 1
+        - fid: '30398'
+          sign: 1
+        - fid: '30397'
+          sign: 1
+        - fid: '30581'
+          sign: 1
+        - fid: '17547'
+          sign: 1
+    consolidated:
+      position: 81
+      calculation:
+        type: sum
+        terms:
+        - fid: '30508'
+          sign: 1
+        - fid: '30506'
+          sign: 1
+        - fid: '30679'
+          sign: 1
+        - fid: '30416'
+          sign: 1
+        - fid: '30415'
+          sign: 1
+        - fid: '30450'
+          sign: 1
+        - fid: '30398'
+          sign: 1
+        - fid: '30397'
+          sign: 1
+        - fid: '30581'
+          sign: 1
+        - fid: '17547'
+          sign: 1
+  evidence: client_mapping
+- fid: '17556'
+  name: Purchase Of Fixed Assets (Tangible / Intangible)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to acquire property, plant and equipment, intangible assets, and related fixed-asset additions.
+    includes:
+    - purchase of tangible fixed assets, intangible assets, capitalised software, right-of-use assets when reported as asset
+      acquisition, and advances paid for such purchases.
+    excludes:
+    - Excludes capital work-in-progress unless specifically capitalised as an asset purchase, sale proceeds of fixed assets,
+      investment property, and all non-fixed-asset investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Acquisition of assets
+    - Payment for purchase of intangible assets
+    - Payment for purchase of property plant and equipment
+    - Payment for purchase of property plant and equipment and intangible assets
+    - Payment including advances for acquiring right-of-use assets
+    - purchase of intangible assets
+    - purchase of property plant and equipment
+    - purchase of property plant and equipment and intangible assets
+    - purchase of property plant and equipment and intangibles
+    - Expenditure on property, plant and equipment and intangibles, net of sale proceeds
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 82
+      calculation:
+        type: reported
+    consolidated:
+      position: 83
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30471'
+  name: Proceeds from sales of investment property
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from disposal of investment property.
+    includes:
+    - proceeds from sale of investment properties and similar real-estate investment disposals.
+    excludes:
+    - Excludes sale of owner-occupied fixed assets, sale of intangible assets, and sale of other investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from sale of investment properties
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 83
+      calculation:
+        type: reported
+    consolidated:
+      position: 84
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30474'
+  name: Purchase of investment property
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to acquire investment property.
+    includes:
+    - purchase of investment property and related acquisition payments.
+    excludes:
+    - Excludes purchase of owner-occupied fixed assets, purchase of intangible assets, and all financial investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Payment for investment properties
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 84
+      calculation:
+        type: reported
+    consolidated:
+      position: 85
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30470'
+  name: Proceeds from sales of intangible assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from sale or disposal of intangible assets.
+    includes:
+    - proceeds from transfer, disposal, or sale of intangibles.
+    excludes:
+    - Excludes sale of goodwill, sale of fixed assets, and proceeds from other investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 85
+      calculation:
+        type: reported
+    consolidated:
+      position: 86
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30662'
+  name: Sale Of Fixed Assets (Tangible / Intangible)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from disposal of property, plant and equipment and other fixed assets, tangible or intangible,
+      when reported as sale proceeds.
+    includes:
+    - gains/proceeds from sale of fixed assets and similar disposals.
+    excludes:
+    - Excludes sale of investment property, sale of intangible assets if separately classified, and routine operating receipts.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from disposal of property plant and equipment
+    - Proceeds from sale of property plant and equipment
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 86
+      calculation:
+        type: reported
+    consolidated:
+      position: 87
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30473'
+  name: Purchase of intangible assets under development
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for intangible assets under development, including purchases, advances, and capitalised development
+      spend that is specifically reported as intangible assets under development.
+    includes: []
+    excludes:
+    - Excludes completed intangible asset purchases, goodwill, and generic capital work-in-progress for tangible assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 87
+      calculation:
+        type: reported
+    consolidated:
+      position: 88
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30469'
+  name: Proceeds from sales of goodwill
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from sale or disposal of goodwill, if separately disclosed.
+    includes:
+    - proceeds from divestment or derecognition of goodwill in unusual transaction reporting.
+    excludes:
+    - Excludes sale of other intangible assets, fixed assets, and investment property.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 88
+      calculation:
+        type: reported
+    consolidated:
+      position: 89
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30472'
+  name: Purchase of goodwill
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to acquire goodwill, including goodwill arising from business combinations when separately presented
+      as a cash acquisition item.
+    includes: []
+    excludes:
+    - Excludes purchase of other intangibles, investment in subsidiaries, and acquisition-related fees unless explicitly capitalised
+      into goodwill.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 89
+      calculation:
+        type: reported
+    consolidated:
+      position: 90
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17557'
+  name: Purchase Of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: ALL purchases/investments in securities lines in investing ('purchase of investments', 'investment in equity
+      instruments', 'purchase of investments in securities') map HERE by convention — never the granular 30460.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investment in common stock of Solvio Inc.
+    - Investment in equity instruments
+    - Payment for purchase of investments
+    - Purchase of investments
+    - Purchase of investments in securities
+    locations:
+    - INVESTING
+    rules:
+    - id: consolidated-purchase-of-mutual-funds
+      status: reviewed
+      aliases:
+      - Purchase of mutual funds
+      scopes:
+      - consolidated
+      locations:
+      - investing
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 90
+      calculation:
+        type: reported
+    consolidated:
+      position: 91
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17563'
+  name: Sale Of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: ALL proceeds from sale/maturity/redemption of investments in investing map HERE by convention — never the granular
+      30461.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from disposal / redemption of investments
+    - Proceeds from sale of investments
+    - Proceeds from sale/maturity of investments in securities
+    - Proceeds from sale of investment in subsidiaries
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 91
+      calculation:
+        type: reported
+    consolidated:
+      position: 92
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30402'
+  name: Dividend Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Dividends RECEIVED in the INVESTING section (incl. from subsidiaries) map HERE.
+    includes: []
+    excludes:
+    - Never 30403.
+    mapping_notes:
+    - Operating-section dividend-income ADJUSTMENT lines map to 30404.
+    distinguish_from:
+    - '30403'
+    - '30404'
+  mapping:
+    aliases:
+    - Dividend income
+    - Dividend received
+    - Dividend received from subsidiaries
+    - Dividend received from subsidiary
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 92
+      calculation:
+        type: reported
+    consolidated:
+      position: 93
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30485'
+  name: Interest Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest received lines in the INVESTING section map HERE.
+    includes: []
+    excludes:
+    - Never 30486.
+    mapping_notes:
+    - Operating-section interest-income adjustments map to 30481.
+    distinguish_from:
+    - '30481'
+    - '30486'
+  mapping:
+    aliases:
+    - Interest income
+    - Interest received
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 93
+      calculation:
+        type: reported
+    consolidated:
+      position: 94
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17527'
+  name: Capital Work In Progress
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Capital work in progress, meaning cash outflow or capitalisation relating to assets under construction before
+      completion.
+    includes:
+    - additions to CWIP, advances specifically capitalised into CWIP, and project construction spend.
+    excludes:
+    - Excludes ordinary repairs, purchase of completed fixed assets, intangible asset development, and printed totals for
+      all fixed assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 94
+      calculation:
+        type: reported
+    consolidated:
+      position: 95
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30365'
+  name: Capital Subsidy Received
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Capital subsidy received from government or other authorities, typically a non-operating capital grant linked
+      to acquisition or setting up of assets or projects.
+    includes: []
+    excludes:
+    - Excludes operating grants, revenue subsidies, and ordinary customer receipts.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 95
+      calculation:
+        type: reported
+    consolidated:
+      position: 96
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30419'
+  name: Inter Corporate Deposits
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash flow from placing or redeeming inter-corporate deposits with other entities.
+    includes:
+    - ICDs given, ICDs recovered, and net movement in such deposits when shown as a single line.
+    excludes:
+    - Excludes loans to subsidiaries, bank deposits, and trade advances.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Inter-corporate deposits placed
+    - Proceeds from inter-corporate deposits
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 96
+      calculation:
+        type: reported
+    consolidated:
+      position: 97
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30360'
+  name: Application Money
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received on application money for shares or other securities, typically before allotment.
+    includes:
+    - application money collected and refunded application money only if separately shown as a receipt within this category.
+    excludes:
+    - Excludes share capital, share premium on allotment, and borrowings.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 97
+      calculation:
+        type: reported
+    consolidated:
+      position: 98
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30499'
+  name: Loans To Subsidiaries
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Loans given to / repaid by subsidiaries ('proceeds from loan to subsidiary', 'loans to subsidiaries') map HERE.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from loan to subsidiary
+    - Loan given to subsidiaries
+    - Loan repaid by subsidiaries
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 98
+      calculation:
+        type: reported
+    consolidated:
+      position: 99
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30491'
+  name: Investment In Subsidiaries
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow to acquire or subscribe for subsidiaries.
+    includes:
+    - purchase of subsidiary equity, capital contribution into subsidiaries, and other consideration paid for subsidiary acquisition
+      when not part of a broader business-combination line.
+    excludes:
+    - Excludes loans to subsidiaries, joint venture investments, and acquisition of fixed assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investment in subsidiaries
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 99
+      calculation:
+        type: reported
+    consolidated:
+      position: 100
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30412'
+  name: Fixed Deposits
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Investing flows for FIXED/BANK DEPOSITS placed or matured ('investments in bank deposits', 'proceeds from bank
+      deposits', net maturities).
+    includes: []
+    excludes:
+    - NEVER the closing-cash component 'deposits with original maturity of less than three months' (breakdown line, maps nowhere).
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Bank deposits placed
+    - Deposits placed with body corporates
+    - Investments in bank deposits
+    - Maturities of / (Investment in) bank deposit net
+    - Maturities of / Investment in bank deposits, net
+    - Proceeds from bank deposits
+    - proceeds from deposits placed with body corporates
+    - term deposits with banks net
+    - Deposits placed with corporation
+    - Redemption of deposits placed with corporation
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 100
+      calculation:
+        type: reported
+    consolidated:
+      position: 101
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30488'
+  name: Investment Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Investment income receipts — DO NOT map fair-value/sale gain ADJUSTMENT lines here (30577).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 101
+      calculation:
+        type: reported
+    consolidated:
+      position: 102
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30489'
+  name: Investments in Mutual Funds
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow to acquire mutual funds or similar pooled investment funds.
+    includes:
+    - purchase of liquid funds and other mutual fund units.
+    excludes:
+    - Excludes direct purchase of equity shares, debt securities, fixed deposits, and subsidiary investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investment in liquid fund
+    locations:
+    - INVESTING
+    rules:
+    - id: standalone-purchase-of-mutual-funds
+      status: reviewed
+      aliases:
+      - Purchase of mutual funds
+      scopes:
+      - standalone
+      locations:
+      - investing
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 102
+      calculation:
+        type: reported
+    consolidated:
+      position: 103
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30492'
+  name: Investments in Subsidiaries and/or Joint Ventures
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow to invest in subsidiaries and/or joint ventures when reported together as a combined category.
+    includes:
+    - equity contributions, share subscriptions, and other acquisition payments for such controlled or jointly controlled
+      investees.
+    excludes:
+    - Excludes ordinary loans to subsidiaries, inter-corporate deposits, and standalone JV-related fees unless capitalised
+      into the investment.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 103
+      calculation:
+        type: reported
+    consolidated:
+      position: 104
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30358'
+  name: Acquisition/Merger Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid for acquisition or merger-related expenses, including transaction costs directly attributable to business
+      combinations, takeover fees, integration costs, and similar one-off acquisition expenses when separately disclosed.
+    includes: []
+    excludes:
+    - Excludes purchase consideration for the acquired business, ongoing operating expenses, and legal or advisory fees not
+      tied to acquisition transactions if reported elsewhere.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 104
+      calculation:
+        type: reported
+    consolidated:
+      position: 105
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30501'
+  name: Losing Control Of Subsidiaries Or Other Businesses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash effect of losing control of subsidiaries or other businesses, including cash disposed on deconsolidation
+      and related net outflow/inflow on loss of control.
+    includes: []
+    excludes:
+    - Excludes ordinary dividend receipts, sale of standalone investments, and acquisition of subsidiaries.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 105
+      calculation:
+        type: reported
+    consolidated:
+      position: 106
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30676'
+  name: Used In Obtaining Control Of Subsidiaries Or Other Businesses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow used in obtaining control of subsidiaries or other businesses, typically acquisition consideration
+      net of cash acquired and other control-acquisition cash movements.
+    includes:
+    - business combination purchase price payments and net cash paid on acquisition of control.
+    excludes:
+    - Excludes purchase of fixed assets, investments that do not confer control, and loans to subsidiaries.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 106
+      calculation:
+        type: reported
+    consolidated:
+      position: 107
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30517'
+  name: Other Cash Receipts From Sales Of Interests In Joint Ventures
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Other cash receipts arising from sale or partial disposal of interests in joint ventures that are not captured
+      by standard sale proceeds lines.
+    includes:
+    - miscellaneous proceeds linked to JV stake reductions.
+    excludes:
+    - Excludes dividends from joint ventures, acquisition of JV interests, and ordinary investment sale proceeds unless explicitly
+      tied to JV interests.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 107
+      calculation:
+        type: reported
+    consolidated:
+      position: 108
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30516'
+  name: Other Cash Payments To Acquire Interests In Joint Ventures
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Other cash payments made to acquire interests in joint ventures that are not captured by standard investment
+      or subsidiary purchase lines.
+    includes:
+    - additional consideration, buy-in payments, and miscellaneous acquisition-related cash outflows for JV interests.
+    excludes:
+    - Excludes loans to JV parties, ordinary investments, and payments for fixed assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 108
+      calculation:
+        type: reported
+    consolidated:
+      position: 109
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30368'
+  name: Cash Advances and Loans Made to Other Parties
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash advances/LOANS made to other parties.
+    includes: []
+    excludes:
+    - EXCLUDES capital advances for asset purchases ('payment for long term capital advance' -> 17545).
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Advance towards acquisition of investment
+    - Loan given
+    - Loan to employees (net)
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 109
+      calculation:
+        type: reported
+    consolidated:
+      position: 112
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30375'
+  name: Cash Receipts from Repayment of Advances and Loans Made to Other Parties
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash RECEIPTS from repayment of advances/loans the company had GIVEN to other parties (money coming back in).
+    includes: []
+    excludes:
+    - NEVER map payments/outflows here — deposits paid, security deposits for property, or advances given go to 17545 (others-investing)
+      or their specific fields.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Loan recovered
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 110
+      calculation:
+        type: reported
+    consolidated:
+      position: 113
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30373'
+  name: Cash Payments for Future , Forward , Option , Swap Contracts
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for settlement of futures, forwards, options, swaps, and other derivative contracts.
+    includes:
+    - premium paid, margin paid, and net cash paid on derivative contracts when separately shown.
+    excludes:
+    - Excludes borrowings, ordinary investments, and non-derivative hedging items.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 111
+      calculation:
+        type: reported
+    consolidated:
+      position: 114
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30374'
+  name: Cash receipts from Future , Forward , Option , Swap Contracts
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash inflow from settlement of futures, forwards, options, swaps, and other derivative contracts.
+    includes:
+    - premium received, margin recovered, and net cash received on derivative contracts when separately shown.
+    excludes:
+    - Excludes interest, dividend, ordinary investment sale proceeds, and borrowings.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 112
+      calculation:
+        type: reported
+    consolidated:
+      position: 115
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30459'
+  name: Cash flows from losing control of subsidiaries or other businesses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received when control over a subsidiary or other business is lost and the investee is deconsolidated, including
+      sale/disposal proceeds or settlement received on loss of control.
+    includes: []
+    excludes:
+    - Excludes ordinary sale proceeds of investments in equity/debt instruments, dividend income, and any gain/loss accounting
+      entries.
+    mapping_notes:
+    - If cash is split between sale proceeds and cash disposed with the subsidiary, only the inflow attributable to losing
+      control maps here.
+    distinguish_from:
+    - '30577'
+  mapping:
+    aliases:
+    - Divestment in subsidiaries
+    - Cash flow from loss of control of subsidiary
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 113
+      calculation:
+        type: reported
+    consolidated:
+      position: 116
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30476'
+  name: Cash flows used in obtaining control of subsidiaries or other businesses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Duplicate control-acquisition field — DO NOT map ordinary acquisition payments here; use 17772.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - INVESTING
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 114
+      calculation:
+        type: reported
+    consolidated:
+      position: 117
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30461'
+  name: Other cash receipts from sales of equity or debt instruments of other entities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Granular equity-sale field — DO NOT map ordinary sale-of-investments lines here; use 17563.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Sale of investments in debt/equity instruments
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 115
+      calculation:
+        type: reported
+    consolidated:
+      position: 118
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30460'
+  name: Other cash payments to acquire equity or debt instruments of other entities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Granular equity-purchase field — DO NOT map ordinary purchase-of-investments lines here; use 17557.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investments in debt/equity instruments
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 116
+      calculation:
+        type: reported
+    consolidated:
+      position: 119
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30457'
+  name: Cash receipts from share of profits of partnership firm or association of persons or limited liability partnerships
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received as the partner/member share of profits from a partnership firm, association of persons, or limited
+      liability partnership.
+    includes:
+    - distributions treated as profit share from such entities.
+    excludes:
+    - Excludes capital withdrawals, return of capital, dividends from companies, and sale proceeds of the investment.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Share of profits from partnership firm
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 117
+      calculation:
+        type: reported
+    consolidated:
+      position: 120
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30456'
+  name: Cash payment for investment in partnership firm or association of persons or limited liability partnerships
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid as contribution, capital investment, or additional investment into a partnership firm, association
+      of persons, or limited liability partnership.
+    includes: []
+    excludes:
+    - Excludes loans, advances, deposits, and purchase of shares or units in companies or funds.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Investment in LLP
+    - Payment to partnership firm
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 118
+      calculation:
+        type: reported
+    consolidated:
+      position: 121
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30601'
+  name: Proceeds from Government Grants
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash inflow received from government grants, subsidies, incentives, or similar support when the cash is actually
+      received.
+    includes: []
+    excludes:
+    - Excludes deferred grant accounting, revenue recognition entries without cash, and tax refunds unless the filing explicitly
+      classifies them as grants.
+    mapping_notes: []
+    distinguish_from:
+    - '30370'
+  mapping:
+    aliases:
+    - Cash/Capital Investment Subsidy
+    - Government grant received
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 119
+      calculation:
+        type: reported
+    consolidated:
+      position: 122
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30364'
+  name: Cancellation Of Investment In Companies Acquired
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash inflow from cancellation, reversal, or unwind of an earlier investment in companies acquired, where the
+      company had previously been treated as an acquisition-related investment.
+    includes: []
+    excludes:
+    - Excludes fresh acquisition payments, disposal proceeds on sale of equity instruments, and ordinary dividend or distribution
+      receipts.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cancellation Of Investment In Companies Acquired
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 120
+      calculation:
+        type: reported
+    consolidated:
+      position: 123
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17772'
+  name: Acquisition Of Companies
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Payments for business/subsidiary acquisitions, net of cash acquired ('acquisition of subsidiaries', 'payments
+      for business acquisitions') map HERE by convention, NOT 30476.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Acquisition of subsidiaries
+    - Payment towards acquisition
+    - Payment towards acquisition of business, net of cash acquired
+    - Payment of contingent consideration pertaining to acquisition of business
+    locations:
+    - INVESTING
+    rules:
+    - id: standalone-business-acquisition-payments
+      status: reviewed
+      aliases:
+      - Payments for business acquisitions, net of cash acquired
+      scopes:
+      - standalone
+      locations:
+      - investing
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 121
+      calculation:
+        type: reported
+    consolidated:
+      position: 124
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17545'
+  name: Others-Investing Activities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Residual/other INVESTING-activities cash flows with no dedicated field — e.g. rental income received (investing
+      section), miscellaneous investing receipts/payments.
+    includes: []
+    excludes:
+    - NEVER a printed subtotal.
+    mapping_notes: []
+    distinguish_from:
+    - '30411'
+    - '30422'
+  mapping:
+    aliases:
+    - Distribution from limited liability partnership
+    - Divestment in subsidiaries net of cash
+    - Excess of cost over fair value reimbursed for treasury shares by direct and indirect subsidiaries
+    - Income tax on capital gain
+    - Income taxes paid
+    - Payment for long term capital advance
+    - Rental income
+    - proceeds from sub lease receivable
+    - repayment of security deposit for property plant and equipment
+    - Other receipts
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 122
+      calculation:
+        type: reported
+    consolidated:
+      position: 125
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30509'
+  name: Net Cash Flows from (Used in) Investing Activities before Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Intermediate subtotal BEFORE extraordinary items — map ONLY when the filing prints a separate before-extraordinary-items
+      subtotal in this section.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The ordinary printed 'Net cash from/(used in) ...' section total maps to the final (after-EOI) total field, not here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 123
+      calculation:
+        type: sum
+        terms:
+        - fid: '17556'
+          sign: 1
+        - fid: '30471'
+          sign: 1
+        - fid: '30474'
+          sign: 1
+        - fid: '30470'
+          sign: 1
+        - fid: '30662'
+          sign: 1
+        - fid: '30473'
+          sign: 1
+        - fid: '30469'
+          sign: 1
+        - fid: '30472'
+          sign: 1
+        - fid: '17557'
+          sign: 1
+        - fid: '17563'
+          sign: 1
+        - fid: '30402'
+          sign: 1
+        - fid: '30485'
+          sign: 1
+        - fid: '17527'
+          sign: 1
+        - fid: '30365'
+          sign: 1
+        - fid: '30419'
+          sign: 1
+        - fid: '30360'
+          sign: 1
+        - fid: '30499'
+          sign: 1
+        - fid: '30491'
+          sign: 1
+        - fid: '30412'
+          sign: 1
+        - fid: '30488'
+          sign: 1
+        - fid: '30489'
+          sign: 1
+        - fid: '30492'
+          sign: 1
+        - fid: '30358'
+          sign: 1
+        - fid: '30501'
+          sign: 1
+        - fid: '30676'
+          sign: 1
+        - fid: '30517'
+          sign: 1
+        - fid: '30516'
+          sign: 1
+        - fid: '30368'
+          sign: 1
+        - fid: '30375'
+          sign: 1
+        - fid: '30373'
+          sign: 1
+        - fid: '30374'
+          sign: 1
+        - fid: '30459'
+          sign: 1
+        - fid: '30476'
+          sign: 1
+        - fid: '30461'
+          sign: 1
+        - fid: '30460'
+          sign: 1
+        - fid: '30457'
+          sign: 1
+        - fid: '30456'
+          sign: 1
+        - fid: '30601'
+          sign: 1
+        - fid: '30364'
+          sign: 1
+        - fid: '17772'
+          sign: 1
+        - fid: '17545'
+          sign: 1
+    consolidated:
+      position: 126
+      calculation:
+        type: sum
+        terms:
+        - fid: '17556'
+          sign: 1
+        - fid: '30471'
+          sign: 1
+        - fid: '30474'
+          sign: 1
+        - fid: '30470'
+          sign: 1
+        - fid: '30662'
+          sign: 1
+        - fid: '30473'
+          sign: 1
+        - fid: '30469'
+          sign: 1
+        - fid: '30472'
+          sign: 1
+        - fid: '17557'
+          sign: 1
+        - fid: '17563'
+          sign: 1
+        - fid: '30402'
+          sign: 1
+        - fid: '30485'
+          sign: 1
+        - fid: '17527'
+          sign: 1
+        - fid: '30365'
+          sign: 1
+        - fid: '30419'
+          sign: 1
+        - fid: '30360'
+          sign: 1
+        - fid: '30499'
+          sign: 1
+        - fid: '30491'
+          sign: 1
+        - fid: '30412'
+          sign: 1
+        - fid: '30488'
+          sign: 1
+        - fid: '30489'
+          sign: 1
+        - fid: '30492'
+          sign: 1
+        - fid: '30358'
+          sign: 1
+        - fid: '30501'
+          sign: 1
+        - fid: '30676'
+          sign: 1
+        - fid: '30517'
+          sign: 1
+        - fid: '30516'
+          sign: 1
+        - fid: '30367'
+          sign: 1
+        - fid: '30366'
+          sign: 1
+        - fid: '30368'
+          sign: 1
+        - fid: '30375'
+          sign: 1
+        - fid: '30373'
+          sign: 1
+        - fid: '30374'
+          sign: 1
+        - fid: '30459'
+          sign: 1
+        - fid: '30476'
+          sign: 1
+        - fid: '30461'
+          sign: 1
+        - fid: '30460'
+          sign: 1
+        - fid: '30457'
+          sign: 1
+        - fid: '30456'
+          sign: 1
+        - fid: '30601'
+          sign: 1
+        - fid: '30364'
+          sign: 1
+        - fid: '17772'
+          sign: 1
+        - fid: '17545'
+          sign: 1
+  evidence: template_inferred
+- fid: '30418'
+  name: Proceeds from Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from extraordinary or exceptional items that are separately disclosed outside ordinary operating,
+      investing, or financing cash flows.
+    includes:
+    - only the cash inflow portion attributable to such extraordinary items.
+    excludes:
+    - Excludes ordinary recurring receipts and all cash payments for extraordinary items.
+    mapping_notes: []
+    distinguish_from:
+    - '30409'
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 124
+      calculation:
+        type: reported
+    consolidated:
+      position: 127
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30417'
+  name: Payment for Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid for extraordinary or exceptional items that are separately disclosed outside ordinary operating, investing,
+      or financing cash flows.
+    includes:
+    - only the cash outflow portion attributable to such extraordinary items.
+    excludes:
+    - Excludes ordinary recurring payments and all cash receipts for extraordinary items.
+    mapping_notes: []
+    distinguish_from:
+    - '30408'
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 125
+      calculation:
+        type: reported
+    consolidated:
+      position: 128
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17537'
+  name: Net Cash Flow From Investing Activities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'FINAL section total ''Net Cash Flow From Investing Activities'': the filing''s printed ''Net cash generated
+      from/(used in) ...'' line for this activity ALWAYS maps here (not to the before-extraordinary-items intermediate).'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Net cash flow from (used in) investing activities
+    - Net cash flow from investing activities
+    - Net cash flows used in investing activities
+    - Net cash from/ (used) in investing activities
+    - Net cash generated from/(used in) investing activities
+    - Net cash (used in) / generated from investing activities
+    - Net cash generated / (used in) from investing activities
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 126
+      calculation:
+        type: sum
+        terms:
+        - fid: '30509'
+          sign: 1
+        - fid: '30418'
+          sign: 1
+        - fid: '30417'
+          sign: 1
+    consolidated:
+      position: 129
+      calculation:
+        type: sum
+        terms:
+        - fid: '30509'
+          sign: 1
+        - fid: '30418'
+          sign: 1
+        - fid: '30417'
+          sign: 1
+  evidence: client_mapping
+- fid: '17553'
+  name: Proceeds From Issue Of Equity Shares (Inclu Share Premium)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from issuing equity shares, including share premium collected at issue and amounts received against
+      equity shares or shares pending allotment when presented as equity issue proceeds.
+    includes: []
+    excludes:
+    - Excludes proceeds from warrants, preference shares, debt instruments, share application money pending allotment if separately
+      classified, and any non-cash equity issuance.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from issuance of equity shares and shares pending allotment
+    - Shares issued on exercise of employee stock options
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 128
+      calculation:
+        type: reported
+    consolidated:
+      position: 131
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30621'
+  name: Proceeds from Share Premium
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received specifically as share premium on issue of equity instruments, when the premium component is disclosed
+      separately from share capital.
+    includes: []
+    excludes:
+    - Excludes equity share principal proceeds, preference share proceeds, warrant proceeds, and other capital receipts.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 129
+      calculation:
+        type: reported
+    consolidated:
+      position: 132
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30618'
+  name: Proceeds from Issue of Subordinated Debt, Perpetual Debt & Upper Tier II Instruments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from issue of subordinated debt, perpetual debt, and Upper Tier II capital instruments.
+    includes: []
+    excludes:
+    - Excludes ordinary debentures unless explicitly classified here, borrowings, and treasury-share transactions.
+    mapping_notes:
+    - This is a financing inflow from debt-like capital instruments, not an equity issue.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Acquisition of treasury shares
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 130
+      calculation:
+        type: reported
+    consolidated:
+      position: 133
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30616'
+  name: Proceeds From Issue Of Debentures
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from issuing debentures or other bond-like debt securities.
+    includes:
+    - long-term debt securities placed with investors.
+    excludes:
+    - Excludes bank borrowings, subordinated debt/upper-tier capital unless separately classified, and debt repayment lines.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 131
+      calculation:
+        type: reported
+    consolidated:
+      position: 134
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30617'
+  name: Proeeds From Issue Of Share Warrants
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from issue of share warrants or similar convertible equity-linked instruments.
+    includes: []
+    excludes:
+    - Excludes equity share proceeds, share premium, debentures, and option/compensation accounting entries without cash.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 132
+      calculation:
+        type: reported
+    consolidated:
+      position: 135
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30363'
+  name: Calls In Arrears
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received from recovery or collection of amounts earlier called in arrears on shares or other capital instruments.
+    includes: []
+    excludes:
+    - Excludes share capital proceeds, share application money, and routine receivables collection.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 133
+      calculation:
+        type: reported
+    consolidated:
+      position: 136
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17554'
+  name: Proceeds From Long Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from long-term borrowings, including term loans, loan drawdowns, borrowings from banks or related
+      parties if classified as long-term, and other non-current debt inflows.
+    includes: []
+    excludes:
+    - Excludes short-term borrowings, lease liabilities, and debt issuance expenses.
+    mapping_notes:
+    - This is a financing inflow; the printed receipt line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Proceeds from borrowings
+    - Proceeds from long-term borrowings
+    - Proceeds of Loan from subsidiary
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 134
+      calculation:
+        type: reported
+    consolidated:
+      position: 137
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17555'
+  name: Proceeds From Short Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net cash received from short-term borrowings, including revolving credit, overdrafts, working-capital borrowings,
+      and other current debt facilities, after netting any repayments if the filing presents a net line.
+    includes: []
+    excludes:
+    - Excludes long-term borrowings and lease liabilities.
+    mapping_notes:
+    - This is a financing inflow/outflow component; the printed short-term borrowing line maps here.
+    distinguish_from:
+    - '30430'
+  mapping:
+    aliases:
+    - (Repayments)/ Proceeds from short-term borrowings (net)
+    - Proceeds from short term borrowings
+    - Proceeds of short-term borrowings (net)
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 135
+      calculation:
+        type: reported
+    consolidated:
+      position: 138
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17552'
+  name: Proceeds From Deposits
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from deposits received or raised as financing, including customer deposits, security deposits,
+      or similar deposit inflows when classified under financing activities.
+    includes: []
+    excludes:
+    - Excludes bank deposits placed, fixed deposits made, and operational trade deposits.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 136
+      calculation:
+        type: reported
+    consolidated:
+      position: 139
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30620'
+  name: Proceeds From Preference Shares
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash proceeds from issue of preference shares, including redeemable or non-redeemable preference capital and
+      any premium attached to those shares if not separately disclosed.
+    includes: []
+    excludes:
+    - Excludes ordinary equity shares, debentures, warrants, and share application money unless specifically classified as
+      preference share issue proceeds.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 137
+      calculation:
+        type: reported
+    consolidated:
+      position: 140
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30654'
+  name: Redemption Of Preference Shares
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to redeem preference shares, including buyback or repayment of preference capital and any premium paid
+      on redemption.
+    includes: []
+    excludes:
+    - Excludes redemption of debentures, repayment of borrowings, and equity share buybacks unless separately classified as
+      preference share redemption.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 138
+      calculation:
+        type: reported
+    consolidated:
+      position: 141
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30666'
+  name: Share Application Money
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash received as share application money pending allotment or similar application advances against share issue.
+    includes: []
+    excludes:
+    - Excludes final equity share proceeds after allotment, loans, deposits, and refundable advances not intended as share
+      capital.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 139
+      calculation:
+        type: reported
+    consolidated:
+      position: 142
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30370'
+  name: Cash/Capital Investment Subsidy
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash subsidy or incentive received for capital investment or related purposes, such as capital subsidy from government
+      authorities.
+    includes: []
+    excludes:
+    - Excludes operating subsidies, deferred grant accounting, and non-cash incentives.
+    mapping_notes: []
+    distinguish_from:
+    - '30601'
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 140
+      calculation:
+        type: reported
+    consolidated:
+      position: 143
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30484'
+  name: Interest Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest/finance costs paid in financing.
+    includes: []
+    excludes:
+    - EXCLUDES the interest portion of lease liability payments (those map to 30467).
+    mapping_notes: []
+    distinguish_from:
+    - '30483'
+  mapping:
+    aliases:
+    - Interest and finance costs paid
+    - Interest paid
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 141
+      calculation:
+        type: reported
+    consolidated:
+      position: 144
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30653'
+  name: Redemption Of Debenture
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to redeem debentures or repay bond principal at maturity, call, or buyback.
+    includes: []
+    excludes:
+    - Excludes coupon interest, repayment of bank borrowings, and redemption of preference shares.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 142
+      calculation:
+        type: reported
+    consolidated:
+      position: 145
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30362'
+  name: Bank Overdrafts
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash inflows or outflows related to bank overdrafts when classified separately, including movements in overdraft
+      balances treated as financing cash flows.
+    includes: []
+    excludes:
+    - Excludes ordinary short-term borrowings if reported in a dedicated borrowing line and excludes bank charges or interest.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 143
+      calculation:
+        type: reported
+    consolidated:
+      position: 146
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30658'
+  name: Repayment Of Long Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to repay long-term borrowings, including principal repayment of term loans and other non-current debt
+      obligations.
+    includes: []
+    excludes:
+    - Excludes interest, short-term borrowings, lease payments, and debenture redemption unless the filing classifies those
+      as long-term borrowings repayment.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Repayment of borrowings
+    - Repayment of long term borrowings
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 144
+      calculation:
+        type: reported
+    consolidated:
+      position: 147
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30659'
+  name: Repayment Of Short Term Borrowings
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to repay short-term borrowings, including working-capital loans, current debt facilities, and overdraft
+      principal when specifically classified as short-term borrowing repayment.
+    includes: []
+    excludes:
+    - Excludes long-term borrowing repayment, interest, and lease liabilities.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Repayment of short term borrowings
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 145
+      calculation:
+        type: reported
+    consolidated:
+      position: 148
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30468'
+  name: Payments of finance lease liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to settle finance lease liabilities, specifically the finance-charge and/or principal portion only
+      when the filing separates finance-lease liabilities from ordinary lease liabilities.
+    includes: []
+    excludes:
+    - Excludes lease payments under a general lease-liability line unless the filing explicitly classifies them as finance
+      lease liabilities.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 146
+      calculation:
+        type: reported
+    consolidated:
+      position: 149
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30467'
+  name: Payments of lease liabilities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: ALL lease-liability payment lines in financing — principal AND the 'interest portion of lease liabilities' —
+      map HERE by convention, NOT Interest Paid (30484).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Payment of interest portion of lease liabilities
+    - Payment of lease liabilities
+    - Payment of lease liabilities including interest
+    - Payment of principal portion of lease liabilities
+    - repayment of lease liabilities
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 147
+      calculation:
+        type: reported
+    consolidated:
+      position: 150
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30656'
+  name: Refund Of Share Application Money
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash refunded or returned for share application money previously received but not allotted or otherwise reversed.
+    includes: []
+    excludes:
+    - Excludes repayment of deposits, share capital redemption, and ordinary trade refunds.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 148
+      calculation:
+        type: reported
+    consolidated:
+      position: 151
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30657'
+  name: Repayment Of Financial Liablities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash paid to settle or repay financial liabilities other than loans, borrowings, lease liabilities, debentures,
+      preference shares, or ordinary trade payables, when the filing uses a broad residual financing-liability line.
+    includes:
+    - repayment of structured liabilities, deposits treated as financing, and other financial obligation settlements if not
+      classified elsewhere.
+    excludes:
+    - Excludes operating payables, provisions, and clearly identified borrowing/lease/debt items with dedicated fields.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 149
+      calculation:
+        type: reported
+    consolidated:
+      position: 152
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17528'
+  name: Dividend Paid
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for distributions to equity holders and similar dividend-related payments.
+    includes:
+    - dividends paid to ordinary shareholders, dividends paid to non-controlling interests, and any combined line such as
+      dividend and tax paid when the report line clearly represents the cash dividend distribution component.
+    excludes:
+    - Exclude income-tax payments, interest paid, and any dividend receivable/income line.
+    mapping_notes:
+    - 'Sign convention: cash outflow is negative; a printed outflow line maps here.'
+    - If a filing separates dividend and dividend tax, map only the dividend portion here, not the tax portion.
+    distinguish_from:
+    - '30401'
+    - '30406'
+  mapping:
+    aliases:
+    - Dividend paid
+    - Payment of dividend
+    - Dividend paid to non-controlling interests
+    - Dividend and tax paid
+    - Dividend and tax paid interest paid
+    - payment of dividend to non controlling interest holders
+    - Payment of dividends
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 150
+      calculation:
+        type: reported
+    consolidated:
+      position: 153
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30405'
+  name: Dividend Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash tax paid that specifically relates to dividend distribution tax or dividend-related withholding tax.
+    includes: []
+    excludes:
+    - Exclude dividend principal/outflow, general corporate income taxes, and interest.
+    mapping_notes:
+    - Use only when the filing presents a separate dividend tax line distinct from ordinary income-tax payments.
+    - 'Sign convention: tax paid is a cash outflow and should be negative if the source line is presented as a payment.'
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 151
+      calculation:
+        type: reported
+    consolidated:
+      position: 154
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17566'
+  name: Transfer On Amalgamation
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash flows arising from amalgamation or merger accounting adjustments that are not ordinary operating, investing,
+      or financing cash flows, typically transfer of cash balances or consideration recognized on amalgamation.
+    includes:
+    - only cash movement specifically described as transfer on amalgamation/scheme of amalgamation.
+    excludes:
+    - Exclude acquisition consideration, business-combination purchase price, and generic subsidiary acquisition lines unless
+      the filing explicitly labels them as amalgamation transfer.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 152
+      calculation:
+        type: reported
+    consolidated:
+      position: 155
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30661'
+  name: Sales Tax Deferral
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash flow effect of sales tax deferral or similar deferred indirect-tax scheme amounts.
+    includes:
+    - movements explicitly described as sales tax deferral, deferred sales tax, or tax deferral receipts/payments arising
+      from such schemes.
+    excludes:
+    - Exclude ordinary income-tax payments, GST/VAT paid on operations, and trade-payable or working-capital timing effects
+      unless the filing labels them as sales-tax deferral.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 153
+      calculation:
+        type: reported
+    consolidated:
+      position: 156
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30582'
+  name: Premium On Redemption
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow associated with premium paid on redemption or buyback of securities, such as premium on redemption
+      of preference shares or debt instruments.
+    includes:
+    - the redemption premium component only when separately stated.
+    excludes:
+    - Exclude the principal repayment/redemption amount, dividends, interest, and share issue costs.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 154
+      calculation:
+        type: reported
+    consolidated:
+      position: 157
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17543'
+  name: Others-Financing Activities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Residual/other FINANCING-activities flows with no dedicated field.
+    includes: []
+    excludes:
+    - NEVER closing-cash breakdown lines ('on current account', EEFC accounts) and never a printed subtotal.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Payment for contingent consideration
+    - Payment of contingent consideration
+    - Payment of deferred and contingent consideration on business acquisitions
+    - Payments for deferred and contingent consideration on business acquisitions
+    - Proceeds from exercise of share options
+    - Sale of shares to non-controlling interests
+    - payment of deferred consideration on business combination
+    - Other payments
+    - Other (payments)/receipts
+    - Buyback of equity shares including transaction cost
+    - Buyback of equity shares including transaction costs
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 155
+      calculation:
+        type: reported
+    consolidated:
+      position: 158
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30507'
+  name: Net Cash Flow From Financing Activities Before EOI
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Intermediate subtotal BEFORE extraordinary items — map ONLY when the filing prints a separate before-extraordinary-items
+      subtotal in this section.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The ordinary printed 'Net cash from/(used in) ...' section total maps to the final (after-EOI) total field, not here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 156
+      calculation:
+        type: sum
+        terms:
+        - fid: '17553'
+          sign: 1
+        - fid: '30621'
+          sign: 1
+        - fid: '30618'
+          sign: 1
+        - fid: '30616'
+          sign: 1
+        - fid: '30617'
+          sign: 1
+        - fid: '30363'
+          sign: 1
+        - fid: '17554'
+          sign: 1
+        - fid: '17555'
+          sign: 1
+        - fid: '17552'
+          sign: 1
+        - fid: '30620'
+          sign: 1
+        - fid: '30654'
+          sign: 1
+        - fid: '30666'
+          sign: 1
+        - fid: '30370'
+          sign: 1
+        - fid: '30484'
+          sign: 1
+        - fid: '30653'
+          sign: 1
+        - fid: '30362'
+          sign: 1
+        - fid: '30658'
+          sign: 1
+        - fid: '30659'
+          sign: 1
+        - fid: '30468'
+          sign: 1
+        - fid: '30467'
+          sign: 1
+        - fid: '30656'
+          sign: 1
+        - fid: '30657'
+          sign: 1
+        - fid: '17528'
+          sign: 1
+        - fid: '30405'
+          sign: 1
+        - fid: '17566'
+          sign: 1
+        - fid: '30661'
+          sign: 1
+        - fid: '30582'
+          sign: 1
+        - fid: '17543'
+          sign: 1
+    consolidated:
+      position: 160
+      calculation:
+        type: sum
+        terms:
+        - fid: '17553'
+          sign: 1
+        - fid: '30621'
+          sign: 1
+        - fid: '30618'
+          sign: 1
+        - fid: '30616'
+          sign: 1
+        - fid: '30617'
+          sign: 1
+        - fid: '30363'
+          sign: 1
+        - fid: '17554'
+          sign: 1
+        - fid: '17555'
+          sign: 1
+        - fid: '17552'
+          sign: 1
+        - fid: '30620'
+          sign: 1
+        - fid: '30654'
+          sign: 1
+        - fid: '30666'
+          sign: 1
+        - fid: '30370'
+          sign: 1
+        - fid: '30484'
+          sign: 1
+        - fid: '30653'
+          sign: 1
+        - fid: '30362'
+          sign: 1
+        - fid: '30658'
+          sign: 1
+        - fid: '30659'
+          sign: 1
+        - fid: '30468'
+          sign: 1
+        - fid: '30467'
+          sign: 1
+        - fid: '30656'
+          sign: 1
+        - fid: '30657'
+          sign: 1
+        - fid: '17528'
+          sign: 1
+        - fid: '30405'
+          sign: 1
+        - fid: '17566'
+          sign: 1
+        - fid: '30661'
+          sign: 1
+        - fid: '30582'
+          sign: 1
+        - fid: '17543'
+          sign: 1
+        - fid: '30665'
+          sign: 1
+  evidence: template_inferred
+- fid: '30409'
+  name: Proceeds from Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash inflow from extraordinary items, if the statement separately presents extraordinary-item cash receipts.
+    includes:
+    - only proceeds/receipts specifically classified as extraordinary.
+    excludes:
+    - Exclude ordinary operating, investing, and financing receipts and any extraordinary-item payments.
+    mapping_notes: []
+    distinguish_from:
+    - '30418'
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 157
+      calculation:
+        type: reported
+    consolidated:
+      position: 161
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30408'
+  name: Payment for Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for extraordinary items, if the statement separately presents extraordinary-item cash payments.
+    includes:
+    - only payments specifically classified as extraordinary.
+    excludes:
+    - Exclude ordinary operating, investing, and financing payments and any extraordinary-item receipts.
+    mapping_notes: []
+    distinguish_from:
+    - '30417'
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 158
+      calculation:
+        type: reported
+    consolidated:
+      position: 162
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17536'
+  name: Net Cash Flow From Financing Activities
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'FINAL section total ''Net Cash Flow From Financing Activities'': the filing''s printed ''Net cash generated
+      from/(used in) ...'' line for this activity ALWAYS maps here (not to the before-extraordinary-items intermediate).'
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Net cash flow from (used in) financing activities
+    - Net cash (used) in/ from financing activities
+    - Net cash flow used in financing activities
+    - Net cash flows (used in) in/ from financing activities
+    - Net cash flows used in financing activities
+    - Net cash generated from/(used in) financing activities
+    - net cash flows used in from financing activities
+    - Net cash used in financing activities
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 159
+      calculation:
+        type: sum
+        terms:
+        - fid: '30507'
+          sign: 1
+        - fid: '30409'
+          sign: 1
+        - fid: '30408'
+          sign: 1
+    consolidated:
+      position: 163
+      calculation:
+        type: sum
+        terms:
+        - fid: '30507'
+          sign: 1
+        - fid: '30409'
+          sign: 1
+        - fid: '30408'
+          sign: 1
+  evidence: client_mapping
+- fid: '30458'
+  name: Net increase (decrease) in cash and cash equivalents before effect of exchange rate changes
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The filing's 'Net increase/(decrease) in cash and cash equivalents' line maps HERE by convention (NOT 17541).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '17541'
+  mapping:
+    aliases:
+    - Net change in cash and cash equivalents
+    - Net increase / (decrease) in cash and cash equivalents
+    - Net increase in cash and cash equivalents
+    - Net increase in cash and cash equivalents during the period
+    - Net increase/(decrease) in cash and cash equivalents during the period
+    locations:
+    - RECONCILIATION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 160
+      calculation:
+        type: sum
+        terms:
+        - fid: '17538'
+          sign: 1
+        - fid: '17537'
+          sign: 1
+        - fid: '17536'
+          sign: 1
+    consolidated:
+      position: 164
+      calculation:
+        type: sum
+        terms:
+        - fid: '17538'
+          sign: 1
+        - fid: '17537'
+          sign: 1
+        - fid: '17536'
+          sign: 1
+  evidence: client_mapping
+- fid: '17529'
+  name: Effect of Exchange Fluctuation Translation Reserve
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Foreign-exchange translation effect on cash and cash equivalents held in foreign currency.
+    includes:
+    - exchange differences, translation reserve effects, and net foreign exchange gains or losses that adjust the cash balance
+      for currency movements.
+    excludes:
+    - Exclude operating, investing, and financing cash flows as well as realized FX gains/losses on other items unless the
+      filing explicitly states the effect on cash and cash equivalents.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Effect of exchange differences on cash and cash equivalents held in foreign currency
+    - Effect of exchange rate changes on cash and cash equivalents
+    - Exchange difference on translation of foreign currency cash and cash equivalents
+    - Net foreign exchange difference
+    locations:
+    - RECONCILIATION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 161
+      calculation:
+        type: reported
+    consolidated:
+      position: 165
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '17541'
+  name: Net Increase in Cash and Cash Equivalents
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Duplicate legacy net-increase field — DO NOT map the ordinary net increase/(decrease) in cash line here; use
+      30458.
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from:
+    - '30458'
+  mapping:
+    match_name: false
+    aliases:
+    - Net cash flow/(outflow) during the year
+    locations:
+    - RECONCILIATION
+    mode: aliases_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 162
+      calculation:
+        type: sum
+        terms:
+        - fid: '30458'
+          sign: 1
+        - fid: '17529'
+          sign: 1
+    consolidated:
+      position: 166
+      calculation:
+        type: sum
+        terms:
+        - fid: '30458'
+          sign: 1
+        - fid: '17529'
+          sign: 1
+  evidence: client_mapping
+- fid: '17519'
+  name: Cash and Cash Equivalents at the Beginning of the Year
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Opening cash and cash equivalents balance at the start of the reporting period.
+    includes:
+    - the beginning-of-period/year cash and cash equivalents amount, and equivalent opening balance lines.
+    excludes:
+    - Exclude closing balance, net movement, and any acquisition-adjustment line unless the filing explicitly states it is
+      part of the opening balance reconciliation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cash and cash equivalents at the beginning of the period / year
+    - Cash and cash equivalents at the beginning of the period
+    - Cash and cash equivalents at the beginning of the year
+    locations:
+    - RECONCILIATION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 163
+      calculation:
+        type: reported
+    consolidated:
+      position: 167
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30513'
+  name: Other Adjustments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'Opening/closing cash RECONCILIATION adjustments printed between net-change and closing cash: ''Less: Bank overdraft
+      at the beginning'', ''Cash acquired on acquisition of subsidiary/scheme''.'
+    includes: []
+    excludes:
+    - NEVER closing-cash breakdown lines (deposits < 3 months, current accounts, EEFC).
+    mapping_notes:
+    - SUM all such lines here (closing = beginning + net + fx + this field).
+    distinguish_from:
+    - '17542'
+  mapping:
+    aliases:
+    - Cash acquired on acquisition of subsidiaries (net)
+    - 'Less : Bank overdraft at the beginning of the year'
+    locations:
+    - RECONCILIATION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 164
+      calculation:
+        type: reported
+    consolidated:
+      position: 168
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30371'
+  name: Cash and Cash Equivalents at the End of the Year
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Closing cash and cash equivalents balance at the end of the reporting period.
+    includes:
+    - the final reported cash and cash equivalents amount, including equivalent end-of-period/year labels.
+    excludes:
+    - Exclude opening balance and net movement.
+    mapping_notes:
+    - If the filing gives a reconciled ending cash balance, map the printed closing total here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cash and cash equivalents at the end of the period
+    - Cash and cash equivalents at the end of the period / year
+    - Cash and cash equivalents at the end of the year
+    locations:
+    - RECONCILIATION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 165
+      calculation:
+        type: sum
+        terms:
+        - fid: '17541'
+          sign: 1
+        - fid: '17519'
+          sign: 1
+        - fid: '30513'
+          sign: 1
+    consolidated:
+      position: 169
+      calculation:
+        type: sum
+        terms:
+        - fid: '17541'
+          sign: 1
+        - fid: '17519'
+          sign: 1
+        - fid: '30513'
+          sign: 1
+  evidence: client_mapping
+- fid: '17540'
+  name: Capital Expenditure (CAP-EX)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Capital expenditure cash outflow, usually the sum of purchases/acquisition of property, plant and equipment,
+      capital work-in-progress additions, intangible asset additions, and other capital asset purchases where the filing groups
+      them into a capex total.
+    includes:
+    - only the aggregate capex amount; component purchase lines belong to this total when separately reported.
+    excludes:
+    - Exclude proceeds from disposal of fixed assets and ordinary repairs/maintenance expenses.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 166
+      calculation:
+        type: sum
+        terms:
+        - fid: '30399'
+          sign: 1
+        - fid: '30420'
+          sign: 1
+        - fid: '30576'
+          sign: 1
+        - fid: '30502'
+          sign: 1
+    consolidated:
+      position: 170
+      calculation:
+        type: sum
+        terms:
+        - fid: '30399'
+          sign: 1
+        - fid: '30420'
+          sign: 1
+        - fid: '30576'
+          sign: 1
+        - fid: '30502'
+          sign: 1
+  evidence: template_inferred
+- fid: '30664'
+  name: Share Of Profit & Loss from Partnership Firm or Association of Persons Etc
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share of profit or loss from partnership firms or associations of persons accounted for using the equity method,
+      i.e. the investor’s proportional share of net earnings or losses from these investees.
+    includes:
+    - both profit and loss, and any equivalent line for associate/joint venture equity-accounted results only when the filing
+      uses partnership-firm/AOP terminology or analogous equity-accounted investee wording.
+    excludes:
+    - Exclude dividend income received from such entities, direct cash investment into them, and operating income from their
+      activities.
+    mapping_notes:
+    - This is not a cash flow amount itself, but a reported share-of-result line used in reconciliation contexts.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Share of net (profit)/loss of associate and joint venture accounted for using equity method
+    locations:
+    - OPERATING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 32
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30367'
+  name: Cash Receipts From Share Of Profits Of Partnership Firm Or Assn Of Persons
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash receipts from the share of profits of a partnership firm or association of persons, typically distributions
+      or profit remittances received in cash from such entities.
+    includes:
+    - actual cash received from the partnership/AOP profit share.
+    excludes:
+    - Exclude accounting share-of-profit recognition without cash receipt, dividend income from corporations, and capital
+      returns of investment principal.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 110
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '30366'
+  name: Cash Payment For Investment In Partnership Firm Or Assn Of Persons
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cash outflow for investment in a partnership firm or association of persons, including capital contribution,
+      purchase of partnership interest, or payments made toward such investment.
+    includes:
+    - net cash paid for acquisition or subscription to partnership/AOP interests when separately identified.
+    excludes:
+    - Exclude business acquisition payments for companies, ordinary operating expenses, and profit-share accounting entries.
+    mapping_notes:
+    - 'Sign convention: investment payments are cash outflows and should be negative if presented as a payment.'
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - INVESTING
+    rules:
+    - id: consolidated-business-acquisition-payments
+      status: reviewed
+      aliases:
+      - Payments for business acquisitions, net of cash acquired
+      scopes:
+      - consolidated
+      locations:
+      - investing
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 111
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '30665'
+  name: Share Of Profit & Loss from Partnership Firm or Associates
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share of profit or loss from partnership firms or similar associates, using equity-method accounting where the
+      investee is described as a partnership firm or associate.
+    includes:
+    - proportional net profit or loss recognized from such investments.
+    excludes:
+    - Exclude dividend income, actual cash receipts from profit distributions, and cash paid to invest in the entity.
+    mapping_notes:
+    - This is an equity-method result line, not a cash transaction amount.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - FINANCING
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 159
+      calculation:
+        type: reported
+  evidence: template_inferred

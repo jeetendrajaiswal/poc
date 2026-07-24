@@ -70,13 +70,18 @@ def _sha256_file(path: str) -> str:
 
 def _pipeline_sha256(sector_config) -> str:
     """Fingerprint every local input capable of changing report contents."""
-    paths = [sector_config.taxonomy_path,
+    paths = [sector_config.extraction_path,
              os.path.join(ROOT, "config", "default.yaml"),
              os.path.join(ROOT, "requirements.txt"),
              os.path.join(ROOT, "src", "webapp.py"),
              os.path.join(ROOT, "src", "config.py"),
              os.path.join(ROOT, "src", "llm.py")]
     paths += glob.glob(os.path.join(ROOT, "src", "engine", "*.py"))
+    paths += glob.glob(
+        os.path.join(
+            os.path.dirname(sector_config.taxonomy_path), "**", "*.yaml"),
+        recursive=True,
+    )
     paths += [
         os.path.join(ROOT, "scripts", name)
         for name in ("repair_raw.py", "verify_raw.py", "verify_delivered.py")
@@ -934,9 +939,13 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool,
 
         jobs[job_id]["message"] = "Processing…"
         from src.engine.tables_llm import maybe_trim_large_filing
-        pdf_in = maybe_trim_large_filing(pdf_path, log=log)
+        pdf_in = maybe_trim_large_filing(
+            pdf_path, log=log,
+            extraction_policy=sector_config.extraction_policy)
         log("EXTRACT: whole-file upload + per-statement questions")
-        tables = extract_tables_smart(pdf_in, mode="quarterly", log=log)
+        tables = extract_tables_smart(
+            pdf_in, mode="quarterly", log=log,
+            extraction_policy=sector_config.extraction_policy)
         rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
         # Deterministic un-mangling of the boxed-negative paren/comma glyph
         # ('(21,914)' -> text layer '121.914)'). Runs on EVERY statement — the
@@ -959,7 +968,9 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool,
         # free completeness tripwire: a statement the PDF prints but the model
         # never returned must surface, not vanish
         from src.engine.filing_chat import unextracted_statements
-        missing_stmts = unextracted_statements(pdf_in, tables)
+        missing_stmts = unextracted_statements(
+            pdf_in, tables,
+            extraction_policy=sector_config.extraction_policy)
         for kind in missing_stmts:
             log(f"⚠ COMPLETENESS: '{kind}' heading printed in the PDF but no "
                 "table extracted")
@@ -1019,8 +1030,10 @@ def _run_tables_job(job_id: str, name: str, pdf_path: str, fin_only: bool,
                     log(f"DOUBLE-READ: {len(_needs)} failing or source-unverified "
                         f"statement(s) -> paid cross-read: {sorted(_needs)}")
                     jobs[job_id]["message"] = "Processing…"
-                    _t2 = extract_tables_smart(pdf_in, mode="quarterly",
-                                               log=lambda m_: log(f"XREAD: {m_}"))
+                    _t2 = extract_tables_smart(
+                        pdf_in, mode="quarterly",
+                        log=lambda m_: log(f"XREAD: {m_}"),
+                        extraction_policy=sector_config.extraction_policy)
                     _lines = _sa.page_word_lines(pdf_path)
                     rows, _adopted = adopt_verified_second_reads(
                         rows, _t2, _needs, _forms, _lines, _untrusted)

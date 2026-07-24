@@ -1,0 +1,16 @@
+statement_exclusions:
+- id: ifrs
+  description: IFRS statement variants
+  header_patterns:
+  - ^\s*ifrs\s*[-–—:]
+  - \b(?:extracted\s+from|prepared\s+(?:under|in\s+accordance\s+with))\b.{0,80}\bifrs\b
+  - \bunder\s+ifrs\b
+- id: us-gaap
+  description: US GAAP statement variants
+  header_patterns:
+  - \b(?:prepared\s+(?:under|in\s+accordance\s+with))\b.{0,80}\bu\.?\s*s\.?\s+gaap\b
+- id: foreign-currency
+  description: foreign-currency statement variants
+  header_patterns:
+  - \bdollars?\s+in\s+(?:millions?|billions?)\b
+  - \bin\s+(?:us\s*)?\$\s*(?:millions?|billions?)\b

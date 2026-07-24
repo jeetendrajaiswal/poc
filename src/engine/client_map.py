@@ -3,10 +3,10 @@ field taxonomy BY MEANING, not by label (the proven taxonomy/definitions.yaml
 approach from the datapoint engine, applied to client fields).
 
 Pieces:
-  * config/<sector>/taxonomy.yaml — per client field: fid, name,
-    concept (economic DEFINITION with inclusion/exclusion/total-vs-component
-    guards), illustrative aliases. Generated from evidence (client template +
-    human mapping files + filing corpus), human-reviewable, versioned.
+  * config/<sector>/taxonomy.yaml — deterministic manifest for per-statement
+    field files, statement structure, and verification identities. Each field
+    defines fid, name, economic definition, reviewed aliases, output position,
+    and FID-based calculation.
   * The client template's 'Field Calculation / Logic' formulas are used for
     VERIFICATION: after mapping, each aggregate's mapped components must sum
     to its mapped printed value. A wrong mapping breaks arithmetic and flags.
@@ -15,6 +15,7 @@ Pieces:
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 
@@ -783,9 +784,107 @@ def _read_taxonomy_yaml(path: str) -> dict:
         return yaml.load(handle, Loader=UniqueKeyLoader) or {}
 
 
+def _referenced_config_path(manifest_path: str, reference: str) -> str:
+    """Resolve a manifest reference without allowing it to escape its sector."""
+    reference = str(reference or "").strip()
+    if not reference or os.path.isabs(reference):
+        raise ValueError(
+            f"taxonomy manifest contains invalid path {reference!r}")
+    sector_dir = os.path.realpath(os.path.dirname(manifest_path))
+    resolved = os.path.realpath(os.path.join(sector_dir, reference))
+    if os.path.commonpath((sector_dir, resolved)) != sector_dir:
+        raise ValueError(
+            f"taxonomy manifest path escapes sector directory: {reference!r}")
+    if not os.path.isfile(resolved):
+        raise FileNotFoundError(
+            f"taxonomy manifest file does not exist: {resolved}")
+    return resolved
+
+
+def _load_taxonomy_document(path: str) -> dict:
+    """Load and merge the sector taxonomy manifest deterministically."""
+    manifest = _read_taxonomy_yaml(path)
+    expected_manifest_keys = {
+        "sector", "name", "field_files", "structure_file", "identities_file",
+    }
+    if set(manifest) != expected_manifest_keys:
+        raise ValueError(
+            "taxonomy manifest must contain exactly "
+            + ", ".join(sorted(expected_manifest_keys)))
+    field_files = manifest.get("field_files")
+    if (not isinstance(field_files, list) or not field_files
+            or any(not str(value).strip() for value in field_files)
+            or len(field_files) != len(set(map(str, field_files)))):
+        raise ValueError(
+            "taxonomy manifest field_files must be a non-empty unique list")
+
+    structure_path = _referenced_config_path(
+        path, manifest["structure_file"])
+    structure = _read_taxonomy_yaml(structure_path)
+    if set(structure) != {"location_vocabulary", "statement_sections"}:
+        raise ValueError(
+            "statement structure must contain exactly "
+            "location_vocabulary and statement_sections")
+
+    identities_path = _referenced_config_path(
+        path, manifest["identities_file"])
+    identities_doc = _read_taxonomy_yaml(identities_path)
+    if set(identities_doc) != {"identities"}:
+        raise ValueError(
+            "identities file must contain exactly identities")
+
+    items = []
+    statements = set()
+    for reference in field_files:
+        field_path = _referenced_config_path(path, reference)
+        field_doc = _read_taxonomy_yaml(field_path)
+        if set(field_doc) != {"statement", "items"}:
+            raise ValueError(
+                f"field file {reference!r} must contain exactly "
+                "statement and items")
+        statement = str(field_doc.get("statement", "")).strip().lower()
+        field_items = field_doc.get("items")
+        if not statement or statement in statements:
+            raise ValueError(
+                f"field file has empty or duplicate statement {statement!r}")
+        if not isinstance(field_items, list) or not field_items:
+            raise ValueError(
+                f"field file {reference!r} must contain a non-empty items list")
+        statements.add(statement)
+        for raw_item in field_items:
+            if not isinstance(raw_item, dict):
+                raise ValueError(
+                    f"field item in {reference!r} must be an object")
+            if "statement" in raw_item:
+                raise ValueError(
+                    f"field item in {reference!r} must inherit statement "
+                    "from its file")
+            item = dict(raw_item)
+            item["statement"] = statement
+            items.append(item)
+
+    section_statements = {
+        str(value).strip().lower()
+        for value in structure["statement_sections"]
+    }
+    identity_statements = {
+        str(value).strip().lower()
+        for value in identities_doc["identities"]
+    }
+    if statements != section_statements or not identity_statements <= statements:
+        raise ValueError(
+            "field files, statement_sections, and identities use "
+            "inconsistent statement names")
+    return {
+        **structure,
+        **identities_doc,
+        "items": items,
+    }
+
+
 def load_taxonomy(path: str) -> Taxonomy:
     """{statement: [ {fid, name, concept, aliases, ...} ]}"""
-    doc = _read_taxonomy_yaml(path)
+    doc = _load_taxonomy_document(path)
     if not isinstance(doc, dict) or not isinstance(doc.get("items"), list):
         raise ValueError(f"taxonomy must contain an items list: {path}")
     allowed_locations = {

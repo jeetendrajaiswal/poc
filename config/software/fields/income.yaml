@@ -1,0 +1,4665 @@
+statement: income
+items:
+- fid: '256'
+  name: Gross Sales/Income from Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The filing's printed 'Revenue from operations' / 'Income from operations' / 'Net sales' line ALWAYS maps here
+      — this is the leaf input field (271 is computed from it by formula and must NEVER receive the printed revenue line).
+    includes: []
+    excludes: []
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Revenue from operations
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 2
+      calculation:
+        type: reported
+    consolidated:
+      position: 2
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '242'
+  name: Excise Duty
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Indirect tax or duty on sales that is deducted from gross operating revenue to arrive at net sales.
+    includes:
+    - excise duty or equivalent sales duty shown separately in older formats.
+    excludes:
+    - Excludes operating revenue itself and any other taxes not presented as a deduction from revenue.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 3
+      calculation:
+        type: reported
+    consolidated:
+      position: 3
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '271'
+  name: Net Sales/Income from Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Computed net-sales aggregate (gross less duties) — NEVER map the filing's printed 'Revenue from operations' line
+      here; that line always maps to 256.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Only use if the filing separately prints gross revenue and a net-of-duties subtotal (rare).
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '256'
+          sign: 1
+        - fid: '242'
+          sign: -1
+    consolidated:
+      position: 4
+      calculation:
+        type: sum
+        terms:
+        - fid: '256'
+          sign: 1
+        - fid: '242'
+          sign: -1
+  evidence: template_inferred
+- fid: '281'
+  name: Other Operating Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income arising from ordinary operating activities other than the main revenue from operations.
+    includes:
+    - miscellaneous operating receipts, operating incentives, service recoveries, and similar recurring operating items that
+      are not separately classified elsewhere.
+    excludes:
+    - Excludes non-operating income such as interest, dividend, forex gains, investment gains, and extraordinary/exceptional
+      items.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 5
+      calculation:
+        type: reported
+    consolidated:
+      position: 5
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '302'
+  name: Profit on Sale of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Gain realized on sale of investments, including disposal of mutual funds, securities, or other financial investments.
+    includes: []
+    excludes:
+    - Excludes interest, dividend income, unrealized fair-value changes, and gains on sale of fixed assets.
+    mapping_notes:
+    - Use only for the profit component from investment disposals.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 6
+      calculation:
+        type: reported
+    consolidated:
+      position: 6
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '258'
+  name: Income From Leases
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income earned from leasing arrangements where the company is the lessor, such as rental or lease receipts.
+    includes:
+    - lease revenue from operating or finance leases when disclosed as income.
+    excludes:
+    - Excludes rent expense, sublease payments made by the company, and gains on sale of leased assets.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 7
+      calculation:
+        type: reported
+    consolidated:
+      position: 7
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '266'
+  name: Total Income from Operations (net)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total revenue generated from operations, consisting of gross sales/income from operations plus other operating
+      income and any lease income treated as operating.
+    includes: []
+    excludes:
+    - Excludes other income that is non-operating in nature.
+    mapping_notes:
+    - This is the printed subtotal for operating income.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 8
+      calculation:
+        type: sum
+        terms:
+        - fid: '271'
+          sign: 1
+        - fid: '281'
+          sign: 1
+        - fid: '302'
+          sign: 1
+        - fid: '258'
+          sign: 1
+    consolidated:
+      position: 8
+      calculation:
+        type: sum
+        terms:
+        - fid: '271'
+          sign: 1
+        - fid: '281'
+          sign: 1
+        - fid: '302'
+          sign: 1
+        - fid: '258'
+          sign: 1
+  evidence: template_inferred
+- fid: '235'
+  name: Dividend Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income from equity dividends or similar profit distributions received from investments.
+    includes:
+    - dividend receipts from shares and units when reported as income.
+    excludes:
+    - Excludes dividend paid by the company, interest income, and gains from sale of investments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 10
+      calculation:
+        type: reported
+    consolidated:
+      position: 10
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '260'
+  name: Interest Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Interest earned on deposits, loans, investments, or other interest-bearing balances.
+    includes:
+    - coupon interest and interest on bank deposits or tax refunds if shown as interest income.
+    excludes:
+    - Excludes finance costs, dividend income, and gains from investment sale.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 11
+      calculation:
+        type: reported
+    consolidated:
+      position: 11
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '241'
+  name: Exchange Gain/(Loss)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net foreign-exchange gain or loss recognized in income, arising from translation or settlement of monetary items
+      and other FX exposures.
+    includes: []
+    excludes:
+    - Excludes translation differences taken directly to other comprehensive income.
+    mapping_notes:
+    - Use the net figure whether presented as gain or loss; gains are positive and losses are negative.
+    distinguish_from:
+    - '239'
+    - '240'
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 12
+      calculation:
+        type: reported
+    consolidated:
+      position: 12
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '306'
+  name: Provision Written Back
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Reversal of earlier provisions, reserves, or expected-loss allowances that is credited to income.
+    includes:
+    - provision written back, reserve reversal, and similar credit items.
+    excludes:
+    - Excludes fresh provisions, impairment charges, and ordinary operating expense accruals.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 13
+      calculation:
+        type: reported
+    consolidated:
+      position: 13
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '300'
+  name: Prior Year Income/(Expenditure)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income or expense relating to prior accounting periods, such as prior-year adjustments, prior-period corrections,
+      or back-dated charges/credits.
+    includes: []
+    excludes:
+    - Excludes current-period operating expenses and exceptional items unless explicitly classified as prior-year items.
+    mapping_notes:
+    - Use the net amount; credits are positive and charges are negative.
+    distinguish_from:
+    - '299'
+    - '301'
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 14
+      calculation:
+        type: reported
+    consolidated:
+      position: 14
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '251'
+  name: Gain (Loss) on Sale of Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss on disposal of fixed assets or other non-current assets.
+    includes: []
+    excludes:
+    - Excludes sale of investments, depreciation, and impairment losses.
+    mapping_notes:
+    - Gains and losses may be reported separately or netted; gains are positive and losses are negative.
+    distinguish_from:
+    - '249'
+    - '250'
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 15
+      calculation:
+        type: reported
+    consolidated:
+      position: 15
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '254'
+  name: Gain (Loss) on Sale of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss on sale of investments, securities, or similar financial assets.
+    includes: []
+    excludes:
+    - Excludes interest income, dividend income, unrealized fair-value movements, and gains on sale of fixed assets.
+    mapping_notes:
+    - Gains are positive and losses are negative.
+    distinguish_from:
+    - '252'
+    - '253'
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 16
+      calculation:
+        type: reported
+    consolidated:
+      position: 16
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '265'
+  name: Miscellaneous Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: A filing's single printed 'Other income' / 'Other income (net)' line maps HERE.
+    includes: []
+    excludes:
+    - NEVER map it to the Total Other Income aggregate (321) — 321 is only for a printed SUBTOTAL that aggregates multiple
+      separately-printed other-income components (interest income, dividend, forex gain etc.).
+    mapping_notes:
+    - Miscellaneous/other non-operating income of the period.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other income (net)
+    - Other income
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 17
+      calculation:
+        type: reported
+    consolidated:
+      position: 17
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '321'
+  name: Total Other Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Printed SUBTOTAL aggregating MULTIPLE separately-printed other-income components (interest, dividend, forex,
+      profit on investments...).
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Use ONLY when the filing prints such an aggregate line in addition to its components.
+    - A single 'Other income' line maps to 265, NOT here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 18
+      calculation:
+        type: sum
+        terms:
+        - fid: '235'
+          sign: 1
+        - fid: '260'
+          sign: 1
+        - fid: '241'
+          sign: 1
+        - fid: '306'
+          sign: 1
+        - fid: '300'
+          sign: 1
+        - fid: '251'
+          sign: 1
+        - fid: '254'
+          sign: 1
+        - fid: '265'
+          sign: 1
+    consolidated:
+      position: 18
+      calculation:
+        type: sum
+        terms:
+        - fid: '235'
+          sign: 1
+        - fid: '260'
+          sign: 1
+        - fid: '241'
+          sign: 1
+        - fid: '306'
+          sign: 1
+        - fid: '300'
+          sign: 1
+        - fid: '251'
+          sign: 1
+        - fid: '254'
+          sign: 1
+        - fid: '265'
+          sign: 1
+  evidence: template_inferred
+- fid: '25238'
+  name: Total Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Grand total revenue and income for the period, equal to revenue from operations plus total other income.
+    includes: []
+    excludes:
+    - Excludes expenses and profit measures.
+    mapping_notes:
+    - This is the printed top-line total income figure.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - TOTAL INCOME
+    - Total revenue
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 19
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '321'
+          sign: 1
+    consolidated:
+      position: 19
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '321'
+          sign: 1
+  evidence: client_mapping
+- fid: '230'
+  name: Cost of Materials Consumed
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Consumption cost of raw materials, components, consumables, or other materials used in producing goods or services.
+    includes:
+    - material purchases consumed in the period.
+    excludes:
+    - Excludes purchase of stock-in-trade, employee costs, outsourced services, and inventory change adjustments.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 21
+      calculation:
+        type: reported
+    consolidated:
+      position: 21
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '307'
+  name: Purchase of Stock-in-Trade
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Purchases of goods held for resale, including stock-in-trade bought by trading businesses.
+    includes: []
+    excludes:
+    - Excludes raw-material consumption and inventory change adjustments.
+    mapping_notes:
+    - May also absorb other operating purchase-type charges when presented as a combined line.
+    - Purchases of technology solutions / products or third-party software and hardware bought for resale or for embedding
+      in delivery map HERE (a purchase-of-goods line), NOT to Operating Expenses (276).
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Purchase of stock-in-trade
+    - Purchases and other operating expenditure
+    - Purchases of stock-in-trade
+    - Purchases of technology solutions
+    - Purchase of technology solutions
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 22
+      calculation:
+        type: reported
+    consolidated:
+      position: 22
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '227'
+  name: Changes in Inventories of Finished Goods, Work-In-Progress and Stock-In-Trade
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net change in inventories of finished goods, work-in-progress, and stock-in-trade recognized in profit and loss
+      as an expense reduction or expense increase.
+    includes: []
+    excludes:
+    - Excludes purchases and cost of materials consumed.
+    mapping_notes:
+    - A negative change in inventory is an expense release; a positive change is an expense.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Changes in inventories of finished goods stock-in-trade and work-in-progress
+    - Changes in inventories of stock-in-trade
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 23
+      calculation:
+        type: reported
+    consolidated:
+      position: 23
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '276'
+  name: Operating Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: External operating SERVICE costs incurred in running the business, such as subcontracting, outsourcing, consultancy,
+      facility services, technical fees, processing charges, and similar third-party operating expenses.
+    includes: []
+    excludes:
+    - Excludes employee costs, depreciation, finance costs, advertising, freight, and administration items classified separately.
+    - Excludes purchases of GOODS / technology products / software or hardware bought for resale or delivery — those are Purchase
+      of Stock-in-Trade (307), not an operating service cost.
+    mapping_notes:
+    - Often used as a broad catch-all for service-based operating costs.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Facility expenses
+    - Outsourcing costs
+    - Sub-contracting and technical fees
+    - Outsourcing and consultancy charges
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 24
+      calculation:
+        type: reported
+    consolidated:
+      position: 24
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '315'
+  name: Software Development Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Technology-related operating expense for software development tools, software licences, development platforms,
+      and similar internally used software costs.
+    includes:
+    - license fees and other directly attributable software-development costs when separately disclosed.
+    excludes:
+    - Excludes general IT service costs, employee costs, and amortization unless explicitly part of the line.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Cost of equipment and software licences
+    - Software license expense for internal use
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 25
+      calculation:
+        type: reported
+    consolidated:
+      position: 25
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '229'
+  name: Construction Material/Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Direct construction-related material and other project expenses incurred in construction or turnkey activity.
+    includes:
+    - construction materials, site expenses, and related direct costs.
+    excludes:
+    - Excludes general operating expenses, employee costs, and depreciation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 26
+      calculation:
+        type: reported
+    consolidated:
+      position: 26
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '263'
+  name: Licence Fee/Charges
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Fees and charges paid for licenses, permissions, permits, regulatory approvals, or similar entitlement costs.
+    includes:
+    - licence-related operating charges when separately shown.
+    excludes:
+    - Excludes software licences, royalty expense, and taxes/duties.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 27
+      calculation:
+        type: reported
+    consolidated:
+      position: 27
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '238'
+  name: Employee Benefit Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: All costs relating to employees, including salaries, wages, bonuses, incentives, gratuity, provident fund, contribution
+      expenses, and employee welfare.
+    includes:
+    - both cash and non-cash employee benefits.
+    excludes:
+    - Excludes contractor fees, outsourcing costs, and director remuneration only if separately classified outside employee
+      costs.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Employed benefits expense
+    - Employee benefit expenses
+    - Employee benefits expense
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 28
+      calculation:
+        type: reported
+    consolidated:
+      position: 28
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '232'
+  name: Depreciation, Depletion and Amortisation Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-cash charge for the periodic consumption of long-term assets, including depreciation, amortization, and depletion;
+      may include impairment if disclosed within the same line.
+    includes: []
+    excludes:
+    - Excludes finance costs and loss on asset sale.
+    mapping_notes:
+    - Use the gross expense amount as presented, with no offsetting income.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Depreciation amortisation and impairment expense
+    - Depreciation and amortisation expense
+    - Depreciation and amortization expense
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 29
+      calculation:
+        type: reported
+    consolidated:
+      position: 29
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '314'
+  name: Selling Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Expenses directly associated with selling activities, distribution, and market-facing functions.
+    includes:
+    - sales commissions, sales promotion, selling overheads, and related selling support costs.
+    excludes:
+    - Excludes advertising if separately classified, freight if separately classified, and general administration expenses.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 30
+      calculation:
+        type: reported
+    consolidated:
+      position: 30
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '217'
+  name: Advertising & Promotions
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Spending on advertising, marketing campaigns, brand building, publicity, and promotions.
+    includes:
+    - media spend and promotional program costs.
+    excludes:
+    - Excludes general selling salaries, freight, and pure administration costs.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Marketing and brand building
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 31
+      calculation:
+        type: reported
+    consolidated:
+      position: 31
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '248'
+  name: Freight & Handling Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Cost of moving goods or materials, including freight, transportation, shipping, handling, clearing, and forwarding
+      charges.
+    includes:
+    - outbound and inbound freight when presented as a logistics expense.
+    excludes:
+    - Excludes warehousing if classified separately and general administrative travel.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 32
+      calculation:
+        type: reported
+    consolidated:
+      position: 32
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '14861'
+  name: Administration Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: General administrative overheads not directly attributable to production or selling, such as legal fees, professional
+      charges, communication, office expenses, subscriptions, and similar back-office costs.
+    includes: []
+    excludes:
+    - Excludes employee costs, depreciation, finance costs, and selling-specific or production-specific expenses.
+    mapping_notes:
+    - Multiple minor admin expense lines may legitimately sum here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Communication
+    - Legal and professional charges
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 33
+      calculation:
+        type: reported
+    consolidated:
+      position: 33
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '323'
+  name: Travelling Cost
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Travel and related business travel expenditure, including fares, lodging, local conveyance, and travel allowances
+      when disclosed as a single line.
+    includes: []
+    excludes:
+    - Excludes employee salaries, customer entertainment, and general administration unless classified within travel.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Travel
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 34
+      calculation:
+        type: reported
+    consolidated:
+      position: 34
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '240'
+  name: Exchange (Gain)/Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net foreign-exchange gain or loss recognized in expense or other expense lines.
+    includes: []
+    excludes:
+    - Excludes translation differences routed to other comprehensive income.
+    mapping_notes:
+    - Use the net amount as reported, with gains positive and losses negative.
+    distinguish_from:
+    - '239'
+    - '241'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 35
+      calculation:
+        type: reported
+    consolidated:
+      position: 35
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '305'
+  name: Provision/Written Off/for Contingencies
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Provision expense, write-off, or contingency charge relating to doubtful debts, expected credit losses, claims,
+      litigation, warranties, or similar uncertain obligations.
+    includes:
+    - write-backs only when the line is explicitly netted and should be treated as negative.
+    excludes:
+    - Excludes routine operating expenses and depreciation.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Lifetime expected credit loss/ (write-back)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 36
+      calculation:
+        type: reported
+    consolidated:
+      position: 36
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '297'
+  name: Power and Fuel
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Power, electricity, fuel, and utility consumption used in operations.
+    includes:
+    - energy costs, power charges, diesel/fuel used for operations, and similar utility expense.
+    excludes:
+    - Excludes rent, repairs, and manufacturing materials.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 37
+      calculation:
+        type: reported
+    consolidated:
+      position: 37
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '299'
+  name: Prior Year (Income)/Expenditure
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income or expenditure relating to prior accounting periods, including prior-year provisions, adjustments, and
+      corrections.
+    includes: []
+    excludes:
+    - Excludes current-period normal operating expenses and exceptional items unless separately identified as prior-period
+      items.
+    mapping_notes:
+    - Use the net amount; credits are positive and charges are negative.
+    distinguish_from:
+    - '300'
+    - '301'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 38
+      calculation:
+        type: reported
+    consolidated:
+      position: 38
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '250'
+  name: (Gain) Loss on Sale of Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss on disposal of fixed assets or other non-current assets.
+    includes: []
+    excludes:
+    - Excludes sale of investments and any depreciation or impairment charge on assets retained in use.
+    mapping_notes:
+    - Gains are positive and losses are negative.
+    distinguish_from:
+    - '249'
+    - '251'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 39
+      calculation:
+        type: reported
+    consolidated:
+      position: 39
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '253'
+  name: (Gain) Loss on Sale of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss recognized on disposal of equity shares, debt securities, mutual funds, or other investments
+      held by the company.
+    includes:
+    - realized proceeds minus carrying value and any related disposal gain/loss line.
+    excludes:
+    - Excludes gains/losses on sale of fixed assets, revaluation changes, fair value changes not arising from sale, and interest/dividend
+      income from investments.
+    - Never map a printed total/aggregate line here.
+    mapping_notes: []
+    distinguish_from:
+    - '252'
+    - '254'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 40
+      calculation:
+        type: reported
+    consolidated:
+      position: 40
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '246'
+  name: Finance Costs
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Financing cost expense incurred for borrowing and other finance arrangements.
+    includes:
+    - interest on loans and borrowings, debentures, lease finance cost, bank charges, commitment fees, and similar borrowing-related
+      costs.
+    excludes:
+    - Excludes foreign exchange gain/loss on borrowings unless separately embedded in a finance-cost note line and excluded
+      from this field by the source presentation, and excludes discounting gains/credits.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Finance costs
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 41
+      calculation:
+        type: reported
+    consolidated:
+      position: 41
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '247'
+  name: Foreign Exchange (Gain)/Loss (Finance Cost)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Foreign exchange gain or loss that is reported within finance costs because it arises from borrowings, lease
+      liabilities, or other financing liabilities.
+    includes: []
+    excludes:
+    - Excludes standalone operating exchange differences, translation differences on foreign operations, and non-financing
+      FX gains/losses reported elsewhere.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - Map only the FX component of finance cost presentation.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 42
+      calculation:
+        type: reported
+    consolidated:
+      position: 42
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '279'
+  name: Other Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Residual operating and non-operating expenses not captured by specific expense heads elsewhere in the statement.
+    includes:
+    - miscellaneous administrative, selling, and other recurring expenses when presented as a single ‘other expenses’ line,
+      and may include small sundry charges aggregated by the company.
+    excludes:
+    - Excludes employee benefits, finance costs, depreciation/amortisation, tax, exceptional items, and any clearly identified
+      specific expense category.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other expenses
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 43
+      calculation:
+        type: reported
+    consolidated:
+      position: 43
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '243'
+  name: Expenses Capitalised
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Amount of costs that are capitalized rather than expensed in the period, reducing reported expenses.
+    includes:
+    - staff, overhead, borrowing, or development costs transferred to qualifying assets or work-in-progress when the source
+      statement presents a separate ‘expenses capitalised’ adjustment.
+    excludes:
+    - Excludes actual expense lines themselves and does not include depreciation of already capitalized assets.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 44
+      calculation:
+        type: reported
+    consolidated:
+      position: 44
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '320'
+  name: Total Expenses
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total of all operating and non-operating expense components shown in the income statement, after deducting any
+      expenses capitalised if the statement presents that reduction.
+    includes:
+    - the sum of employee costs, finance costs, depreciation/amortisation, other expenses, impairment, and any other ordinary
+      expense components included in the company’s expense block.
+    excludes:
+    - Excludes tax expense and exceptional-item subtotal unless the filing explicitly classifies them within expenses.
+    mapping_notes:
+    - The printed total expense line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - TOTAL EXPENSES
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 45
+      calculation:
+        type: sum
+        terms:
+        - fid: '230'
+          sign: 1
+        - fid: '307'
+          sign: 1
+        - fid: '227'
+          sign: 1
+        - fid: '276'
+          sign: 1
+        - fid: '315'
+          sign: 1
+        - fid: '229'
+          sign: 1
+        - fid: '263'
+          sign: 1
+        - fid: '238'
+          sign: 1
+        - fid: '232'
+          sign: 1
+        - fid: '314'
+          sign: 1
+        - fid: '217'
+          sign: 1
+        - fid: '248'
+          sign: 1
+        - fid: '14861'
+          sign: 1
+        - fid: '323'
+          sign: 1
+        - fid: '240'
+          sign: 1
+        - fid: '305'
+          sign: 1
+        - fid: '297'
+          sign: 1
+        - fid: '299'
+          sign: 1
+        - fid: '250'
+          sign: 1
+        - fid: '253'
+          sign: 1
+        - fid: '246'
+          sign: 1
+        - fid: '247'
+          sign: 1
+        - fid: '279'
+          sign: 1
+        - fid: '243'
+          sign: -1
+    consolidated:
+      position: 45
+      calculation:
+        type: sum
+        terms:
+        - fid: '230'
+          sign: 1
+        - fid: '307'
+          sign: 1
+        - fid: '227'
+          sign: 1
+        - fid: '276'
+          sign: 1
+        - fid: '315'
+          sign: 1
+        - fid: '229'
+          sign: 1
+        - fid: '263'
+          sign: 1
+        - fid: '238'
+          sign: 1
+        - fid: '232'
+          sign: 1
+        - fid: '314'
+          sign: 1
+        - fid: '217'
+          sign: 1
+        - fid: '248'
+          sign: 1
+        - fid: '14861'
+          sign: 1
+        - fid: '323'
+          sign: 1
+        - fid: '240'
+          sign: 1
+        - fid: '305'
+          sign: 1
+        - fid: '297'
+          sign: 1
+        - fid: '299'
+          sign: 1
+        - fid: '250'
+          sign: 1
+        - fid: '253'
+          sign: 1
+        - fid: '246'
+          sign: 1
+        - fid: '247'
+          sign: 1
+        - fid: '279'
+          sign: 1
+        - fid: '243'
+          sign: -1
+  evidence: client_mapping
+- fid: '293'
+  name: Profit/(Loss) from Operations before Other Income, Finance Costs and Exceptional Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Operating profit or loss before other income, finance costs, and exceptional items.
+    includes: []
+    excludes:
+    - Excludes other income, finance costs, exceptional items, and tax.
+    - Never map a line that already includes finance cost or exceptional items.
+    mapping_notes:
+    - This is the result of revenue from operations minus operating expenses, optionally adjusted for expenses capitalised
+      if the source statement presents that adjustment in the operating section.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 46
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+    consolidated:
+      position: 46
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+  evidence: template_inferred
+- fid: '295'
+  name: Profit/(Loss) from Ordinary Activities before Finance Costs and Exceptional Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss from ordinary activities before finance costs and exceptional items.
+    includes:
+    - operating profit plus other income as presented before deducting finance costs.
+    excludes:
+    - Excludes exceptional items and tax.
+    - Do not map a line that already includes finance costs or exceptional items; the printed subtotal before finance costs
+      maps here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 47
+      calculation:
+        type: sum
+        terms:
+        - fid: '25238'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+    consolidated:
+      position: 47
+      calculation:
+        type: sum
+        terms:
+        - fid: '25238'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+  evidence: template_inferred
+- fid: '294'
+  name: Profit/(Loss) from Ordinary Activities after Finance Costs but before Exceptional Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss from ordinary activities after finance costs but before exceptional items.
+    includes:
+    - ordinary operating result plus other income minus finance costs, before any exceptional gains or losses.
+    excludes:
+    - Excludes exceptional items and tax.
+    mapping_notes:
+    - The printed subtotal for profit before exceptional items and tax maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - PROFIT BEFORE EXCEPTIONAL ITEM AND TAX
+    - Profit before exceptional items and tax
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 48
+      calculation:
+        type: sum
+        terms:
+        - fid: '25238'
+          sign: 1
+        - fid: '320'
+          sign: -1
+    consolidated:
+      position: 49
+      calculation:
+        type: sum
+        terms:
+        - fid: '25238'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '25236'
+          sign: 1
+  evidence: client_mapping
+- fid: '239'
+  name: Exchange Gain/(Loss)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net foreign exchange gain or loss arising from remeasurement, translation, or settlement of monetary items outside
+      the finance-cost presentation.
+    includes:
+    - exchange differences on trade receivables/payables, loans, cash, and similar monetary exposures when reported as a standalone
+      exchange gain/loss line.
+    excludes:
+    - Excludes translation differences on foreign operations that go to OCI and excludes any FX element already included in
+      finance costs.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '240'
+    - '241'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 50
+      calculation:
+        type: reported
+    consolidated:
+      position: 51
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '249'
+  name: Gain (Loss) on Sale of Assets
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Gain or loss on disposal of non-current operating assets such as property, plant and equipment, equipment, software,
+      intangibles, or other fixed assets.
+    includes:
+    - realized gains/losses on asset sales and related disposal results.
+    excludes:
+    - Excludes gains/losses on sale of investments, impairment, depreciation, and revaluation changes.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '250'
+    - '251'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 51
+      calculation:
+        type: reported
+    consolidated:
+      position: 52
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '252'
+  name: Gain (Loss) on Sale of Investments
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net gain or loss on disposal of investments.
+    includes:
+    - realized results from sale of shares, securities, mutual funds, or other financial investments when the line is specifically
+      about investments rather than fixed assets.
+    excludes:
+    - Excludes gains/losses on sale of assets, unrealized fair value changes, dividend income, and interest income.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '253'
+    - '254'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 52
+      calculation:
+        type: reported
+    consolidated:
+      position: 53
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '310'
+  name: Restructuring Costs
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Expense from restructuring activities, such as reorganization, closure, redundancy, severance, plant shutdown,
+      contract termination, or other one-off restructuring charges.
+    includes:
+    - only the restructuring component as reported.
+    excludes:
+    - Excludes ordinary employee costs, impairment, and other exceptional items not specifically restructuring.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Re-structuring expenses
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 53
+      calculation:
+        type: reported
+    consolidated:
+      position: 54
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '301'
+  name: Prior Year Income/(Expenditure)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income or expense items relating to prior accounting years that are recognized in the current period.
+    includes:
+    - prior-period adjustments, prior-year income, and prior-year expenditure write-backs/charges when shown as a separate
+      line.
+    excludes:
+    - Excludes current-period normal operating items and all exceptional items unless explicitly labeled as prior-year.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from:
+    - '299'
+    - '300'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 54
+      calculation:
+        type: reported
+    consolidated:
+      position: 55
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '278'
+  name: Other Exceptional Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Non-routine exceptional gain or loss not classified into a more specific exceptional category.
+    includes:
+    - one-off charges, credits, write-backs, settlements, regulatory impacts, and other material unusual items presented as
+      exceptional.
+    excludes:
+    - Excludes restructuring costs, prior-year items, gains/losses on sale of assets or investments, and extraordinary items.
+    - Never map a printed total/subtotal line here.
+    mapping_notes:
+    - Negative amounts represent credits or gains where the filing uses that convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - 'Exceptional items: charge / (credit)'
+    - 'Exceptional items: charge'
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 55
+      calculation:
+        type: reported
+    consolidated:
+      position: 56
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '319'
+  name: Total Exceptional Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total of all exceptional items included in the statement, comprising restructuring costs, prior-year items, gains
+      or losses on sale of assets, gains or losses on sale of investments, other exceptional items, and any similar exceptional
+      components separately disclosed.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Positive amounts are charges/expenses; credits or gains are negative when the filing uses that sign convention.
+    - The printed exceptional-item total maps here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 56
+      calculation:
+        type: sum
+        terms:
+        - fid: '239'
+          sign: 1
+        - fid: '249'
+          sign: 1
+        - fid: '252'
+          sign: 1
+        - fid: '310'
+          sign: 1
+        - fid: '301'
+          sign: 1
+        - fid: '278'
+          sign: 1
+    consolidated:
+      position: 57
+      calculation:
+        type: sum
+        terms:
+        - fid: '239'
+          sign: 1
+        - fid: '249'
+          sign: 1
+        - fid: '252'
+          sign: 1
+        - fid: '310'
+          sign: 1
+        - fid: '301'
+          sign: 1
+        - fid: '278'
+          sign: 1
+  evidence: template_inferred
+- fid: '296'
+  name: Profit/(Loss) From Ordinary Activities before Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss before tax after adding or subtracting exceptional items from profit before exceptional items.
+    includes:
+    - ordinary activities result plus total exceptional items, but excludes tax.
+    excludes: []
+    mapping_notes:
+    - The printed profit-before-tax line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - PROFIT BEFORE TAX
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 57
+      calculation:
+        type: sum
+        terms:
+        - fid: '294'
+          sign: 1
+        - fid: '319'
+          sign: 1
+    consolidated:
+      position: 58
+      calculation:
+        type: sum
+        terms:
+        - fid: '294'
+          sign: 1
+        - fid: '319'
+          sign: 1
+  evidence: client_mapping
+- fid: '318'
+  name: Tax Expense
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'CURRENT income-tax expense: the printed ''Current tax'' line ONLY.'
+    includes: []
+    excludes:
+    - NEVER map the printed 'Total tax expense' line to any field (it has no field; the formula verifies it), and NEVER include
+      deferred tax (that is 231).
+    mapping_notes:
+    - The client computes net profit as PBT minus 318 minus 231, so this must hold only current tax.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Current tax
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 58
+      calculation:
+        type: reported
+    consolidated:
+      position: 59
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '231'
+  name: Deferred Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'DEFERRED tax charge/(credit) in profit or loss: the printed ''Deferred tax'' line ONLY.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The printed 'Total tax expense' line maps NOWHERE (no field exists; formula-verified).
+    - Current tax maps to 318.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Deferred tax
+    - Deferred tax charge
+    - Deferred tax charge (credit)
+    - Deferred tax (credit) charge
+    - Deferred tax credit
+    - Deferred tax expense (benefit)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 59
+      calculation:
+        type: reported
+    consolidated:
+      position: 60
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '270'
+  name: Net Profit/(Loss) from Ordinary Activities after Tax
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net profit or loss from ordinary activities after tax, i.e. profit before tax minus current and deferred tax,
+      before any extraordinary items or discontinued operations are included.
+    includes: []
+    excludes:
+    - Excludes extraordinary items and discontinued operations.
+    mapping_notes:
+    - This is an after-tax subtotal for continuing ordinary activities.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 60
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '318'
+          sign: -1
+        - fid: '231'
+          sign: -1
+    consolidated:
+      position: 61
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '318'
+          sign: -1
+        - fid: '231'
+          sign: -1
+  evidence: template_inferred
+- fid: '244'
+  name: Extraordinary Items
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Extraordinary gains or losses arising from events clearly distinct from ordinary business operations and expected
+      to be rare or abnormal.
+    includes:
+    - extraordinary items only when the filing explicitly uses that category.
+    excludes:
+    - Excludes exceptional items, restructuring, prior-year items, and discontinued operations unless specifically classified
+      as extraordinary.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 61
+      calculation:
+        type: reported
+    consolidated:
+      position: 62
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20017'
+  name: Profit/(Loss) for the Period from Continuing Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss from continuing operations after tax, combining ordinary activities after tax and any extraordinary
+      items if separately presented within continuing operations.
+    includes: []
+    excludes:
+    - Excludes discontinued operations entirely.
+    mapping_notes:
+    - This is the continuing-operations after-tax subtotal.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 62
+      calculation:
+        type: sum
+        terms:
+        - fid: '270'
+          sign: 1
+        - fid: '244'
+          sign: 1
+    consolidated:
+      position: 63
+      calculation:
+        type: sum
+        terms:
+        - fid: '270'
+          sign: 1
+        - fid: '244'
+          sign: 1
+  evidence: template_inferred
+- fid: '20016'
+  name: Profit/(Loss) from Discontinuing Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Pre-tax profit or loss from discontinued operations, i.e. the operating result of a business component that has
+      been disposed of, held for sale, or otherwise discontinued.
+    includes: []
+    excludes:
+    - Excludes tax on discontinued operations and excludes continuing operations.
+    - Never map a printed total/subtotal line here.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 63
+      calculation:
+        type: reported
+    consolidated:
+      position: 64
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20018'
+  name: Tax Expense of Discontinuing Operations
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income tax expense or benefit attributable specifically to discontinued operations.
+    includes:
+    - current and deferred tax on discontinued operations when presented separately.
+    excludes:
+    - Excludes tax on continuing operations and tax effects in OCI.
+    mapping_notes:
+    - Positive values usually represent expense; negative values represent tax benefit.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 64
+      calculation:
+        type: reported
+    consolidated:
+      position: 65
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '20015'
+  name: Net Profit From Discontinuing Operations (After Tax)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net profit or loss from discontinued operations after tax, calculated as discontinued-operations profit or loss
+      minus tax on discontinued operations.
+    includes: []
+    excludes:
+    - Excludes continuing operations.
+    mapping_notes:
+    - The after-tax subtotal for discontinued operations maps here.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 65
+      calculation:
+        type: sum
+        terms:
+        - fid: '20016'
+          sign: 1
+        - fid: '20018'
+          sign: -1
+    consolidated:
+      position: 66
+      calculation:
+        type: sum
+        terms:
+        - fid: '20016'
+          sign: 1
+        - fid: '20018'
+          sign: -1
+  evidence: template_inferred
+- fid: '269'
+  name: Net Profit/(Loss) for the Period
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Net profit or loss for the period attributable to the full statement of profit and loss, after continuing and
+      discontinued operations and after tax.
+    includes:
+    - all profit/loss components that flow through profit or loss for the period.
+    excludes:
+    - Excludes OCI and equity movements outside profit or loss.
+    mapping_notes:
+    - The printed bottom-line profit for the period maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - PROFIT FOR THE PERIOD
+    - Profit for the period / year
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 66
+      calculation:
+        type: sum
+        terms:
+        - fid: '20017'
+          sign: 1
+        - fid: '20015'
+          sign: 1
+    consolidated:
+      position: 70
+      calculation:
+        type: sum
+        terms:
+        - fid: '268'
+          sign: 1
+        - fid: '292'
+          sign: 1
+        - fid: '264'
+          sign: -1
+  evidence: client_mapping
+- fid: '16484'
+  name: Other Comprehensive Income
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total other comprehensive income or loss for the period, being the sum of OCI items after tax across both non-reclassifiable
+      and reclassifiable categories.
+    includes:
+    - all OCI components after tax, such as remeasurement items and foreign currency translation differences, net of related
+      tax effects.
+    excludes:
+    - Excludes profit or loss items.
+    mapping_notes:
+    - The printed total OCI line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other comprehensive income
+    - TOTAL OTHER COMPREHENSIVE INCOME / (LOSSES)
+    - Total other comprehensive income (loss) net of tax
+    - Total other comprehensive income for the period net of taxes
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 67
+      calculation:
+        type: sum
+        terms:
+        - fid: '22293'
+          sign: 1
+        - fid: '22295'
+          sign: 1
+        - fid: '22294'
+          sign: 1
+        - fid: '22296'
+          sign: 1
+    consolidated:
+      position: 71
+      calculation:
+        type: sum
+        terms:
+        - fid: '22293'
+          sign: 1
+        - fid: '22295'
+          sign: 1
+        - fid: '22294'
+          sign: 1
+        - fid: '22296'
+          sign: 1
+  evidence: client_mapping
+- fid: '22293'
+  name: Items that will not be reclassified to Profit or Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'OCI items that will NOT be reclassified to profit or loss: remeasurements of defined benefit plans, fair-value
+      changes of EQUITY instruments designated at FVOCI, and related taxes when printed within this block.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - 'NOTE: fair-value changes of investments OTHER THAN equity (debt instruments/mutual funds at FVOCI) are RECLASSIFIABLE
+      and map to 22294, never here.'
+    - Multiple qualifying lines sum here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Items that will not be reclassified to statement of profit and loss
+    - Net change in equity instruments through other comprehensive
+    - Net change in fair value of investment in equity instruments measured at fair value through OCI
+    - Net change in fair values of investments in equity shares carried at fair value through OCI
+    - Re-measurement gains/ (losses) on defined
+    - Re-measurement of defined benefit plans
+    - re measurements of the defined benefit plans net
+    - remeasurement of defined employee benefit plans
+    - remeasurements of the defined benefit plans net
+    - remeasurments of the defined benefit plan net
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 68
+      calculation:
+        type: reported
+    consolidated:
+      position: 72
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22295'
+  name: Income Tax related to items that will not be reclassified to Profit or Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income tax expense or benefit relating to OCI items that will never be reclassified to profit or loss.
+    includes:
+    - deferred tax effect on non-recyclable OCI items such as remeasurement of defined benefit plans or fair value changes
+      on equity instruments through OCI.
+    excludes:
+    - Excludes tax on recyclable OCI items and tax in profit or loss.
+    mapping_notes:
+    - Usually sign follows the tax effect presentation in the filing.
+    distinguish_from:
+    - '22296'
+  mapping:
+    aliases:
+    - Deferred taxes relating to items that will not be reclassified to profit or loss
+    - Income tax effect
+    - Income tax effect on (a) above
+    - Income tax on items that will not be reclassified to profit or loss
+    - Income tax relating to items that will not be reclassified to statement of profit and loss
+    - income tax on items that will not be reclassified subsequently to profit or loss
+    locations:
+    - STATEMENT-WIDE
+    rules:
+    - id: nonreclassifying-oci-tax-second-unqualified-row
+      status: reviewed
+      aliases:
+      - Income tax effect
+      occurrence: last
+      min_occurrences: 2
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 69
+      calculation:
+        type: reported
+    consolidated:
+      position: 73
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22294'
+  name: Items that will be reclassified to Profit or Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: 'OCI items that WILL be reclassified to profit or loss in future periods: foreign currency translation differences,
+      cash-flow-hedge fair value changes (time/intrinsic/forward elements), and fair-value changes of DEBT instruments / investments
+      OTHER THAN equity at FVOCI, plus related taxes when printed within this block.'
+    includes: []
+    excludes: []
+    mapping_notes:
+    - Equity-instrument FVOCI changes map to 22293, never here.
+    - Multiple qualifying lines sum here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Exchange difference on translation of foreign operation
+    - Exchange differences on translation of financial statements of foreign operations
+    - Foreign currency translation differences relating to foreign operations
+    - Items that will be reclassified to statement of profit and loss
+    - Net change in fair value of derivatives designated as cash flow
+    - Net change in fair value of forward contracts designated as cash flow hedges
+    - net change in fair value of investment in debt instruments measured at fair value through oci
+    - net change in fair values of investments other than equity shares carried at fair value through oci
+    - net change in fair values of investments other than equityshares carried at fair value through oci
+    - net change in intrinsic value of derivatives designated as cash flow hedges
+    - net change in intrinsic value of option contracts designated as cash flow hedges
+    - net change in time vaiue of derivatives designated as cash flow hedges
+    - net change in time value of derivatives designated as cash flow hedges
+    - net change in time value of option contracts designated as cash flow hedges
+    - net movement on effective portion of cash flow hedges gains losses
+    - reclassification of foreign currency translation differences on liquidation of subsidiaries to statement of profit and
+      loss
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 70
+      calculation:
+        type: reported
+    consolidated:
+      position: 74
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22296'
+  name: Income Tax related to items that will be reclassified to Profit or Loss
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Income tax expense or benefit relating to OCI items that may be reclassified to profit or loss in future periods.
+    includes:
+    - deferred tax effect on recyclable OCI reserves such as cash flow hedges and foreign currency translation items where
+      the filing presents a tax line for them.
+    excludes:
+    - Excludes tax on non-recyclable OCI items and tax in profit or loss.
+    mapping_notes:
+    - Usually sign follows the tax effect presentation in the filing.
+    distinguish_from:
+    - '22295'
+  mapping:
+    aliases:
+    - Deferred taxes relating to items that will be reclassified to profit or loss
+    - Income tax effect
+    - Income tax effect on (b) above
+    - Income tax on items that will be reclassified subsequently to profit or loss
+    - Income tax relating to items that will be reclassified to statement of profit and loss
+    locations:
+    - STATEMENT-WIDE
+    rules:
+    - id: reclassifying-oci-tax-first-unqualified-row
+      status: reviewed
+      aliases:
+      - Income tax effect
+      occurrence: first
+      min_occurrences: 2
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 71
+      calculation:
+        type: reported
+    consolidated:
+      position: 75
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '20019'
+  name: Total Comprehensive Gain (Loss) For the Year
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total comprehensive income or loss for the period, equal to profit or loss for the period plus other comprehensive
+      income net of tax, and after including any discontinued-operation amounts if the statement presents them within total
+      comprehensive income.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is the final comprehensive income bottom line.
+    - The printed total comprehensive income line maps here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - TOTAL COMPREHENSIVE INCOME FOR THE PERIOD
+    - Total comprehensive income for the period / year
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 72
+      calculation:
+        type: sum
+        terms:
+        - fid: '269'
+          sign: 1
+        - fid: '16484'
+          sign: 1
+    consolidated:
+      position: 76
+      calculation:
+        type: sum
+        terms:
+        - fid: '269'
+          sign: 1
+        - fid: '16484'
+          sign: 1
+  evidence: client_mapping
+- fid: '282'
+  name: Paid-Up Equity Share Capital
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Issued and paid-up equity share capital outstanding at the reporting date, measured in monetary amount.
+    includes:
+    - only equity share capital actually paid in, not authorized capital, preference share capital, share premium, or reserves.
+    excludes: []
+    mapping_notes:
+    - The share-count is not this field; this field is the rupee amount of paid-up equity capital as reported.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - 'Paid up equity share capital (Face vaIue: ₹  per share)'
+    - Paid up equity share capital (Face value of 10/- per equity share)
+    - Paid up equity share capital (Par value ₹ 2 per share)
+    - 'Paid-up equity share capital (Face value: ₹ 2 each)'
+    - paid up equity share capital rs 2 each
+    - paid up equityshare capital face value per share
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 73
+      calculation:
+        type: reported
+    consolidated:
+      position: 86
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '245'
+  name: Face Value
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: point_in_time
+  definition:
+    meaning: Par or face value per equity share used to describe the company’s share capital denomination.
+    includes: []
+    excludes:
+    - Do not map aggregate capital lines here.
+    mapping_notes:
+    - This is a per-share nominal amount, not the number of shares and not the paid-up capital amount.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 74
+      calculation:
+        type: reported
+    consolidated:
+      position: 87
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '309'
+  name: Reserve excluding Revaluation Reserves (as per Balance Sheet of Previous Accounting Year)
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Accumulated reserves and surplus / other equity balance carried forward from the prior year balance sheet, excluding
+      revaluation reserves.
+    includes:
+    - retained earnings, general reserves, and other equity balances reported as part of shareholders’ funds.
+    excludes:
+    - Excludes paid-up share capital, revaluation reserve, and non-controlling interests.
+    mapping_notes:
+    - This is an equity stock amount, not a flow for the period.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other equity
+    - Other equity attributable to owners of the Company
+    - Reserve excluding revaluation reserve
+    - Reserve excluding revaluation reserves as per balance sheet
+    - Reserves excluding revaluation reserves and Non­ controlling interests as per balance sheet
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 75
+      calculation:
+        type: reported
+    consolidated:
+      position: 88
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '222'
+  name: Basic EPS
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: duration
+  definition:
+    meaning: Basic earnings per share AS REPORTED — the filing's standard printed 'Basic (in ₹)' / 'Basic EPS' line.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is the DEFAULT target for the basic EPS line of every filing.
+    - A COMBINED 'Basic and diluted' single EPS row also maps HERE.
+    distinguish_from:
+    - '221'
+  mapping:
+    aliases:
+    - Basic (in ₹)
+    - Basic EPS (Rs.)
+    - Earnings per equity share:- Basic and diluted (₹)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 77
+      calculation:
+        type: reported
+    consolidated:
+      position: 90
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '234'
+  name: Diluted EPS
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: duration
+  definition:
+    meaning: Diluted earnings per share AS REPORTED — the filing's standard printed 'Diluted (in ₹)' / 'Diluted EPS' line.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - DEFAULT target for the diluted EPS line.
+    distinguish_from:
+    - '233'
+  mapping:
+    aliases:
+    - Diluted (in ₹)
+    - Diluted EPS (Rs.)
+    - Diluted EPS (in ₹)
+    - Earnings per equity share (EPS) in ₹ (not annualised) Diluted (₹)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 78
+      calculation:
+        type: reported
+    consolidated:
+      position: 91
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '221'
+  name: Basic EPS
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: duration
+  definition:
+    meaning: Basic EPS BEFORE extraordinary items — use ONLY when the filing explicitly prints a separate basic EPS 'before
+      extraordinary/exceptional items' line.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The plain 'Basic EPS' line maps to 222, NEVER here.
+    distinguish_from:
+    - '222'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 80
+      calculation:
+        type: reported
+    consolidated:
+      position: 93
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '233'
+  name: Diluted EPS
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: duration
+  definition:
+    meaning: Diluted EPS BEFORE extraordinary items — use ONLY when the filing explicitly prints a separate diluted EPS 'before
+      extraordinary/exceptional items' line.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - The plain 'Diluted EPS' line maps to 234, NEVER here.
+    distinguish_from:
+    - '234'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 81
+      calculation:
+        type: reported
+    consolidated:
+      position: 94
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '224'
+  name: Book Value Per Share (Before Extraordinary Items)
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: point_in_time
+  definition:
+    meaning: Net worth per equity share before extraordinary items or exceptional/extraordinary adjustments, calculated from
+      equity attributable to shareholders divided by outstanding equity shares.
+    includes:
+    - the pre-extraordinary-items book value per share line exactly as disclosed.
+    excludes:
+    - Excludes the post-extraordinary-items book value measure and any face-value/share-capital amounts.
+    mapping_notes:
+    - This is a per-share amount, not a total equity balance.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Book value per share before extraordinary items
+    - Book value per equity share (before extraordinary items)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 82
+      calculation:
+        type: reported
+    consolidated:
+      position: 95
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '223'
+  name: Book Value Per Share  (After Extraordinary Items)
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: point_in_time
+  definition:
+    meaning: Net worth per equity share after extraordinary items or exceptional/extraordinary adjustments, calculated from
+      shareholders’ equity divided by outstanding equity shares.
+    includes:
+    - the post-extraordinary-items book value per share line exactly as disclosed.
+    excludes:
+    - Excludes the before-extraordinary-items measure and any total equity or share capital line.
+    mapping_notes:
+    - This is a per-share amount, not a balance-sheet total.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Book value per share after extraordinary items
+    - Book value per equity share (after extraordinary items)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 83
+      calculation:
+        type: reported
+    consolidated:
+      position: 96
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '218'
+  name: BASEL - I Capital Adequacy (CRAR) (%)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Capital adequacy ratio under Basel I, expressed as a percentage of regulatory capital to risk-weighted assets.
+    includes:
+    - the Basel I CRAR line disclosed by banks.
+    excludes:
+    - Excludes Basel II and Basel III ratios and leverage/liquidity ratios.
+    mapping_notes:
+    - This is a regulatory percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - BASEL - I Capital Adequacy (CRAR) (%)
+    - Basel I CRAR (%)
+    - Capital adequacy ratio (Basel I)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 86
+      calculation:
+        type: reported
+    consolidated:
+      position: 104
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '219'
+  name: BASEL - II Capital Adequacy (CRAR) (%)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Capital adequacy ratio under Basel II, expressed as a percentage of regulatory capital to risk-weighted assets.
+    includes:
+    - the Basel II CRAR line disclosed by banks.
+    excludes:
+    - Excludes Basel I and Basel III ratios and other prudential ratios.
+    mapping_notes:
+    - This is a regulatory percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - BASEL - II Capital Adequacy (CRAR) (%)
+    - Basel II CRAR (%)
+    - Capital adequacy ratio (Basel II)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 87
+      calculation:
+        type: reported
+    consolidated:
+      position: 105
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '220'
+  name: BASEL - III Capital Adequacy (CRAR) (%)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Capital adequacy ratio under Basel III, expressed as a percentage of regulatory capital to risk-weighted assets.
+    includes:
+    - the Basel III CRAR line disclosed by banks.
+    excludes:
+    - Excludes Basel I and Basel II ratios and other capital or liquidity ratios.
+    mapping_notes:
+    - This is a regulatory percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - BASEL - III Capital Adequacy (CRAR) (%)
+    - Basel III CRAR (%)
+    - Capital adequacy ratio (Basel III)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 88
+      calculation:
+        type: reported
+    consolidated:
+      position: 106
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '255'
+  name: Amount of Gross NPA
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Gross non-performing assets measured as the amount outstanding before deducting provisions or write-offs.
+    includes:
+    - the total gross NPA amount disclosed for advances or loans.
+    excludes:
+    - Excludes net NPA and the provision balance; do not use percentages of GNPA here.
+    mapping_notes:
+    - This is an amount, not a ratio.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Amount of Gross NPA
+    - Gross NPA
+    - Gross non-performing assets
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 90
+      calculation:
+        type: reported
+    consolidated:
+      position: 108
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '24702'
+  name: Movement of Provisions for NPAs (Rs.)
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Movement in provisions created for non-performing assets during the period, as an amount.
+    includes:
+    - charge to P&L, reversals, write-backs, and any disclosed increase or decrease in NPA provisions.
+    excludes:
+    - Excludes the closing provision stock, gross NPA, and net NPA balances.
+    mapping_notes:
+    - Negative values may appear for reversals or write-backs; otherwise follow reported sign convention.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Movement of Provisions for NPAs (Rs.)
+    - Provision movement for NPAs
+    - NPA provision movement
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 91
+      calculation:
+        type: reported
+    consolidated:
+      position: 109
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '24697'
+  name: Debt Equity Ratio (%)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Debt-to-equity leverage ratio, expressed as a percentage or times-equivalent as reported by the company.
+    includes:
+    - the disclosed debt equity ratio line based on total debt relative to shareholders’ equity.
+    excludes:
+    - Excludes interest coverage, capital adequacy, and any standalone debt or equity amounts.
+    mapping_notes:
+    - This is a leverage metric, not a balance-sheet total.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Debt Equity Ratio (%)
+    - Debt-to-equity ratio
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 92
+      calculation:
+        type: reported
+    consolidated:
+      position: 99
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '267'
+  name: Amount of Net NPA
+  value_type: amount
+  unit: statement_currency
+  time_nature: point_in_time
+  definition:
+    meaning: Net non-performing assets measured as the amount remaining after deducting provisions from gross NPAs.
+    includes:
+    - the disclosed net NPA amount.
+    excludes:
+    - Excludes gross NPA and the provision balance; do not map percentages of net NPA here.
+    mapping_notes:
+    - This is an amount, not a ratio.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Amount of Net NPA
+    - Net NPA
+    - Net non-performing assets
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 93
+      calculation:
+        type: reported
+    consolidated:
+      position: 110
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '24700'
+  name: Interest Service Coverage ratio (%)
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Interest service coverage ratio, expressed as the company’s ability to meet interest obligations from earnings.
+    includes:
+    - the disclosed interest service coverage ratio line.
+    excludes:
+    - Excludes debt-equity ratio, EBITDA/EBIT margins, and actual interest expense amounts.
+    mapping_notes:
+    - This is a coverage ratio, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Interest Service Coverage ratio (%)
+    - Interest coverage ratio
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 94
+      calculation:
+        type: reported
+    consolidated:
+      position: 101
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '283'
+  name: '% of Gross NPA'
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Gross NPA as a percentage of the relevant asset or loan base, as disclosed by the company.
+    includes:
+    - only the ratio/percentage version of gross NPA.
+    excludes:
+    - Excludes the absolute GNPA amount, net NPA percentage, and provision ratios.
+    mapping_notes:
+    - This is a percentage metric, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - '% of Gross NPA'
+    - Gross NPA (%)
+    - Gross NPA as % of advances
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 95
+      calculation:
+        type: reported
+    consolidated:
+      position: 111
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '284'
+  name: '% of Net NPA'
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Net NPA as a percentage of the relevant asset or loan base, as disclosed by the company.
+    includes:
+    - only the ratio/percentage version of net NPA.
+    excludes:
+    - Excludes the absolute net NPA amount, gross NPA percentage, and provision amounts.
+    mapping_notes:
+    - This is a percentage metric, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - '% of Net NPA'
+    - Net NPA (%)
+    - Net NPA as % of advances
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 96
+      calculation:
+        type: reported
+    consolidated:
+      position: 112
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '312'
+  name: Return on Assets
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Return on assets ratio, typically expressed as a percentage of profit after tax relative to average or total
+      assets as reported by the company.
+    includes:
+    - the disclosed ROA line.
+    excludes:
+    - Excludes return on equity, margins, and asset amounts.
+    mapping_notes:
+    - This is a profitability ratio, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Return on Assets
+    - ROA (%)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 97
+      calculation:
+        type: reported
+    consolidated:
+      position: 113
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '236'
+  name: Equity Dividend In %
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Dividend declared or proposed per equity share, expressed as a percentage of face value or paid-up value.
+    includes:
+    - the equity dividend percentage line.
+    excludes:
+    - Excludes dividend amount, interim/special dividend amount, and per-share rupee dividend values.
+    mapping_notes:
+    - This is a rate/percentage, not a cash amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Equity Dividend In %
+    - Dividend %
+    - Dividend rate
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 98
+      calculation:
+        type: reported
+    consolidated:
+      position: 114
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '237'
+  name: Equity Dividend Amount
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total equity dividend amount declared, proposed, or paid for the relevant period, as a rupee amount.
+    includes:
+    - dividend amount lines for equity shares, including interim, final, special interim, or total dividend when the disclosure
+      is an amount.
+    excludes:
+    - Excludes dividend percentage and per-share dividend rate.
+    mapping_notes:
+    - Sign follows the reported dividend presentation; it is usually a positive distribution amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Equity Dividend Amount
+    - Dividend amount
+    - Total dividend paid (in ₹)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 99
+      calculation:
+        type: reported
+    consolidated:
+      position: 115
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '17779'
+  name: Operating Profit
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Operating profit, i.e. profit from operations before finance costs and before depreciation/amortisation, after
+      operating revenues and operating expenses are considered.
+    includes:
+    - the calculated operating profit total line.
+    excludes:
+    - Excludes finance income/costs, depreciation and amortisation if those are shown separately, extraordinary items, and
+      tax.
+    mapping_notes:
+    - If the filing prints an operating profit subtotal, map that subtotal here; component expense or income lines do not
+      map here unless they are the only available source for the subtotal.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Operating Profit
+    - Profit from operations
+    - Operating profit subtotal
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 100
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+    consolidated:
+      position: 116
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '320'
+          sign: -1
+        - fid: '246'
+          sign: 1
+  evidence: template_inferred
+- fid: '16473'
+  name: Gross Profit
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Gross profit, i.e. revenue from operations less cost of materials/changes in inventories and other direct production
+      or service costs that sit above operating expenses.
+    includes:
+    - the calculated gross profit subtotal line.
+    excludes:
+    - Excludes employee costs, other operating expenses, depreciation, finance costs, and tax.
+    mapping_notes:
+    - If the filing prints a gross profit subtotal, map that subtotal here; component lines belong to their own expense/revenue
+      fields.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Gross Profit
+    - Gross margin profit
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 101
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '230'
+          sign: -1
+        - fid: '307'
+          sign: -1
+        - fid: '227'
+          sign: -1
+    consolidated:
+      position: 117
+      calculation:
+        type: sum
+        terms:
+        - fid: '266'
+          sign: 1
+        - fid: '230'
+          sign: -1
+        - fid: '307'
+          sign: -1
+        - fid: '227'
+          sign: -1
+  evidence: template_inferred
+- fid: '17774'
+  name: EBITDA
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: EBITDA, i.e. earnings before interest, tax, depreciation, and amortisation.
+    includes:
+    - the calculated EBITDA subtotal line, typically derived from operating profit or profit before interest plus back depreciation
+      and amortisation.
+    excludes:
+    - Excludes finance costs/income, tax, and any exceptional items unless the filing explicitly includes them in EBITDA.
+    mapping_notes:
+    - If a printed EBITDA subtotal exists, map it here; do not map the component expense lines here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - EBITDA
+    - Earnings before interest, tax, depreciation and amortisation
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 102
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '246'
+          sign: 1
+        - fid: '232'
+          sign: 1
+    consolidated:
+      position: 118
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '246'
+          sign: 1
+        - fid: '232'
+          sign: 1
+  evidence: template_inferred
+- fid: '17773'
+  name: EBIT
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: EBIT, i.e. earnings before interest and tax, also known as operating profit when depreciation and amortisation
+      are already excluded from operating expenses.
+    includes:
+    - the calculated EBIT subtotal line.
+    excludes:
+    - Excludes finance costs/income and tax.
+    mapping_notes:
+    - If a printed EBIT subtotal exists, map it here; do not map component lines or margins here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - EBIT
+    - Earnings before interest and tax
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 103
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '246'
+          sign: 1
+    consolidated:
+      position: 119
+      calculation:
+        type: sum
+        terms:
+        - fid: '296'
+          sign: 1
+        - fid: '246'
+          sign: 1
+  evidence: template_inferred
+- fid: '17777'
+  name: Gross Profit Margin
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Gross profit margin, expressed as gross profit divided by revenue from operations or equivalent sales base, multiplied
+      by 100.
+    includes:
+    - the printed gross profit margin percentage.
+    excludes:
+    - Excludes gross profit amount, operating margin, and EBITDA/EBIT margins.
+    mapping_notes:
+    - This is a percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Gross Profit Margin
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 104
+      calculation:
+        type: ratio
+        numerator: '16473'
+        denominator: '266'
+        scale: 100.0
+    consolidated:
+      position: 120
+      calculation:
+        type: ratio
+        numerator: '16473'
+        denominator: '266'
+        scale: 100.0
+  evidence: template_inferred
+- fid: '17780'
+  name: Operating Profit Margin
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Operating profit margin, expressed as operating profit divided by revenue from operations or equivalent sales
+      base, multiplied by 100.
+    includes:
+    - the printed operating profit margin percentage.
+    excludes:
+    - Excludes operating profit amount, gross profit margin, and EBITDA/EBIT margins.
+    mapping_notes:
+    - This is a percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Operating Profit Margin
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 105
+      calculation:
+        type: ratio
+        numerator: '17779'
+        denominator: '266'
+        scale: 100.0
+    consolidated:
+      position: 121
+      calculation:
+        type: ratio
+        numerator: '17779'
+        denominator: '266'
+        scale: 100.0
+  evidence: template_inferred
+- fid: '17775'
+  name: EBITDA Margin
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: EBITDA margin, expressed as EBITDA divided by the relevant revenue base, multiplied by 100.
+    includes:
+    - the printed EBITDA margin percentage.
+    excludes:
+    - Excludes EBITDA amount, EBIT margin, and net profit margin.
+    mapping_notes:
+    - This is a percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - EBITDA Margin
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 106
+      calculation:
+        type: ratio
+        numerator: '17774'
+        denominator: '25238'
+        scale: 100.0
+    consolidated:
+      position: 122
+      calculation:
+        type: ratio
+        numerator: '17774'
+        denominator: '25238'
+        scale: 100.0
+  evidence: template_inferred
+- fid: '17776'
+  name: EBIT Margin
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: EBIT margin, expressed as EBIT divided by the relevant revenue base, multiplied by 100.
+    includes:
+    - the printed EBIT margin percentage.
+    excludes:
+    - Excludes EBIT amount, EBITDA margin, and net profit margin.
+    mapping_notes:
+    - This is a percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - EBIT Margin
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 107
+      calculation:
+        type: ratio
+        numerator: '17773'
+        denominator: '25238'
+        scale: 100.0
+    consolidated:
+      position: 123
+      calculation:
+        type: ratio
+        numerator: '17773'
+        denominator: '25238'
+        scale: 100.0
+  evidence: template_inferred
+- fid: '17778'
+  name: Net Profit Margin
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Net profit margin, expressed as profit after tax or profit attributable to shareholders divided by the relevant
+      revenue base, multiplied by 100.
+    includes:
+    - the printed net profit margin percentage.
+    excludes:
+    - Excludes net profit amount, operating margin, EBITDA margin, and EBIT margin.
+    mapping_notes:
+    - This is a percentage, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Net Profit Margin
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 108
+      calculation:
+        type: ratio
+        numerator: '269'
+        denominator: '25238'
+        scale: 100.0
+    consolidated:
+      position: 124
+      calculation:
+        type: ratio
+        numerator: '269'
+        denominator: '25238'
+        scale: 100.0
+  evidence: template_inferred
+- fid: '25233'
+  name: No of Permanent Employees
+  value_type: count
+  unit: count
+  time_nature: point_in_time
+  definition:
+    meaning: Number of permanent employees on the company’s rolls at the reporting date.
+    includes:
+    - only permanent staff count.
+    excludes:
+    - Excludes temporary, contractual, casual, trainees, and outsourced personnel.
+    mapping_notes:
+    - This is a headcount, not compensation or cost.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - No of Permanent Employees
+    - Permanent employees
+    - Number of permanent employees
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 109
+      calculation:
+        type: reported
+    consolidated:
+      position: 125
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '25234'
+  name: No of Temporary/Contractual/Casual Employees
+  value_type: count
+  unit: count
+  time_nature: point_in_time
+  definition:
+    meaning: Number of temporary, contractual, or casual employees engaged by the company at the reporting date.
+    includes:
+    - only non-permanent workforce headcount.
+    excludes:
+    - Excludes permanent employees and outsourced vendor staff unless explicitly counted as contractual/casual employees.
+    mapping_notes:
+    - This is a headcount, not an amount.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - No of Temporary/Contractual/Casual Employees
+    - Temporary/contractual/casual employees
+    - Number of temporary employees
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 110
+      calculation:
+        type: reported
+    consolidated:
+      position: 126
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '25237'
+  name: Total No of Employees
+  value_type: count
+  unit: count
+  time_nature: point_in_time
+  definition:
+    meaning: Total number of employees employed by the company at the reporting date, generally the sum of permanent and temporary/contractual/casual
+      employees where disclosed on that basis.
+    includes:
+    - the total workforce headcount line.
+    excludes:
+    - Excludes employee cost expenses and any category-specific headcounts unless they are the only components used to form
+      the total.
+    mapping_notes:
+    - If a printed total employee count exists, map it here.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total No of Employees
+    - Total employees
+    - Number of employees
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 111
+      calculation:
+        type: reported
+    consolidated:
+      position: 127
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '275'
+  name: a. Number of shares
+  value_type: count
+  unit: shares
+  time_nature: point_in_time
+  definition:
+    meaning: Number of shares held for a particular shareholder category or disclosure row, typically in shareholding tables.
+    includes:
+    - the absolute share count only.
+    excludes:
+    - Excludes percentage holdings, face value, and total share capital.
+    - Do not map percentage columns here; this is a count of shares.
+    mapping_notes: []
+    distinguish_from:
+    - '273'
+    - '274'
+  mapping:
+    match_name: false
+    aliases:
+    - Shares held
+    locations:
+    - STATEMENT-WIDE
+    mode: aliases_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 114
+      calculation:
+        type: reported
+    consolidated:
+      position: 130
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '287'
+  name: b. Percentage of shareholding
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Shareholding represented as a percentage of a relevant base, typically the category’s total or the company’s
+      share capital as specified in the disclosure.
+    includes:
+    - the percentage shareholding line for that row.
+    excludes:
+    - Excludes number of shares and any total share capital amount.
+    mapping_notes:
+    - This is a percentage, not a count.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - b. Percentage of shareholding
+    - Shareholding (%)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 115
+      calculation:
+        type: reported
+    consolidated:
+      position: 131
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '273'
+  name: Number of shares
+  value_type: count
+  unit: shares
+  time_nature: point_in_time
+  definition:
+    meaning: Total equity shares issued or outstanding in the reporting context.
+    includes:
+    - issued/outstanding ordinary or common equity-share counts.
+    excludes:
+    - Excludes authorized shares, treasury shares, monetary share capital, face value, EPS, diluted EPS, percentages, non-encumbered
+      promoter shares, and weighted-average shares used for EPS unless a dedicated template field explicitly requests that
+      average.
+    mapping_notes:
+    - A plain 'Number of shares' caption maps here and is treated as outstanding shares unless the filing explicitly identifies
+      a different concept.
+    distinguish_from:
+    - '274'
+    - '275'
+  mapping:
+    aliases:
+    - Number of shares
+    - No. of shares
+    - Shares
+    - Shares Outstanding
+    - Outstanding Shares
+    - Total Shares Outstanding
+    - Issued Shares
+    - Issued and Outstanding Shares
+    - Ordinary Shares Outstanding
+    - Common Shares Outstanding
+    - Equity Shares Outstanding
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 118
+      calculation:
+        type: reported
+    consolidated:
+      position: 134
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '274'
+  name: Number of shares
+  value_type: count
+  unit: shares
+  time_nature: point_in_time
+  definition:
+    meaning: Absolute number of promoter or promoter-group shares in the non-encumbered shareholding disclosure block.
+    includes:
+    - only the share count for that block.
+    excludes:
+    - Excludes pledged or encumbered shares, percentage disclosures, weighted-average shares used for EPS, and monetary share
+      capital.
+    mapping_notes: []
+    distinguish_from:
+    - '273'
+    - '275'
+  mapping:
+    match_name: false
+    aliases:
+    - Number of non-encumbered shares
+    - Non-encumbered shares
+    locations:
+    - STATEMENT-WIDE
+    mode: aliases_only
+    location_source: declared
+  scopes:
+    standalone:
+      position: 122
+      calculation:
+        type: reported
+    consolidated:
+      position: 138
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '285'
+  name: Percentage of Shares (As a % of the Total Shareholding of Promoter and Promoter Group)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Percentage of shares held as a share of the total shareholding of promoter and promoter group.
+    includes:
+    - only the promoter-group percentage line.
+    excludes:
+    - Excludes raw share count and percentage of total company share capital.
+    mapping_notes:
+    - This is a percentage within the promoter-group context, not a count.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Percentage of Shares (As a % of the Total Shareholding of Promoter and Promoter Group)
+    - Promoter group shareholding (%)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 119
+      calculation:
+        type: reported
+    consolidated:
+      position: 135
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '288'
+  name: Percentage of Shares (As a % of the Total Share Capital of the Company)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Percentage of shares held as a share of the company’s total share capital.
+    includes:
+    - only the percentage of total share capital line.
+    excludes:
+    - Excludes number of shares and promoter-group percentage.
+    mapping_notes:
+    - This is a percentage of total capital, not a count or amount.
+    distinguish_from:
+    - '289'
+  mapping:
+    aliases:
+    - Percentage of Shares (As a % of the Total Share Capital of the Company)
+    - Share of total share capital (%)
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 120
+      calculation:
+        type: reported
+    consolidated:
+      position: 136
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '286'
+  name: Percentage of Shares (As a % of the Total Shareholding of the Promoter and Promoter Group)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Percentage ownership of the company held by the promoter and promoter group, expressed as a share of the promoter-and-promoter-group
+      holding base.
+    includes: []
+    excludes:
+    - Do not map the company-level shareholding percentage here; that belongs to the percentage of total share capital field.
+    mapping_notes:
+    - This is a disclosure percentage, not a count or monetary amount.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 123
+      calculation:
+        type: reported
+    consolidated:
+      position: 139
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '289'
+  name: Percentage of Shares (As a % of the Total Share Capital of the Company)
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Secondary percentage-of-total-share-capital disclosure field used only when the filing and template provide an
+      explicit contextual distinction from field 288.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - It is a percentage, not a share count, currency amount, or face value.
+    - A face-value-per-share caption must never map here.
+    distinguish_from:
+    - '288'
+  mapping:
+    match_name: false
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 124
+      calculation:
+        type: reported
+    consolidated:
+      position: 140
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '272'
+  name: Notes
+  value_type: text
+  unit: text
+  time_nature: duration
+  definition:
+    meaning: Free-text notes, annotations, or footnote references attached to the line item or disclosure.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This field carries explanatory text only and never a financial amount, percentage, or count.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    standalone:
+      position: 125
+      calculation:
+        type: reported
+    consolidated:
+      position: 141
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '317'
+  name: Source
+  value_type: text
+  unit: text
+  time_nature: context_dependent
+  definition:
+    meaning: Source identifier for the reported figure, such as filing source, investor presentation source, or other provenance
+      label.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is metadata only and never a financial amount or ratio.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: false
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 126
+      calculation:
+        type: reported
+    consolidated:
+      position: 142
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '316'
+  name: Source Date
+  value_type: text
+  unit: text
+  time_nature: point_in_time
+  definition:
+    meaning: Date associated with the source document or disclosure provenance.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is a metadata date only and never a financial amount, ratio, or accounting line item.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: false
+    mode: disabled
+    location_source: declared
+  scopes:
+    standalone:
+      position: 127
+      calculation:
+        type: reported
+    consolidated:
+      position: 143
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '25236'
+  name: Share of Profit/(loss) of associates and Joint Ventures before ebt
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The investor's share of profit or loss from associates and joint ventures accounted for using the equity method,
+      after the investee's own tax and after applying equity-method accounting.
+    includes:
+    - the line commonly labelled share of net profit/(loss) of associate and joint venture accounted for using the equity
+      method.
+    excludes:
+    - Exclude operating profit, finance income, tax expense, and any minority-interest allocation.
+    mapping_notes:
+    - This is the equity-accounted share of post-tax earnings from those investees, and not the gross profit of the investees.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Share of net profit/ (loss) of associate and joint venture accounted for using the equity method
+    locations:
+    - SEGMENT-RESULTS
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 48
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '268'
+  name: Net Profit/(Loss) After Taxes But Before Share of Profit/(Loss) of Associates and Minority Interest
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Profit or loss remaining after current tax and deferred tax, but before adding the share of profit or loss from
+      associates/joint ventures and before deducting minority interest or non-controlling interest.
+    includes: []
+    excludes:
+    - Exclude share of associate/joint-venture results and exclude minority interest allocation.
+    mapping_notes:
+    - This is an intermediate profit subtotal.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 67
+      calculation:
+        type: sum
+        terms:
+        - fid: '20017'
+          sign: 1
+        - fid: '20015'
+          sign: 1
+  evidence: template_inferred
+- fid: '292'
+  name: Share of Profit/(Loss) of Associates/Joint Ventures
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Share of profit or loss from associates and joint ventures recognised under the equity method.
+    includes:
+    - the investor's share of earnings or losses from equity-accounted associates/JVs, whether presented as a separate line
+      or as a combined share-of-profit line.
+    excludes:
+    - Exclude dividend income from investments, full consolidation results, and minority-interest allocations.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 68
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '264'
+  name: Minority Interest
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Minority interest / non-controlling interest expense or allocation deducted to arrive at profit attributable
+      to owners.
+    includes:
+    - the profit share attributable to non-controlling interests when presented as a deduction before the attributable-profit
+      subtotal.
+    excludes:
+    - Exclude the final attribution line itself; that belongs to the owners/non-controlling interest attribution fields.
+    mapping_notes: []
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 69
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '22300'
+  name: Profit (Loss) Attributable To [Total]
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total profit or loss attributable to all equity holders and non-controlling interests combined, i.e. the total
+      profit for the period before splitting between owners and non-controlling interests.
+    includes: []
+    excludes:
+    - Never map an individual attribution component line here.
+    mapping_notes:
+    - This is the printed attributable-profit total line and is composed of the owners' share plus the non-controlling interests'
+      share.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Profit (loss) for the period / year attributable to
+    - 'Profit for the period attributable to:'
+    locations:
+    - PROFIT-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 77
+      calculation:
+        type: sum
+        terms:
+        - fid: '22299'
+          sign: 1
+        - fid: '22298'
+          sign: 1
+  evidence: client_mapping
+- fid: '22299'
+  name: Owners of the company
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of profit or loss attributable to the parent company's equity holders, shareholders, or owners.
+    includes:
+    - labels referring to owners of the company, shareholders of the company, or equity holders of the company.
+    excludes:
+    - Exclude the non-controlling interests share and exclude the total attributable-profit line.
+    mapping_notes: []
+    distinguish_from:
+    - '22291'
+    - '22303'
+  mapping:
+    aliases:
+    - Equity holders of the Company
+    - Owners of the Company
+    - Shareholders of the Company
+    - Owners
+    locations:
+    - PROFIT-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 78
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22298'
+  name: Non-Controlling Interests
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of profit or loss attributable to non-controlling interests.
+    includes:
+    - labels for non-controlling interest or non-controlling interests.
+    excludes:
+    - Exclude the owners' share and exclude the total attributable-profit line.
+    mapping_notes: []
+    distinguish_from:
+    - '22290'
+    - '22302'
+  mapping:
+    aliases:
+    - Non-controlling interest
+    - Non-controlling interests
+    locations:
+    - PROFIT-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 79
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22292'
+  name: Comprehensive Income Attributable To [Total]
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total comprehensive income attributable to all stakeholders combined, before splitting between owners and non-controlling
+      interests.
+    includes: []
+    excludes:
+    - Never map an individual attribution component line here.
+    mapping_notes:
+    - This is the printed total attribution line for comprehensive income and is composed of the owners' comprehensive income
+      share plus the non-controlling interests' share.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Other comprehensive income (loss) for the period/ year attributable to
+    - 'Other comprehensive income for the period attributable to:'
+    locations:
+    - CI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 80
+      calculation:
+        type: sum
+        terms:
+        - fid: '22291'
+          sign: 1
+        - fid: '22290'
+          sign: 1
+  evidence: client_mapping
+- fid: '22291'
+  name: Owners of the company
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of comprehensive income attributable to the parent company's owners, shareholders, or equity holders.
+    includes:
+    - the owners' share of other comprehensive income or comprehensive income.
+    excludes:
+    - Exclude the non-controlling interests share and exclude the total comprehensive income attributable line.
+    mapping_notes: []
+    distinguish_from:
+    - '22299'
+    - '22303'
+  mapping:
+    aliases:
+    - Owners of the Company
+    - Shareholders of the Company
+    - Owners
+    locations:
+    - CI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 81
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22290'
+  name: Non-Controlling Interests
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of comprehensive income attributable to non-controlling interests.
+    includes:
+    - the non-controlling interest share of comprehensive income or OCI.
+    excludes:
+    - Exclude the owners' share and exclude the total comprehensive income attributable line.
+    mapping_notes: []
+    distinguish_from:
+    - '22298'
+    - '22302'
+  mapping:
+    aliases:
+    - Non-controlling interest
+    - Non-controlling interests
+    locations:
+    - CI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 82
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22301'
+  name: Total Comprehensive Income Attributable To
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: Total comprehensive income attributable to all stakeholders combined, before splitting between owners and non-controlling
+      interests.
+    includes: []
+    excludes:
+    - Never map an individual attribution component line here.
+    mapping_notes:
+    - This is the printed total attribution line and is composed of the owners' comprehensive income share plus the non-controlling
+      interests' share.
+    distinguish_from: []
+  mapping:
+    aliases:
+    - Total comprehensive income (loss) for the period/ year attributable to
+    - 'Total comprehensive income for the period attributable to:'
+    locations:
+    - TCI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 83
+      calculation:
+        type: sum
+        terms:
+        - fid: '22303'
+          sign: 1
+        - fid: '22302'
+          sign: 1
+  evidence: client_mapping
+- fid: '22303'
+  name: Owners of the company
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of total comprehensive income attributable to the parent company's owners, shareholders, or equity
+      holders.
+    includes:
+    - the owners' share of total comprehensive income.
+    excludes:
+    - Exclude the non-controlling interests share and exclude the total comprehensive income attributable line.
+    mapping_notes: []
+    distinguish_from:
+    - '22291'
+    - '22299'
+  mapping:
+    aliases:
+    - Equity holders of the Company
+    - Owners of the Company
+    - Shareholders of the Company
+    - Owners
+    locations:
+    - TCI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 84
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '22302'
+  name: Non-Controlling Interests
+  value_type: amount
+  unit: statement_currency
+  time_nature: duration
+  definition:
+    meaning: The portion of total comprehensive income attributable to non-controlling interests.
+    includes:
+    - the non-controlling interest share of total comprehensive income.
+    excludes:
+    - Exclude the owners' share and exclude the total comprehensive income attributable line.
+    mapping_notes: []
+    distinguish_from:
+    - '22290'
+    - '22298'
+  mapping:
+    aliases:
+    - Non-controlling interest
+    - Non-controlling interests
+    locations:
+    - TCI-ATTRIBUTION
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 85
+      calculation:
+        type: reported
+  evidence: client_mapping
+- fid: '24703'
+  name: Provision Coverage Ratio
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
+  definition:
+    meaning: Provision coverage ratio, usually a percentage or ratio showing the extent to which provisions cover underlying
+      exposures or bad assets.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is a presentation KPI, not a financial statement line item or monetary amount.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 98
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '24698'
+  name: Debt Service Coverage ratio (%)
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Debt service coverage ratio, expressed as a ratio or percentage, measuring the ability to meet debt servicing
+      obligations from operating cash flow or earnings.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is a presentation KPI, not a financial statement line item or monetary amount.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 100
+      calculation:
+        type: reported
+  evidence: template_inferred
+- fid: '24704'
+  name: ROCE (%)
+  value_type: percentage
+  unit: percent
+  time_nature: duration
+  definition:
+    meaning: Return on capital employed, expressed as a percentage, measuring operating profit relative to capital employed.
+    includes: []
+    excludes: []
+    mapping_notes:
+    - This is a presentation KPI and not a monetary amount or accounting line item.
+    distinguish_from: []
+  mapping:
+    aliases: []
+    locations:
+    - STATEMENT-WIDE
+    match_name: true
+    mode: canonical_name_and_aliases
+    location_source: declared
+  scopes:
+    consolidated:
+      position: 102
+      calculation:
+        type: reported
+  evidence: template_inferred

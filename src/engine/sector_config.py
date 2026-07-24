@@ -1,8 +1,9 @@
 """Sector-scoped client configuration.
 
 Adding a sector is a configuration operation: create
-``config/<id>/taxonomy.yaml``. Pipeline code must not branch on sector or
-company names.
+``config/<id>/taxonomy.yaml`` and its referenced field/structure/identity
+files, plus ``config/<id>/extraction.yaml``. Pipeline code must not branch on
+sector or company names.
 """
 from __future__ import annotations
 
@@ -24,6 +25,8 @@ class SectorConfig:
     sector_id: str
     name: str
     taxonomy_path: str
+    extraction_path: str
+    extraction_policy: dict
 
 
 def _read_yaml(path: str) -> dict:
@@ -47,7 +50,10 @@ def available_sector_ids() -> list[str]:
     out = []
     for name in os.listdir(CONFIG_DIR):
         if (_SECTOR_ID.fullmatch(name)
-                and os.path.isfile(os.path.join(CONFIG_DIR, name, "taxonomy.yaml"))):
+                and os.path.isfile(
+                    os.path.join(CONFIG_DIR, name, "taxonomy.yaml"))
+                and os.path.isfile(
+                    os.path.join(CONFIG_DIR, name, "extraction.yaml"))):
             out.append(name)
     return sorted(out)
 
@@ -57,15 +63,51 @@ def load_sector_config(sector_id: str | None = None) -> SectorConfig:
     if not _SECTOR_ID.fullmatch(sid):
         raise ValueError(f"invalid sector id: {sid!r}")
     taxonomy_path = os.path.join(CONFIG_DIR, sid, "taxonomy.yaml")
+    extraction_path = os.path.join(CONFIG_DIR, sid, "extraction.yaml")
     doc = _read_yaml(taxonomy_path)
     declared = str(doc.get("sector", "")).strip().lower()
     if declared != sid:
         raise ValueError(
             f"taxonomy sector {declared!r} does not match directory {sid!r}")
+    extraction = _read_yaml(extraction_path)
+    rules = extraction.get("statement_exclusions")
+    if not isinstance(rules, list) or not rules:
+        raise ValueError(
+            "extraction.statement_exclusions must be a non-empty list")
+    compiled_rules = []
+    seen_ids = set()
+    for rule in rules:
+        if not isinstance(rule, dict):
+            raise ValueError("statement exclusion must be an object")
+        rule_id = str(rule.get("id", "")).strip()
+        description = str(rule.get("description", "")).strip()
+        patterns = rule.get("header_patterns")
+        if not rule_id or rule_id in seen_ids or not description:
+            raise ValueError(
+                "statement exclusions require unique IDs and descriptions")
+        if (not isinstance(patterns, list) or not patterns
+                or any(not str(pattern).strip() for pattern in patterns)):
+            raise ValueError(
+                f"statement exclusion {rule_id!r} requires header_patterns")
+        clean_patterns = [str(pattern).strip() for pattern in patterns]
+        try:
+            for pattern in clean_patterns:
+                re.compile(pattern, re.IGNORECASE)
+        except re.error as exc:
+            raise ValueError(
+                f"invalid extraction pattern in {rule_id!r}") from exc
+        seen_ids.add(rule_id)
+        compiled_rules.append({
+            "id": rule_id,
+            "description": description,
+            "header_patterns": clean_patterns,
+        })
     return SectorConfig(
         sector_id=sid,
         name=str(doc.get("name") or sid.replace("_", " ").title()),
         taxonomy_path=taxonomy_path,
+        extraction_path=extraction_path,
+        extraction_policy={"statement_exclusions": compiled_rules},
     )
 
 

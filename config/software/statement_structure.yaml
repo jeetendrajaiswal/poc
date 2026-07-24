@@ -1,0 +1,79 @@
+location_vocabulary:
+- STATEMENT-WIDE
+- NON-CURRENT-ASSETS
+- CURRENT-ASSETS
+- EQUITY
+- NON-CURRENT-LIABILITIES
+- CURRENT-LIABILITIES
+- OPERATING
+- INVESTING
+- FINANCING
+- RECONCILIATION
+- PROFIT-ATTRIBUTION
+- CI-ATTRIBUTION
+- TCI-ATTRIBUTION
+- EXTERNAL-REVENUE
+- INTER-SEGMENT
+- SEGMENT-REVENUE
+- SEGMENT-RESULTS
+- SEGMENT-ASSETS
+- SEGMENT-LIABILITIES
+statement_sections:
+  income:
+  - pattern: total comprehensive income.*attributable
+    section: TCI-ATTRIBUTION
+    location: TCI-ATTRIBUTION
+  - pattern: comprehensive income.*attributable
+    section: CI-ATTRIBUTION
+    location: CI-ATTRIBUTION
+  - pattern: profit.*attributable
+    section: PROFIT-ATTRIBUTION
+    location: PROFIT-ATTRIBUTION
+  balance:
+  - pattern: non\s*-?\s*current\s+assets
+    section: NON-CURRENT ASSETS
+    location: NON-CURRENT-ASSETS
+  - pattern: current\s+assets
+    section: CURRENT ASSETS
+    location: CURRENT-ASSETS
+  - pattern: non\s*-?\s*current\s+liabilit
+    section: NON-CURRENT LIABILITIES
+    location: NON-CURRENT-LIABILITIES
+  - pattern: current\s+liabilit
+    section: CURRENT LIABILITIES
+    location: CURRENT-LIABILITIES
+  - pattern: ^(?:[a-z]\s+)?equity(?:\s+and\s+liabilities)?$|shareholders.?\s*funds
+    section: EQUITY
+    location: EQUITY
+  cashflow:
+  - pattern: operating\s+activities
+    section: OPERATING
+    location: OPERATING
+  - pattern: investing\s+activities
+    section: INVESTING
+    location: INVESTING
+  - pattern: financing\s+activities
+    section: FINANCING
+    location: FINANCING
+  - pattern: cash\s+and\s+cash\s+equivalents
+    section: RECONCILIATION
+    location: RECONCILIATION
+  segment:
+  - pattern: inter.?segment\s+revenue
+    section: INTER-SEGMENT
+    location: INTER-SEGMENT
+  - pattern: external\s+customers
+    section: EXTERNAL-REVENUE
+    location: EXTERNAL-REVENUE
+  - pattern: ^segment\s+revenue
+    section: SEGMENT-REVENUE
+    location: SEGMENT-REVENUE
+  - pattern: ^segment\s+result
+    section: SEGMENT-RESULTS
+    location: SEGMENT-RESULTS
+  - pattern: ^segment\s+assets
+    section: SEGMENT-ASSETS
+    location: SEGMENT-ASSETS
+  - pattern: ^segment\s+liabilit
+    section: SEGMENT-LIABILITIES
+    location: SEGMENT-LIABILITIES

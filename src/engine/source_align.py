@@ -39,6 +39,24 @@ from __future__ import annotations
 import re
 import statistics
 
+# ---------------------------------------------------------------- statement exclusions
+
+def excluded_statement_variant(text: str, policy: dict | None) -> str:
+    """Return the configured exclusion-rule ID matching a statement header."""
+    if not policy:
+        return ""
+    window = " ".join(str(text or "").split())[:2000]
+    for rule in policy.get("statement_exclusions", ()):
+        if any(re.search(pattern, window, re.IGNORECASE)
+               for pattern in rule.get("header_patterns", ())):
+            return str(rule.get("id", ""))
+    return ""
+
+
+def is_excluded_statement_text(text: str, policy: dict | None) -> bool:
+    return bool(excluded_statement_variant(text, policy))
+
+
 # ---------------------------------------------------------------- tokens
 
 _TRAIL = "*^#@;:"           # footnote marks / stray punctuation on numbers
@@ -442,7 +460,11 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
     # its positions must not overwrite values it never printed. Same when the
     # column mapping itself is in doubt: fix forms, fill blanks, flag — the
     # identity suite + repair loop own the rest.
-    conservative = coverage < _FULL_AUTHORITY_COVERAGE or bool(report["unverified_cols"])
+    conservative = (
+        coverage < _FULL_AUTHORITY_COVERAGE
+        or bool(report["unverified_cols"])
+        or report["structure_mismatch"]
+    )
     report["conservative"] = conservative
 
     # ---- per-cell verification/correction
@@ -552,7 +574,7 @@ def has_text_authority(grid, page_forms, untrusted_pages) -> bool:
 
 
 def reconcile_with_source(grid, section, title, page_forms, page_lines,
-                          scan_pages=None, log=None):
+                          scan_pages=None, excluded_pages=None, log=None):
     """Reconcile `grid` against its best source pages: try the top candidate
     spans and keep the outcome with the fewest failing identities (ties: most
     verified rows). Guard rails:
@@ -569,9 +591,12 @@ def reconcile_with_source(grid, section, title, page_forms, page_lines,
     if identities.suite_for(section, title) is None:
         return grid, None
     scan_pages = scan_pages or set()
+    excluded_pages = excluded_pages or set()
     baseline = len(identities.failing(section, title, grid))
     best = None
     for span, cov in candidate_spans(grid, page_forms):
+        if any((p + 1) in excluded_pages for p in span):
+            continue
         if all((p + 1) in scan_pages for p in span):
             continue
         pool = [ln for p in span for ln in page_lines[p] if (p + 1) not in scan_pages]

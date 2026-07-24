@@ -27,10 +27,15 @@ def run(name: str) -> str:
     if not os.path.exists(pdf):
         sys.exit(f"missing PDF: {pdf}")
     reset_usage()
+    from src.engine.sector_config import load_sector_assets
+    sector, _template, _taxonomy = load_sector_assets()
     from src.engine.tables_llm import maybe_trim_large_filing
-    pdf_in = maybe_trim_large_filing(pdf, log=lambda m: print(str(m), flush=True))
+    pdf_in = maybe_trim_large_filing(
+        pdf, log=lambda m: print(str(m), flush=True),
+        extraction_policy=sector.extraction_policy)
     tables = extract_tables_smart(pdf_in, mode="quarterly",
-                                  log=lambda m: print("  " + str(m), flush=True))
+                                  log=lambda m: print("  " + str(m), flush=True),
+                                  extraction_policy=sector.extraction_policy)
     rows = [(t.page, t.n, t.title, t.scope, t.section, t.grid) for t in tables]
     out = os.path.join(PKL_DIR, f"{name}.pkl")
     pickle.dump(rows, open(out, "wb"))

@@ -66,7 +66,8 @@ EXTRACT_PROMPT = """You transcribe financial statements from Indian company fili
 - Copy every value EXACTLY as printed: same digits, same grouping (e.g. 1,45,575.77), same decimals. Never round, compute, convert or "correct" a number.
 - Use line-item names exactly as printed. Do not rename, summarise, reorder or omit rows.
 - NEVER invent data. Transcribe ONLY the period columns actually printed in the ONE table you are reading. If a period is not printed there, it must not appear in your answer — do not fill it in from another page, another table, or memory.
-- Each table you return must reproduce ONE printed statement from ONE page range. Filings often print the same statement twice (earnings release + audited statements, or Ind AS + IFRS): pick one printing and never blend them.
+- Follow the reporting-basis constraint in the question. Do not return an alternative accounting-framework, foreign-reporting, or foreign-currency duplicate.
+- Each table you return must reproduce ONE printed statement from ONE page range. Filings often print the same statement twice (earnings release + audited statements): pick the requested statutory printing and never blend them.
 - Start each table with the heading and any denomination line printed above it (e.g. '(₹ in crore)', 'Rs. in lakhs'), then the FULL column-header rows including any period banner (e.g. 'For the quarter ended June 30, 2025').
 - Answer with markdown tables only — each preceded by a bold heading line, no commentary."""
 
@@ -75,11 +76,7 @@ _DETAIL = ("for ALL periods shown, detailed, row by row, exactly as printed "
            "Include the denomination line and the table's column-header rows exactly as "
            "printed, INCLUDING any period banner line above the columns "
            "(e.g. 'For the quarter ended June 30, 2025'). "
-           "CRITICAL: some filings present the SAME statement twice — once under Ind AS and "
-           "once under IFRS — with different figures. These are DIFFERENT statements: transcribe "
-           "each as its own SEPARATE table with a heading naming its GAAP (e.g. "
-           "'Consolidated Financial Results — Ind AS' / '— IFRS'). NEVER mix rows from the two; "
-           "every table must reproduce ONE printed statement from ONE page range only. "
+           "Every table must reproduce ONE printed statement from ONE page range only. "
            "When the same statement is printed once as the main quarterly results table and "
            "again later as a condensed/annual statement with fewer period columns, transcribe "
            "the MAIN quarterly results table with the widest printed set of period columns. "
@@ -214,10 +211,27 @@ def filing_document_scope(pdf_path: str) -> str:
     return document_scope_from_text(text)
 
 
-def _questions_for_document_scope(document_scope: str) -> list[tuple[str, str, str]]:
+def _questions_for_document_scope(
+        document_scope: str,
+        extraction_policy: dict | None = None,
+) -> list[tuple[str, str, str]]:
     """Build extraction questions consistent with the proven filing scope."""
+    excluded = ", ".join(
+        str(rule.get("description", "")).strip()
+        for rule in (extraction_policy or {}).get(
+            "statement_exclusions", ())
+        if str(rule.get("description", "")).strip()
+    )
+    basis_constraint = (
+        "\n\nEXCLUDE these alternative statement variants: " + excluded
+        + ". Do not transcribe or use them as a source."
+        if excluded else ""
+    )
     if document_scope != "standalone":
-        return list(_QUESTIONS)
+        return [
+            (scope, label, question + basis_constraint)
+            for scope, label, question in _QUESTIONS
+        ]
     questions = []
     constraint = (
         "\n\nThe filing explicitly states that the company has no subsidiary, "
@@ -229,7 +243,8 @@ def _questions_for_document_scope(document_scope: str) -> list[tuple[str, str, s
             continue
         if requested_scope == "unknown":
             question += constraint
-        questions.append((requested_scope, label, question))
+        questions.append(
+            (requested_scope, label, question + basis_constraint))
     return questions
 
 
@@ -241,6 +256,7 @@ def recover_missing_statements(
     page_forms: list,
     page_lines: list,
     scans: set,
+    excluded_pages: set[int] | None = None,
     log=print,
 ) -> list:
     """Recover model-omitted statements from the local digital text layer.
@@ -261,8 +277,11 @@ def recover_missing_statements(
     from src.engine.tables import RawTable, extract_tables
 
     wanted = set(missing)
+    excluded_pages = excluded_pages or set()
     candidates = []
     for table in extract_tables(pdf_path, financial_only=False):
+        if table.page in excluded_pages:
+            continue
         text = f"{table.section} {table.title}".lower()
         kinds = [
             kind for kind, pattern in _STMT_HEADINGS.items()
@@ -289,6 +308,7 @@ def recover_missing_statements(
         grid, report = source_align.reconcile_with_source(
             table.grid, table.section, table.title,
             page_forms, page_lines, scan_pages=scans,
+            excluded_pages=excluded_pages,
         )
         grid = source_align.repair_dropped_decimals(grid)
         failures = identities.failing(table.section, table.title, grid)
@@ -327,8 +347,12 @@ def recover_missing_statements(
 
 # --------------------------------------------------------------------------- statement extraction
 
-def quarterly_statement_tables(pdf_path: str, model: str | None = None,
-                               log=print) -> list:
+def quarterly_statement_tables(
+        pdf_path: str,
+        model: str | None = None,
+        log=print,
+        extraction_policy: dict | None = None,
+) -> list:
     """Upload the filing ONCE; internally ask for each detailed statement
     (standalone results, consolidated results, segments, balance sheet, cash
     flow) in parallel; return the answers as RawTable sheets.
@@ -348,27 +372,75 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
     scans = source_align.untrusted_text_pages(pdf_path)
     import pymupdf
     _scope_doc = pymupdf.open(pdf_path)
-    page_heads = [" ".join(page.get_text().split())[:1200].lower()
-                  for page in _scope_doc]
+    page_texts = [" ".join(page.get_text().split()) for page in _scope_doc]
+    page_heads = [text[:1200].lower() for text in page_texts]
     _scope_doc.close()
+    excluded_pages = {
+        page_number
+        for page_number, text in enumerate(page_texts, 1)
+        if source_align.is_excluded_statement_text(
+            text, extraction_policy)
+    }
+    if excluded_pages:
+        log(
+            "  BASIS: excluded "
+            f"{len(excluded_pages)} alternative-framework page(s) using "
+            "sector extraction policy"
+        )
 
-    def source_scope(report) -> str:
+    def _statement_kind(text: str) -> str:
+        value = str(text or "").lower()
+        if re.search(r"cash\s+flo", value):
+            return "cashflow"
+        if re.search(r"balance\s+sheet|assets\s+and\s+liabilit", value):
+            return "balance"
+        if re.search(r"segment", value):
+            return "segment"
+        if re.search(
+                r"financial\s+results|profit\s+and\s+loss|"
+                r"statement\s+of\s+(?:comprehensive\s+income|audited\s+results)",
+                value):
+            return "income"
+        return ""
+
+    def source_scope(report, requested_label: str) -> str:
         """Scope proved by the heading of the source page selected through
-        positional reconciliation. Ambiguous pages deliberately return
-        unknown instead of guessing."""
+        positional reconciliation. Only pages carrying the same statement
+        kind are evidence: an adjacent consolidated segment page cannot
+        reclassify a standalone income statement that begins on the next
+        page."""
         found = set()
+        wanted_kind = _statement_kind(requested_label)
         for page_number in (report or {}).get("pages", []):
             if not (1 <= page_number <= len(page_heads)):
                 continue
             head = page_heads[page_number - 1]
-            if re.search(r"\bconsolidated\b", head):
+            if wanted_kind and _statement_kind(head) != wanted_kind:
+                continue
+            if re.search(
+                    r"\bconsolidated\b.{0,100}\b(?:financial\s+results|"
+                    r"audited\s+results|balance\s+sheet|cash\s+flo|segment)"
+                    r"|(?:financial\s+results|audited\s+results|balance\s+sheet|"
+                    r"cash\s+flo|segment).{0,100}\bconsolidated\b",
+                    head):
                 found.add("consolidated")
             if re.search(r"\bstandalone\b", head):
                 found.add("standalone")
         return next(iter(found)) if len(found) == 1 else "unknown"
 
+    def _is_statement_grid(grid: list[list[str]]) -> bool:
+        """Reject markdown note blocks masquerading as a second statement."""
+        numeric_rows = 0
+        for row in grid[1:]:
+            if any(
+                    re.fullmatch(r"\(?-?[\d,.]+\)?", str(cell).strip())
+                    for cell in row[1:]):
+                numeric_rows += 1
+        return numeric_rows >= 3
+
     document_scope = filing_document_scope(pdf_path)
-    questions = _questions_for_document_scope(document_scope)
+    questions = _questions_for_document_scope(
+        document_scope, extraction_policy)
     if document_scope == "standalone":
         log(
             "  SCOPE: filing proves it is single-entity (no subsidiary, "
@@ -381,11 +453,28 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
         → identity checks. Returns [(heading, grid, report, fails)]."""
         out = []
         for heading, grid in _md_tables(answer):
+            table_text = " ".join(
+                [heading]
+                + [str(cell) for row in grid[:10] for cell in row]
+            )
+            if source_align.is_excluded_statement_text(
+                    table_text, extraction_policy):
+                log(
+                    f"  {label}: rejected alternative reporting-basis "
+                    "table before source reconciliation"
+                )
+                continue
             width = max(len(r) for r in grid)
             grid = [r + [""] * (width - len(r)) for r in grid]
+            if not _is_statement_grid(grid):
+                log(
+                    f"  {label}: rejected non-statement markdown table "
+                    "(fewer than three numeric data rows)"
+                )
+                continue
             grid, rep = source_align.reconcile_with_source(
                 grid, label, heading or label, page_forms, page_lines,
-                scan_pages=scans)
+                scan_pages=scans, excluded_pages=excluded_pages)
             grid = source_align.repair_dropped_decimals(grid)
             fails = identities.failing(label, heading or label, grid)
             out.append((heading, grid, rep, fails))
@@ -435,7 +524,7 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                     "checks against the printed statement: " + "; ".join(fails)[:400]
                     + ". Common causes: repeating one period column's numbers into an "
                     "adjacent column, mixing rows from two different printed statements "
-                    "(e.g. Ind AS and IFRS versions), or misplacing values against their "
+                    "under different reporting bases, or misplacing values against their "
                     "labels. Read the table column by column and transcribe EACH "
                     "period's own values exactly as printed, from ONE statement only.")
                 tables2 = _finalize(label, answer2)
@@ -476,7 +565,7 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                 sc = "consolidated"
             elif "standalone" in head:
                 sc = "standalone"
-            proved_scope = source_scope(rep)
+            proved_scope = source_scope(rep, label)
             if (proved_scope != "unknown" and sc in ("standalone", "consolidated")
                     and sc != proved_scope):
                 log(
@@ -486,6 +575,13 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                 continue
             if proved_scope != "unknown":
                 sc = proved_scope
+            if rep and any(
+                    page in excluded_pages for page in rep.get("pages", [])):
+                log(
+                    f"    · [skip] {heading or label}: source page belongs "
+                    "to an excluded reporting basis"
+                )
+                continue
             title = heading or label
             notes = []
             if rep:
@@ -508,9 +604,7 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
                     notes.append(f"{sum(ok for _n, ok in checks)}/{len(checks)} identities tie")
             section = label
             up = head.upper()
-            if "IFRS" in up:
-                section += " — IFRS"
-            elif "IND AS" in up or "IND-AS" in up:
+            if "IND AS" in up or "IND-AS" in up:
                 section += " — Ind AS"
             log(f"    · [{sc[:4]}] {title[:56]}: {'; '.join(notes)[:140]}")
             out.append(RawTable(
@@ -523,7 +617,8 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
         log(f"  {label}: {len(tables)} table(s)"
             + (f" — {sum(len(fl) for _h, _g, _r, fl in tables)} check(s) failing ⚠"
                if any(fl for _h, _g, _r, fl in tables) else ""))
-    missing = unextracted_statements(pdf_path, out)
+    missing = unextracted_statements(
+        pdf_path, out, extraction_policy=extraction_policy)
     if missing:
         out.extend(recover_missing_statements(
             pdf_path,
@@ -532,9 +627,11 @@ def quarterly_statement_tables(pdf_path: str, model: str | None = None,
             page_forms=page_forms,
             page_lines=page_lines,
             scans=scans,
+            excluded_pages=excluded_pages,
             log=log,
         ))
-        missing = unextracted_statements(pdf_path, out)
+        missing = unextracted_statements(
+            pdf_path, out, extraction_policy=extraction_policy)
     for kind in missing:
         log(f"  ⚠ COMPLETENESS: the filing prints a {kind} heading on a "
             "number-heavy page, but NO such table was extracted")
@@ -551,7 +648,11 @@ _STMT_HEADINGS = {
 }
 
 
-def unextracted_statements(pdf_path: str, tables) -> list[str]:
+def unextracted_statements(
+        pdf_path: str,
+        tables,
+        extraction_policy: dict | None = None,
+) -> list[str]:
     """FREE completeness check: statement kinds whose heading is printed on a
     number-heavy TEXT page of the filing but for which no table was extracted.
     (Scan pages carry no text to match — absence there stays the double-read's
@@ -568,6 +669,10 @@ def unextracted_statements(pdf_path: str, tables) -> list[str]:
     doc = pymupdf.open(pdf_path)
     for page in doc:
         text = " ".join(page.get_text().split())
+        from src.engine import source_align
+        if source_align.is_excluded_statement_text(
+                text, extraction_policy):
+            continue
         if len(re.findall(r"\d[\d,]*\.?\d*", text)) < 25:
             continue
         head = text[:400].lower()

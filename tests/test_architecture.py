@@ -27,6 +27,7 @@ from src.engine.sector_config import (
     load_sector_assets,
     load_sector_config,
 )
+from src.engine.source_align import is_excluded_statement_text
 
 
 class SectorConfigurationTests(unittest.TestCase):
@@ -55,11 +56,70 @@ class SectorConfigurationTests(unittest.TestCase):
     def test_taxonomy_is_the_only_runtime_field_source(self):
         self.assertFalse(hasattr(self.config, "template_path"))
         with open(self.config.taxonomy_path, encoding="utf-8") as fh:
-            document = yaml.safe_load(fh)
-        self.assertNotIn("mapping_policy", document)
-        self.assertNotIn("expected_unique_field_count", document)
-        self.assertNotIn("expected_scope_assignment_count", document)
-        self.assertNotIn("schema_version", document)
+            manifest = yaml.safe_load(fh)
+        self.assertEqual(
+            {
+                "sector", "name", "field_files",
+                "structure_file", "identities_file",
+            },
+            set(manifest),
+        )
+        self.assertEqual(
+            [
+                "fields/income.yaml",
+                "fields/balance.yaml",
+                "fields/cashflow.yaml",
+                "fields/segment.yaml",
+            ],
+            manifest["field_files"],
+        )
+        config_dir = os.path.dirname(self.config.taxonomy_path)
+        with open(
+                os.path.join(config_dir, manifest["structure_file"]),
+                encoding="utf-8") as fh:
+            structure = yaml.safe_load(fh)
+        with open(
+                os.path.join(config_dir, manifest["identities_file"]),
+                encoding="utf-8") as fh:
+            validation = yaml.safe_load(fh)
+        items = []
+        for reference in manifest["field_files"]:
+            with open(
+                    os.path.join(config_dir, reference),
+                    encoding="utf-8") as fh:
+                field_document = yaml.safe_load(fh)
+            self.assertEqual(
+                {"statement", "items"}, set(field_document))
+            self.assertTrue(all(
+                "statement" not in item
+                for item in field_document["items"]))
+            items.extend({
+                **item, "statement": field_document["statement"],
+            } for item in field_document["items"])
+        document = {
+            **structure,
+            **validation,
+            "items": items,
+        }
+        for retired_key in (
+                "mapping_policy", "expected_unique_field_count",
+                "expected_scope_assignment_count", "schema_version",
+                "statement_selection"):
+            self.assertNotIn(retired_key, manifest)
+            self.assertNotIn(retired_key, document)
+        self.assertTrue(os.path.isfile(self.config.extraction_path))
+        with open(self.config.extraction_path, encoding="utf-8") as fh:
+            extraction = yaml.safe_load(fh)
+        self.assertEqual(
+            {"statement_exclusions"}, set(extraction))
+        self.assertEqual(
+            extraction["statement_exclusions"],
+            self.config.extraction_policy["statement_exclusions"],
+        )
+        self.assertTrue(all(
+            set(rule) == {"id", "description", "header_patterns"}
+            for rule in extraction["statement_exclusions"]
+        ))
         self.assertEqual(
             {"income", "balance", "cashflow", "segment"},
             set(document["statement_sections"]),
@@ -223,6 +283,17 @@ class SectorConfigurationTests(unittest.TestCase):
     def test_unknown_sector_is_not_fallback_hardcoded(self):
         with self.assertRaises(FileNotFoundError):
             load_sector_config("not_configured")
+
+    def test_statement_exclusions_are_sector_configured(self):
+        policy = self.config.extraction_policy
+        self.assertTrue(is_excluded_statement_text(
+            "Extracted from IFRS Financial Statements", policy))
+        self.assertTrue(is_excluded_statement_text(
+            "Condensed statement (Dollars in millions)", policy))
+        self.assertFalse(is_excluded_statement_text(
+            "Results prepared in accordance with Ind AS", policy))
+        self.assertFalse(is_excluded_statement_text(
+            "Attachment index: Ind AS results and IFRS results", policy))
 
     def test_unambiguous_exact_label_does_not_call_the_model(self):
         grid = [
