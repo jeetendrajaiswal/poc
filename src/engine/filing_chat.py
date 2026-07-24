@@ -128,6 +128,81 @@ def _md_tables(answer: str) -> list[tuple[str, list[list[str]]]]:
     return [(h, g) for h, g in tables if len(g) >= 2 and len(g[0]) >= 2]
 
 
+def _normalize_grid_preamble(
+        heading: str, grid: list[list[str]]) -> tuple[str, list[list[str]]]:
+    """Canonicalize model variations in a printed statement's header rows."""
+    grid = [list(row) for row in grid]
+    if len(grid) >= 2:
+        first = [str(cell).strip() for cell in grid[0]]
+        second_first = str(grid[1][0]).strip().casefold()
+        if (first[0] and all(not cell for cell in first[1:])
+                and second_first == "particulars"):
+            heading = f"{heading} — {first[0]}" if heading else first[0]
+            grid = grid[1:]
+    if grid:
+        first_cell = str(grid[0][0]).strip()
+        period_header = any(
+            re.search(
+                r"\b(?:quarter|year|months?|as\s+at|ended)\b",
+                str(cell), re.IGNORECASE)
+            for cell in grid[0][1:]
+        )
+        denomination = bool(re.search(
+            r"(?:₹|\brs\.?\b|\binr\b|\bcrore\b|\blakhs?\b|"
+            r"\bmillions?\b|\bbillions?\b)",
+            first_cell, re.IGNORECASE))
+        if (period_header and denomination
+                and first_cell.casefold() != "particulars"):
+            heading = f"{heading} — {first_cell}" if heading else first_cell
+            grid[0][0] = "Particulars"
+    # Shared banner plus a separate year row -> one canonical header row.
+    if (len(grid) >= 2
+            and str(grid[0][0]).strip().casefold() == "particulars"
+            and str(grid[1][0]).strip().casefold() == "particulars"):
+        years = [
+            str(cell).strip()
+            for cell in grid[1][1:]
+            if str(cell).strip()
+        ]
+        banner = next(
+            (str(cell).strip() for cell in grid[0][1:]
+             if re.search(r"\b(?:ended|as\s+at)\b", str(cell),
+                          re.IGNORECASE)),
+            "",
+        )
+        if (banner and len(years) >= 2
+                and all(re.fullmatch(r"(?:19|20)\d{2}", year)
+                        for year in years)):
+            grid[0] = ["Particulars"] + [
+                f"{banner.rstrip(' ,')} {year}" for year in years
+            ]
+            grid.pop(1)
+    # A model can preserve the first complete period heading but shorten a
+    # later heading to its year.  Complete it from the nearest preceding
+    # heading of the same column group.  This is structural normalization:
+    # the printed year is preserved and no reporting date is invented.
+    if grid:
+        completed = [grid[0][0]]
+        previous_heading = ""
+        for cell in grid[0][1:]:
+            text = str(cell).strip()
+            if re.fullmatch(r"(?:19|20)\d{2}", text) and previous_heading:
+                prior = re.fullmatch(
+                    r"(.+?)(?:19|20)\d{2}", previous_heading,
+                    re.IGNORECASE)
+                text = f"{prior.group(1)}{text}" if prior else text
+            if (re.search(r"\b(?:ended|as\s+at)\b", text, re.IGNORECASE)
+                    and re.search(r"(?:19|20)\d{2}\s*$", text)):
+                previous_heading = text
+            completed.append(text)
+        grid[0] = completed
+    while grid and len(grid[0]) > 1 and all(
+            not str(row[-1]).strip() for row in grid):
+        for row in grid:
+            row.pop()
+    return heading, grid
+
+
 def _widest_numeric_row(tables) -> int:
     """Maximum numeric-cell count carried by any row in one attempt.
 
@@ -403,30 +478,49 @@ def quarterly_statement_tables(
             return "income"
         return ""
 
-    def source_scope(report, requested_label: str) -> str:
-        """Scope proved by the heading of the source page selected through
-        positional reconciliation. Only pages carrying the same statement
-        kind are evidence: an adjacent consolidated segment page cannot
-        reclassify a standalone income statement that begins on the next
-        page."""
+    def _page_scope(page_number: int, wanted_kind: str) -> str:
+        if not (1 <= page_number <= len(page_heads)):
+            return "unknown"
+        head = page_heads[page_number - 1]
+        if wanted_kind and _statement_kind(head) != wanted_kind:
+            return "unknown"
         found = set()
-        wanted_kind = _statement_kind(requested_label)
-        for page_number in (report or {}).get("pages", []):
-            if not (1 <= page_number <= len(page_heads)):
-                continue
-            head = page_heads[page_number - 1]
-            if wanted_kind and _statement_kind(head) != wanted_kind:
-                continue
-            if re.search(
-                    r"\bconsolidated\b.{0,100}\b(?:financial\s+results|"
-                    r"audited\s+results|balance\s+sheet|cash\s+flo|segment)"
-                    r"|(?:financial\s+results|audited\s+results|balance\s+sheet|"
-                    r"cash\s+flo|segment).{0,100}\bconsolidated\b",
-                    head):
-                found.add("consolidated")
-            if re.search(r"\bstandalone\b", head):
-                found.add("standalone")
+        if re.search(
+                r"\bconsolidated\b.{0,100}\b(?:financial\s+results|"
+                r"audited\s+results|balance\s+sheet|cash\s+flo|segment)"
+                r"|(?:financial\s+results|audited\s+results|balance\s+sheet|"
+                r"cash\s+flo|segment).{0,100}\bconsolidated\b",
+                head):
+            found.add("consolidated")
+        if re.search(r"\bstandalone\b", head):
+            found.add("standalone")
         return next(iter(found)) if len(found) == 1 else "unknown"
+
+    def source_scope(report, requested_label: str) -> str:
+        """Scope proved only by source pages of the same statement kind."""
+        wanted_kind = _statement_kind(requested_label)
+        found = {
+            scope
+            for page_number in (report or {}).get("pages", [])
+            for scope in [_page_scope(page_number, wanted_kind)]
+            if scope != "unknown"
+        }
+        return next(iter(found)) if len(found) == 1 else "unknown"
+
+    def _opposite_scope_pages(
+            requested_scope: str, requested_label: str) -> set[int]:
+        if requested_scope not in {"standalone", "consolidated"}:
+            return set()
+        opposite = (
+            "consolidated"
+            if requested_scope == "standalone" else "standalone"
+        )
+        wanted_kind = _statement_kind(requested_label)
+        return {
+            page_number
+            for page_number in range(1, len(page_heads) + 1)
+            if _page_scope(page_number, wanted_kind) == opposite
+        }
 
     def _is_statement_grid(grid: list[list[str]]) -> bool:
         """Reject markdown note blocks masquerading as a second statement."""
@@ -448,11 +542,19 @@ def quarterly_statement_tables(
             "consolidated question skipped"
         )
 
-    def _finalize(label: str, answer: str):
+    def _finalize(
+            label: str, answer: str, requested_scope: str = "unknown"):
         """markdown → grids → positional reconcile → residual decimal repair
         → identity checks. Returns [(heading, grid, report, fails)]."""
         out = []
         for heading, grid in _md_tables(answer):
+            heading, grid = _normalize_grid_preamble(heading, grid)
+            table_scope = requested_scope
+            heading_lower = str(heading or "").lower()
+            if "consolidated" in heading_lower:
+                table_scope = "consolidated"
+            elif "standalone" in heading_lower:
+                table_scope = "standalone"
             table_text = " ".join(
                 [heading]
                 + [str(cell) for row in grid[:10] for cell in row]
@@ -474,7 +576,11 @@ def quarterly_statement_tables(
                 continue
             grid, rep = source_align.reconcile_with_source(
                 grid, label, heading or label, page_forms, page_lines,
-                scan_pages=scans, excluded_pages=excluded_pages)
+                scan_pages=scans,
+                excluded_pages=(
+                    excluded_pages
+                    | _opposite_scope_pages(table_scope, label)
+                ))
             grid = source_align.repair_dropped_decimals(grid)
             fails = identities.failing(label, heading or label, grid)
             out.append((heading, grid, rep, fails))
@@ -515,7 +621,7 @@ def quarterly_statement_tables(
                     truncated = status == "incomplete"
                 if truncated:
                     log(f"  {label}: STILL truncated — content may be missing ⚠")
-            tables = _finalize(label, answer)
+            tables = _finalize(label, answer, scope)
             fails = [f for _h, _g, _r, fl in tables for f in fl]
             if fails and "NOT PRESENT" not in answer[:400]:
                 log(f"  {label}: verification FAILED ({'; '.join(fails)[:90]}) -> re-ask")
@@ -527,7 +633,7 @@ def quarterly_statement_tables(
                     "under different reporting bases, or misplacing values against their "
                     "labels. Read the table column by column and transcribe EACH "
                     "period's own values exactly as printed, from ONE statement only.")
-                tables2 = _finalize(label, answer2)
+                tables2 = _finalize(label, answer2, scope)
                 if tables2 and sum(len(fl) for _h, _g, _r, fl in tables2) < len(fails):
                     before_width = _widest_numeric_row(tables)
                     after_width = _widest_numeric_row(tables2)
@@ -585,7 +691,11 @@ def quarterly_statement_tables(
             title = heading or label
             notes = []
             if rep:
-                n_fix = len(rep["corrections"]) + rep["filled"]
+                n_fix = (
+                    len(rep["corrections"]) + rep["filled"]
+                    + rep.get("labels_filled", 0)
+                    + len(rep.get("label_corrections", ()))
+                )
                 notes.append(f"source-reconciled p{'/'.join(map(str, rep['pages']))}"
                              + (f", {n_fix} cell(s) corrected" if n_fix else ""))
                 if rep["structure_mismatch"] or rep["conservative"]:
@@ -617,6 +727,24 @@ def quarterly_statement_tables(
         log(f"  {label}: {len(tables)} table(s)"
             + (f" — {sum(len(fl) for _h, _g, _r, fl in tables)} check(s) failing ⚠"
                if any(fl for _h, _g, _r, fl in tables) else ""))
+    unique = []
+    seen_grids = set()
+    for table in out:
+        normalized_grid = tuple(
+            tuple(re.sub(r"\s+", " ", str(cell).strip()).casefold()
+                  for cell in row)
+            for row in table.grid
+        )
+        key = (table.scope, normalized_grid)
+        if key in seen_grids:
+            log(
+                f"  DEDUP: removed repeated [{table.scope[:4]}] "
+                f"{table.title[:60]}"
+            )
+            continue
+        seen_grids.add(key)
+        unique.append(table)
+    out = unique
     missing = unextracted_statements(
         pdf_path, out, extraction_policy=extraction_policy)
     if missing:

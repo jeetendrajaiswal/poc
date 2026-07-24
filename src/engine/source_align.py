@@ -299,7 +299,10 @@ def _match_rows(grid, lines):
     cand = []
     for ri, row in enumerate(grid):
         words, digs, vals = _grid_row_features(row)
-        if not vals:
+        # A model can drop every value from a printed row. A distinctive
+        # multi-word label remains sufficient to anchor that row; reconcile()
+        # can then refill its values from the proven printed columns.
+        if not vals and len(words) < 2:
             continue
         best, bscore = None, 0.0
         for li, L in enumerate(lines):
@@ -309,6 +312,15 @@ def _match_rows(grid, lines):
             wj = (len(words & L.words) / len(words | L.words)
                   if words and L.words else 0.0)
             score = 2.0 * ds + wj
+            if not vals:
+                # Identical captions can occur in an index with only a note
+                # and page number. Prefer the actual statement row carrying
+                # multiple amount-sized numeric tokens.
+                amount_tokens = sum(
+                    1 for _x, form in L.nums
+                    if len(_digits(form)) >= 3
+                )
+                score += min(0.20, 0.05 * amount_tokens)
             if score > bscore:
                 bscore, best = score, li
         if best is None:
@@ -380,6 +392,7 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
     pass runs CONSERVATIVELY: form fixes and blank fills only, never a
     digits-differ rewrite."""
     report = {"abstained": False, "corrections": [], "filled": 0,
+              "labels_filled": 0, "label_corrections": [],
               "unmatched_rows": 0, "numeric_rows": 0,
               "structure_mismatch": False, "unverified_cols": [],
               "conservative": False}
@@ -479,6 +492,86 @@ def reconcile(grid, lines_raw, coverage: float = 1.0, log=None):
             if k not in placed or abs(clusters[k][0] - x) < abs(clusters[k][0] - placed[k][0]):
                 placed[k] = (x, f)
         vals = _grid_row_features(out[ri])[2]
+        # Restore/canonicalize the line-item label from the same positionally
+        # matched printed row. Only text left of the first proven amount
+        # column is eligible. Inline numeric footnotes remain part of a label;
+        # a distant numeric note-reference column does not.
+        if value_ks:
+            first_value_x = clusters[min(value_ks)][0]
+            label_tokens = []
+            prior_x = None
+            for x, word in lines_raw[li]:
+                word = str(word).strip()
+                if x >= first_value_x - 12.0 or not word:
+                    continue
+                numeric = _is_numeric_form(_clean_token(word))
+                if numeric and (prior_x is None or x - prior_x > 30.0):
+                    prior_x = x
+                    continue
+                if re.fullmatch(r"[.…·]+", word):
+                    prior_x = x
+                    continue
+                label_tokens.append(word)
+                prior_x = x
+            printed_label = " ".join(label_tokens).strip()
+            first_grid_value = min(vals) if vals else len(out[ri])
+            text_cells = [
+                (j, str(out[ri][j] or "").strip())
+                for j in range(first_grid_value)
+                if any(ch.isalpha() for ch in str(out[ri][j] or ""))
+            ]
+            substantive = [
+                (j, text)
+                for j, text in text_cells
+                if re.search(r"[a-z]{2,}", text, re.IGNORECASE)
+            ]
+            if substantive:
+                label_col, current_label = max(
+                    substantive,
+                    key=lambda item: (
+                        len(re.findall(r"[a-z]", item[1], re.IGNORECASE)),
+                        item[0],
+                    ),
+                )
+            else:
+                empty_before_values = [
+                    j for j in range(first_grid_value)
+                    if not str(out[ri][j] or "").strip()
+                ]
+                label_col = (
+                    empty_before_values[-1]
+                    if empty_before_values else 0
+                )
+                current_label = str(out[ri][label_col] or "").strip()
+            # Keep enumerators in their own grid cells. PDF text lines can
+            # include them in the reconstructed label ("I Revenue"); copying
+            # that prefix into the actual label cell would duplicate it.
+            prefix = " ".join(
+                str(out[ri][j] or "").strip()
+                for j in range(label_col)
+                if str(out[ri][j] or "").strip()
+            )
+            if (prefix and printed_label.casefold().startswith(
+                    prefix.casefold() + " ")):
+                printed_label = printed_label[len(prefix):].strip()
+            current_words = set(re.findall(
+                r"[a-z]{2,}", current_label.casefold()))
+            printed_words = set(re.findall(
+                r"[a-z]{2,}", printed_label.casefold()))
+            overlap = len(current_words & printed_words)
+            comparable = (
+                current_words and printed_words
+                and overlap / len(current_words) >= 0.60
+                and overlap / len(printed_words) >= 0.60
+            )
+            if (printed_label and any(ch.isalpha() for ch in printed_label)
+                    and not current_words):
+                out[ri][label_col] = printed_label
+                report["labels_filled"] += 1
+            elif comparable and printed_label != current_label:
+                out[ri][label_col] = printed_label
+                report["label_corrections"].append(
+                    (ri, current_label, printed_label))
         for j, k in col_map.items():
             p = placed.get(k)
             g = vals.get(j)

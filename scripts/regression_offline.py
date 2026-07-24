@@ -585,6 +585,46 @@ check("segment identity treats printed dashes as zero",
       not identities.failing("Segment Information", "Consolidated Segment Information",
                              _good_segment))
 
+print("== 10e. source-backed omissions and shortened period headers ==")
+from src.engine.filing_chat import _normalize_grid_preamble
+
+_omission_grid = [
+    ["Particulars", "2026", "2025"],
+    ["Revenue from operations", "10,000", "9,000"],
+    ["Other income", "1,000", "900"],
+    ["Trade payables", "", ""],
+    ["", "11,000", "9,900"],
+]
+_omission_lines = [
+    [(100.0, "Revenue"), (160.0, "from"), (200.0, "operations"),
+     (400.0, "10,000"), (500.0, "9,000")],
+    [(100.0, "Other"), (150.0, "income"),
+     (400.0, "1,000"), (500.0, "900")],
+    [(100.0, "Trade"), (145.0, "payables"),
+     (400.0, "4,744"), (500.0, "4,164")],
+    [(100.0, "Total"), (145.0, "income"),
+     (400.0, "11,000"), (500.0, "9,900")],
+]
+_omission_fixed, _omission_report = sa.reconcile(
+    _omission_grid, _omission_lines)
+check("printed values restore an entirely blank model row",
+      _omission_fixed[3][1:] == ["4,744", "4,164"]
+      and _omission_report["filled"] == 2)
+check("printed label restores a value-only model row",
+      _omission_fixed[4][0] == "Total income"
+      and _omission_report["labels_filled"] == 1)
+
+_short_period_grid = [
+    ["Particulars", "Quarter ended March 31, 2026",
+     "Quarter ended December 31, 2025", "Quarter ended March 31, 2025",
+     "Year ended March 31, 2026", "2025"],
+    ["Revenue", "1", "2", "3", "4", "5"],
+]
+_, _period_grid = _normalize_grid_preamble(
+    "Segment Information", _short_period_grid)
+check("a bare year inherits only the nearest complete period heading",
+      _period_grid[0][-1] == "Year ended March 31, 2025")
+
 _infosys_direct = os.path.expanduser("~/Downloads/infosys_q4FY2026.pdf")
 _infosys_bad_raw = os.path.join(PKL, "infosys_new_q4FY2026.pkl")
 if os.path.exists(_infosys_direct) and os.path.exists(_infosys_bad_raw):
