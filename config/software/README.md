@@ -23,7 +23,9 @@ Each field defines:
   rules are declared once instead of repeated in all 410 definitions.
 - `mapping.aliases`: reviewed report labels for deterministic matching.
 - `mapping.locations`: statement locations in which those labels are valid,
-  such as current, non-current, operating, investing, or financing.
+  such as current assets, current liabilities, operating, investing, or
+  financing. Asset and liability locations are never collapsed into a generic
+  current/non-current label.
 - `mapping.match_name`: explicit for every field; `false` prevents a
   legacy/computed display name from being treated as a report-line alias.
 - `mapping.rules`: reviewed disambiguation rules for captions whose meaning
@@ -37,10 +39,9 @@ Each field defines:
   - `reported`: sourced from a printed report line;
   - `sum`: signed `terms`, each referencing another FID;
   - `ratio`: FID-based numerator, denominator, and scale.
-- `evidence`: provenance of the semantic mapping:
-  - `client_mapping`: supported by a client-supplied mapping example;
-  - `template_inferred`: derived from the client template and accounting
-    context but not yet confirmed by a client mapping example.
+- `evidence`: `client_mapping` when a client-supplied mapping supports the
+  field, or `template_inferred` when the field comes from the client template
+  and accounting context.
 
 The two count guards have deliberately explicit names:
 
@@ -60,6 +61,11 @@ explicit for every field:
 field uses its canonical name plus aliases, aliases only, reviewed rules only,
 or is disabled from direct report-line matching.
 
+Empty `includes`, `excludes`, or `mapping_notes` lists are intentional when the
+field's `meaning` already provides a complete boundary. They are not filled
+with generic boilerplate, because vague text reduces rather than improves
+mapping precision.
+
 Calculations never use Excel row addresses. The runtime validates field counts,
 scope positions, formula references, calculation types, and taxonomy structure
 before processing a report.
@@ -70,11 +76,13 @@ The sector-level mapping grammar is declarative too:
 - `statement_sections` identifies printed section headings and explicitly
   assigns each heading a mapping `location`; the engine never infers location
   from the heading or section name.
-- `implicit_initial_sections` defines narrowly gated recovery when extraction
-  loses an initial heading but preserves a later boundary.
-- `identities` defines reported-value cross-checks entirely by FID. `lhs` is
-  required, `alternate_lhs` is used only when the primary form is incomplete,
-  and `optional_lhs` participates only when that reported field is present.
+- `identities` defines reported-value cross-checks entirely by FID. Each check
+  has a stable `id`, applicable `scopes`, one `result_fid`, and signed
+  `terms`. A term's `presence` is either `required` or `optional`; a check is
+  skipped if a required printed value is absent.
+  - `coefficient: 1` adds the field; `coefficient: -1` subtracts it.
+  - `presence: required` means the check needs that reported field.
+    `presence: optional` means use the field only when the report prints it.
 
 `src/engine/client_map.py` interprets this contract. It contains no
 software-sector captions or software-sector FIDs.

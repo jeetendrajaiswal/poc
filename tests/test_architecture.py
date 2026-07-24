@@ -16,6 +16,7 @@ from src.engine.client_map import (
     Period,
     Taxonomy,
     canonicalize_xlsx,
+    load_taxonomy,
     map_statement,
     propose_unmapped_mappings,
     validate_template_taxonomy,
@@ -69,17 +70,26 @@ class SectorConfigurationTests(unittest.TestCase):
             {"income", "balance", "cashflow", "segment"},
             set(document["statement_sections"]),
         )
+        self.assertNotIn("implicit_initial_sections", document)
         self.assertTrue(document["location_vocabulary"])
+        self.assertNotIn("CURRENT", document["location_vocabulary"])
+        self.assertNotIn("NON-CURRENT", document["location_vocabulary"])
+        self.assertTrue({
+            "NON-CURRENT-ASSETS", "CURRENT-ASSETS",
+            "NON-CURRENT-LIABILITIES", "CURRENT-LIABILITIES",
+        } <= set(document["location_vocabulary"]))
         self.assertTrue(document["identities"])
         self.assertTrue(all(
-            "fid" in term
+            set(check) == {
+                "id", "name", "scopes", "result_fid", "terms"}
+            and all(set(term) == {"fid", "coefficient", "presence"}
+                    for term in check["terms"])
             for checks in document["identities"].values()
             for check in checks
-            for term in (
-                check["lhs"] + check.get("alternate_lhs", [])
-                + check.get("optional_lhs", [])
-            )
         ))
+        self.assertTrue(all(
+            item["evidence"] in {"client_mapping", "template_inferred"}
+            for item in document["items"]))
         calculations = [
             scoped["calculation"]
             for item in document["items"]
@@ -137,6 +147,15 @@ class SectorConfigurationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"missing from taxonomy: 274"):
             validate_template_taxonomy(self.template, broken)
 
+    def test_duplicate_taxonomy_key_fails_fast(self):
+        with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".yaml", encoding="utf-8") as handle:
+            handle.write("items: []\nitems: []\n")
+            handle.flush()
+            with self.assertRaisesRegex(
+                    ValueError, r"duplicate taxonomy key 'items'"):
+                load_taxonomy(handle.name)
+
     def test_unsafe_active_alias_collision_fails_fast(self):
         broken = copy.deepcopy(self.taxonomy)
         revenue = next(
@@ -151,12 +170,20 @@ class SectorConfigurationTests(unittest.TestCase):
     def test_identity_verifier_interprets_taxonomy_without_known_fids(self):
         taxonomy = Taxonomy(identities={
             "income": [{
+                "id": "declarative-test",
                 "name": "declarative test identity",
-                "lhs": [
-                    {"fid": "left-a", "sign": 1},
-                    {"fid": "left-b", "sign": 1},
+                "scopes": ["standalone"],
+                "result_fid": "right",
+                "terms": [
+                    {
+                        "fid": "left-a", "coefficient": 1,
+                        "presence": "required",
+                    },
+                    {
+                        "fid": "left-b", "coefficient": 1,
+                        "presence": "required",
+                    },
                 ],
-                "rhs": "right",
             }],
         })
         mapped = MappedStatement(
@@ -170,9 +197,34 @@ class SectorConfigurationTests(unittest.TestCase):
             unmapped=[],
             verification=[],
         )
-        verify_mapped(mapped, "income", taxonomy)
+        verify_mapped(mapped, "income", "standalone", taxonomy)
         self.assertTrue(mapped.flags)
         self.assertIn("declarative test identity", mapped.flags[0])
+
+    def test_corrected_financial_types_and_time_natures_are_explicit(self):
+        by_fid = {
+            item["fid"]: item
+            for items in self.taxonomy.values() for item in items
+        }
+        expected = {
+            "316": ("text", "text", "point_in_time"),
+            "317": ("text", "text", "context_dependent"),
+            "236": ("percentage", "percent", "duration"),
+            "24703": ("percentage", "percent", "point_in_time"),
+            "312": ("percentage", "percent", "duration"),
+            "245": ("per_share", "currency_per_share", "point_in_time"),
+            "223": ("per_share", "currency_per_share", "point_in_time"),
+            "224": ("per_share", "currency_per_share", "point_in_time"),
+            "17519": ("amount", "statement_currency", "point_in_time"),
+            "30371": ("amount", "statement_currency", "point_in_time"),
+        }
+        for fid, semantic_type in expected.items():
+            item = by_fid[fid]
+            self.assertEqual(
+                semantic_type,
+                (item["value_type"], item["unit"], item["time_nature"]),
+                fid,
+            )
 
     def test_unknown_sector_is_not_fallback_hardcoded(self):
         with self.assertRaises(FileNotFoundError):
@@ -268,7 +320,7 @@ class SectorConfigurationTests(unittest.TestCase):
         self.assertEqual({1: 30.0}, mapped.facts["20230"])
         self.assertEqual({1: 40.0}, mapped.facts["20231"])
 
-    def test_missing_initial_noncurrent_heading_is_recovered_from_boundary(self):
+    def test_missing_initial_heading_does_not_infer_a_balance_location(self):
         grid = [
             ["Particulars", "As at March 31, 2026"],
             ["Property, plant and equipment", "100"],
@@ -286,8 +338,8 @@ class SectorConfigurationTests(unittest.TestCase):
             scope="standalone",
         )
         self.assertEqual({1: 100.0}, mapped.facts["20222"])
-        self.assertEqual({1: 20.0}, mapped.facts["20220"])
-        self.assertEqual({1: 30.0}, mapped.facts["13748"])
+        self.assertNotIn("20220", mapped.facts)
+        self.assertNotIn("13748", mapped.facts)
         self.assertEqual({1: 40.0}, mapped.facts["13724"])
         self.assertEqual({1: 50.0}, mapped.facts["13722"])
 

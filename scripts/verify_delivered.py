@@ -142,44 +142,37 @@ def verify_workbook(path: str, raw_rows=None, template=None, taxonomy=None,
 
             # (1) printed cross-identities between reported totals
             for identity in getattr(taxonomy, "identities", {}).get(stmt, []):
+                if scope not in identity["scopes"]:
+                    continue
                 name = str(identity["name"])
-                lhs = [
-                    (int(term["sign"]), str(term["fid"]))
-                    for term in identity["lhs"]
+                required = [
+                    (float(term["coefficient"]), str(term["fid"]))
+                    for term in identity["terms"]
+                    if term["presence"] == "required"
                 ]
-                alternate = identity.get("alternate_lhs")
-                alt = ([
-                    (int(term["sign"]), str(term["fid"]))
-                    for term in alternate
-                ] if alternate else None)
                 optional = [
-                    (int(term["sign"]), str(term["fid"]))
-                    for term in identity.get("optional_lhs", [])
+                    (float(term["coefficient"]), str(term["fid"]))
+                    for term in identity["terms"]
+                    if term["presence"] == "optional"
                 ]
-                rhs_fid = str(identity["rhs"])
-                if str(rhs_fid) not in byfid:
+                result_fid = str(identity["result_fid"])
+                if result_fid not in byfid:
                     continue
                 for j in pcols:
-                    rv = val(rhs_fid, j)
+                    rv = val(result_fid, j)
                     if rv is None:
                         continue
-                    # A declared alternate is used only when the primary form
-                    # is incomplete. Optional terms participate when printed.
-                    form = (
-                        lhs
-                        if all(val(f, j) is not None for _s, f in lhs)
-                        else alt
-                    )
-                    if not form or not all(
-                            val(f, j) is not None for _s, f in form):
+                    if not all(
+                            val(fid, j) is not None
+                            for _coefficient, fid in required):
                         continue
                     present_optional = [
-                        (sign, fid) for sign, fid in optional
+                        (coefficient, fid) for coefficient, fid in optional
                         if val(fid, j) is not None
                     ]
                     tot = sum(
-                        sign * val(fid, j)
-                        for sign, fid in form + present_optional
+                        coefficient * val(fid, j)
+                        for coefficient, fid in required + present_optional
                     )
                     if not _close(tot, rv):
                         findings.append({"stmt": stmt, "scope": scope, "kind": "identity",

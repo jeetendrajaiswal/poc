@@ -1,7 +1,7 @@
 """Map verified raw extractions to the client template workbooks.
 
 Reads output/qtr_raw/<name>.pkl (verified raw tables), maps every statement
-to the client taxonomy (LLM-assisted -> API cost ~$0.10-0.26 per filing),
+to the client taxonomy using reviewed deterministic aliases/rules,
 and writes output/client/<NAME>.xlsx in long format.
 
 Usage:

@@ -344,7 +344,7 @@ _sector_cfg, template, _taxonomy = _load_sector_assets("software")
 bs = MappedStatement(periods=[Period("?", "2026-03-31", "", 1)],
                      facts={"13771": {1: 115541.51}, "13776": {1: 101198.69}},
                      sources={}, unmapped=[], verification=[])
-verify_mapped(bs, "balance", _taxonomy)
+verify_mapped(bs, "balance", "standalone", _taxonomy)
 check("Genesis-style TA≠TEL raises a statement flag",
       bool(getattr(bs, "flags", None))
       and any("assets = equity" in f.lower() for f in bs.flags))

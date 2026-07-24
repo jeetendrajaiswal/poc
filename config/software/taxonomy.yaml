@@ -10,9 +10,11 @@ mapping_policy:
   model_authority: proposal_only
 location_vocabulary:
 - STATEMENT-WIDE
-- NON-CURRENT
-- CURRENT
+- NON-CURRENT-ASSETS
+- CURRENT-ASSETS
 - EQUITY
+- NON-CURRENT-LIABILITIES
+- CURRENT-LIABILITIES
 - OPERATING
 - INVESTING
 - FINANCING
@@ -40,16 +42,16 @@ statement_sections:
   balance:
   - pattern: non\s*-?\s*current\s+assets
     section: NON-CURRENT ASSETS
-    location: NON-CURRENT
+    location: NON-CURRENT-ASSETS
   - pattern: current\s+assets
     section: CURRENT ASSETS
-    location: CURRENT
+    location: CURRENT-ASSETS
   - pattern: non\s*-?\s*current\s+liabilit
     section: NON-CURRENT LIABILITIES
-    location: NON-CURRENT
+    location: NON-CURRENT-LIABILITIES
   - pattern: current\s+liabilit
     section: CURRENT LIABILITIES
-    location: CURRENT
+    location: CURRENT-LIABILITIES
   - pattern: ^(?:[a-z]\s+)?equity(?:\s+and\s+liabilities)?$|shareholders.?\s*funds
     section: EQUITY
     location: EQUITY
@@ -85,89 +87,175 @@ statement_sections:
   - pattern: ^segment\s+liabilit
     section: SEGMENT-LIABILITIES
     location: SEGMENT-LIABILITIES
-implicit_initial_sections:
-  balance:
-    before_pattern: ^current assets$
-    section: NON-CURRENT ASSETS
-    location: NON-CURRENT
 identities:
   balance:
-  - name: Assets = Equity + Liabilities
-    lhs:
+  - id: assets-equal-equity-and-liabilities
+    name: Assets = Equity + Liabilities
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '13776'
+    terms:
     - fid: '13771'
-      sign: 1
-    rhs: '13776'
-  - name: Non-current + Current assets = Total assets
-    lhs:
+      coefficient: 1
+      presence: required
+  - id: total-assets-components
+    name: Non-current + current + separately presented assets = Total assets
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '13771'
+    terms:
     - fid: '13777'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '13774'
-      sign: 1
-    rhs: '13771'
+      coefficient: 1
+      presence: required
+    - fid: '20208'
+      coefficient: 1
+      presence: optional
+    - fid: '33087'
+      coefficient: 1
+      presence: optional
   income:
-  - name: PBT − tax = Net Profit
-    lhs:
+  - id: standalone-pbt-to-net-profit
+    name: PBT, tax, discontinued operations and regulatory movement = Net Profit
+    scopes:
+    - standalone
+    result_fid: '269'
+    terms:
     - fid: '296'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '318'
-      sign: -1
+      coefficient: -1
+      presence: required
     - fid: '231'
-      sign: -1
-    alternate_lhs:
+      coefficient: -1
+      presence: required
+    - fid: '244'
+      coefficient: 1
+      presence: optional
+    - fid: '20016'
+      coefficient: 1
+      presence: optional
+    - fid: '20018'
+      coefficient: -1
+      presence: optional
+  - id: consolidated-pbt-to-net-profit
+    name: PBT, tax, discontinued operations, regulatory movement and attribution = Net Profit
+    scopes:
+    - consolidated
+    result_fid: '269'
+    terms:
     - fid: '296'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '318'
-      sign: -1
-    rhs: '269'
-  - name: Net Profit + OCI = Total Comprehensive Income
-    lhs:
+      coefficient: -1
+      presence: required
+    - fid: '231'
+      coefficient: -1
+      presence: required
+    - fid: '244'
+      coefficient: 1
+      presence: optional
+    - fid: '20016'
+      coefficient: 1
+      presence: optional
+    - fid: '20018'
+      coefficient: -1
+      presence: optional
+    - fid: '292'
+      coefficient: 1
+      presence: optional
+    - fid: '264'
+      coefficient: -1
+      presence: optional
+  - id: net-profit-plus-oci
+    name: Net Profit + OCI = Total Comprehensive Income
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '20019'
+    terms:
     - fid: '269'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '16484'
-      sign: 1
-    rhs: '20019'
-  - name: Owners TCI attributable = Profit + OCI attributable
-    lhs:
+      coefficient: 1
+      presence: required
+  - id: owners-tci-attribution
+    name: Owners TCI attributable = Profit + OCI attributable
+    scopes:
+    - consolidated
+    result_fid: '22303'
+    terms:
     - fid: '22299'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '22291'
-      sign: 1
-    rhs: '22303'
-  - name: NCI TCI attributable = Profit + OCI attributable
-    lhs:
+      coefficient: 1
+      presence: required
+  - id: nci-tci-attribution
+    name: NCI TCI attributable = Profit + OCI attributable
+    scopes:
+    - consolidated
+    result_fid: '22302'
+    terms:
     - fid: '22298'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '22290'
-      sign: 1
-    rhs: '22302'
+      coefficient: 1
+      presence: required
   cashflow:
-  - name: Operating + Investing + Financing = Net change before exchange effect
-    lhs:
+  - id: cashflow-activity-total
+    name: Operating + Investing + Financing = Net change before exchange effect
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '30458'
+    terms:
     - fid: '17538'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '17537'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '17536'
-      sign: 1
-    rhs: '30458'
-  - name: Net change before exchange effect + exchange effect = Net change
-    lhs:
+      coefficient: 1
+      presence: required
+  - id: cashflow-net-change
+    name: Net change before exchange effect + exchange effect = Net change
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '17541'
+    terms:
     - fid: '30458'
-      sign: 1
-    optional_lhs:
+      coefficient: 1
+      presence: required
     - fid: '17529'
-      sign: 1
-    rhs: '17541'
-  - name: Opening + Net change + adjustments = Closing
-    lhs:
+      coefficient: 1
+      presence: optional
+  - id: cashflow-closing-balance
+    name: Opening + Net change + adjustments = Closing
+    scopes:
+    - standalone
+    - consolidated
+    result_fid: '30371'
+    terms:
     - fid: '17519'
-      sign: 1
+      coefficient: 1
+      presence: required
     - fid: '17541'
-      sign: 1
-    optional_lhs:
+      coefficient: 1
+      presence: required
     - fid: '30513'
-      sign: 1
-    rhs: '30371'
+      coefficient: 1
+      presence: optional
 items:
 - fid: '256'
   name: Gross Sales/Income from Operations
@@ -746,7 +834,7 @@ items:
           sign: 1
         - fid: '265'
           sign: 1
-  evidence: client_mapping
+  evidence: template_inferred
 - fid: '25238'
   name: Total Income
   statement: income
@@ -2242,6 +2330,10 @@ items:
     aliases:
     - Deferred tax
     - Deferred tax charge
+    - Deferred tax charge (credit)
+    - Deferred tax (credit) charge
+    - Deferred tax credit
+    - Deferred tax expense (benefit)
     locations:
     - STATEMENT-WIDE
     match_name: true
@@ -2862,9 +2954,9 @@ items:
 - fid: '245'
   name: Face Value
   statement: income
-  value_type: amount
-  unit: statement_currency
-  time_nature: duration
+  value_type: per_share
+  unit: currency_per_share
+  time_nature: point_in_time
   definition:
     meaning: Par or face value per equity share used to describe the company’s share capital denomination.
     includes: []
@@ -3066,8 +3158,8 @@ items:
 - fid: '224'
   name: Book Value Per Share (Before Extraordinary Items)
   statement: income
-  value_type: amount
-  unit: statement_currency
+  value_type: per_share
+  unit: currency_per_share
   time_nature: point_in_time
   definition:
     meaning: Net worth per equity share before extraordinary items or exceptional/extraordinary adjustments, calculated
@@ -3101,8 +3193,8 @@ items:
 - fid: '223'
   name: Book Value Per Share  (After Extraordinary Items)
   statement: income
-  value_type: amount
-  unit: statement_currency
+  value_type: per_share
+  unit: currency_per_share
   time_nature: point_in_time
   definition:
     meaning: Net worth per equity share after extraordinary items or exceptional/extraordinary adjustments, calculated
@@ -3138,7 +3230,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Capital adequacy ratio under Basel I, expressed as a percentage of regulatory capital to risk-weighted
       assets.
@@ -3174,7 +3266,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Capital adequacy ratio under Basel II, expressed as a percentage of regulatory capital to risk-weighted
       assets.
@@ -3210,7 +3302,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Capital adequacy ratio under Basel III, expressed as a percentage of regulatory capital to risk-weighted
       assets.
@@ -3316,7 +3408,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Debt-to-equity leverage ratio, expressed as a percentage or times-equivalent as reported by the company.
     includes:
@@ -3420,7 +3512,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Gross NPA as a percentage of the relevant asset or loan base, as disclosed by the company.
     includes:
@@ -3455,7 +3547,7 @@ items:
   statement: income
   value_type: percentage
   unit: percent
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Net NPA as a percentage of the relevant asset or loan base, as disclosed by the company.
     includes:
@@ -3488,8 +3580,8 @@ items:
 - fid: '312'
   name: Return on Assets
   statement: income
-  value_type: amount
-  unit: statement_currency
+  value_type: percentage
+  unit: percent
   time_nature: duration
   definition:
     meaning: Return on assets ratio, typically expressed as a percentage of profit after tax relative to average
@@ -3523,8 +3615,8 @@ items:
 - fid: '236'
   name: Equity Dividend In %
   statement: income
-  value_type: amount
-  unit: statement_currency
+  value_type: percentage
+  unit: percent
   time_nature: duration
   definition:
     meaning: Dividend declared or proposed per equity share, expressed as a percentage of face value or paid-up
@@ -4422,9 +4514,9 @@ items:
 - fid: '317'
   name: Source
   statement: income
-  value_type: amount
-  unit: statement_currency
-  time_nature: duration
+  value_type: text
+  unit: text
+  time_nature: context_dependent
   definition:
     meaning: Source identifier for the reported figure, such as filing source, investor presentation source, or
       other provenance label.
@@ -4437,8 +4529,8 @@ items:
     aliases: []
     locations:
     - STATEMENT-WIDE
-    match_name: true
-    mode: canonical_name_and_aliases
+    match_name: false
+    mode: disabled
     location_source: declared
   scopes:
     standalone:
@@ -4453,9 +4545,9 @@ items:
 - fid: '316'
   name: Source Date
   statement: income
-  value_type: amount
-  unit: statement_currency
-  time_nature: duration
+  value_type: text
+  unit: text
+  time_nature: point_in_time
   definition:
     meaning: Date associated with the source document or disclosure provenance.
     includes: []
@@ -4467,8 +4559,8 @@ items:
     aliases: []
     locations:
     - STATEMENT-WIDE
-    match_name: true
-    mode: canonical_name_and_aliases
+    match_name: false
+    mode: disabled
     location_source: declared
   scopes:
     standalone:
@@ -4908,9 +5000,9 @@ items:
 - fid: '24703'
   name: Provision Coverage Ratio
   statement: income
-  value_type: amount
-  unit: statement_currency
-  time_nature: duration
+  value_type: percentage
+  unit: percent
+  time_nature: point_in_time
   definition:
     meaning: Provision coverage ratio, usually a percentage or ratio showing the extent to which provisions cover
       underlying exposures or bad assets.
@@ -5009,7 +5101,7 @@ items:
     - Tangible Assets
     - Tangible fixed assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5062,7 +5154,7 @@ items:
     aliases:
     - Investment property
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5099,7 +5191,7 @@ items:
     - Property and plant equipment
     - PPE
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5134,7 +5226,7 @@ items:
     - Right-of-Use assets
     - ROU assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5168,7 +5260,7 @@ items:
     - Biological assets other than bearer plants
     - Biological assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5200,7 +5292,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     mode: disabled
     location_source: declared
   scopes:
@@ -5245,7 +5337,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     rules:
     - id: standalone-goodwill
       status: reviewed
@@ -5254,7 +5346,7 @@ items:
       scopes:
       - standalone
       locations:
-      - non-current
+      - non-current-assets
     mode: rules_only
     location_source: declared
   scopes:
@@ -5286,7 +5378,7 @@ items:
     - Intangible assets
     - Other Intangible assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5319,7 +5411,7 @@ items:
     aliases:
     - Producing Properties
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5353,7 +5445,7 @@ items:
     - PreProducing Properties
     - Pre-producing properties
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5388,7 +5480,7 @@ items:
     - Capital work in progress
     - CWIP
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5422,7 +5514,7 @@ items:
     aliases:
     - Intangible assets under development
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5457,7 +5549,7 @@ items:
     - Provision for impairment of assets
     - Provision for impairment
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5493,7 +5585,7 @@ items:
     - Fixed assets, net
     - Net fixed assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5559,7 +5651,7 @@ items:
     - Investments
     - Non-current investments
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5593,7 +5685,7 @@ items:
     - Deferred tax assets (net)
     - Deferred tax assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5628,7 +5720,7 @@ items:
     - Foreign Currency Monetary Item Translation Difference Asset Account
     - Foreign currency monetary item translation difference asset
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5663,7 +5755,7 @@ items:
     aliases:
     - Long-Term Loans And Advances
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5718,7 +5810,7 @@ items:
     - Unbilled
     - Trade receivables - unbilled
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5752,7 +5844,7 @@ items:
     - Non-current tax assets (net)
     - Income tax assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5789,7 +5881,7 @@ items:
     - Loans Non-Current
     - Non-current loans
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5830,8 +5922,9 @@ items:
     - Other Non-Current Financial Assets
     - Derivative assets
     - Others
+    - Other financiaI assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5870,7 +5963,7 @@ items:
     - Other assets
     - Contract assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5905,7 +5998,7 @@ items:
     - Total non-current assets
     - Non-current assets
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -5967,7 +6060,7 @@ items:
     - Inventory
     - Stock-in-trade
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6000,7 +6093,7 @@ items:
     - Investments
     - Current investments
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6038,7 +6131,7 @@ items:
     - Unbilled
     - Trade receivables - unbilled
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6072,7 +6165,7 @@ items:
     aliases:
     - Cash and cash equivalents
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6109,7 +6202,7 @@ items:
     - Other balances with banks
     - Other bank balances
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6144,7 +6237,7 @@ items:
     aliases:
     - Short Term Loans And Advances
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6199,7 +6292,7 @@ items:
     - Unbilled Revenue
     - Unbilled receivables
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6234,7 +6327,7 @@ items:
     - Deposit Under Site Restoration Fund
     - Site restoration fund deposit
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6268,7 +6361,7 @@ items:
     - Current Tax Assets (Net)
     - Income tax assets (net)
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6305,7 +6398,7 @@ items:
     - Loans, Current
     - Current loans
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6346,8 +6439,9 @@ items:
     - Other Current Financial Assets
     - Derivative assets
     - Others
+    - Other financiaI assets
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6385,7 +6479,7 @@ items:
     - Other assets
     - Contract assets
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6422,7 +6516,7 @@ items:
     - Total current assets
     - Current assets
     locations:
-    - CURRENT
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6486,8 +6580,9 @@ items:
     - Assets classified as held for sale
     - Held for sale assets
     - Non-current assets held for sale
+    - Assets held for sale
     locations:
-    - STATEMENT-WIDE
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6521,7 +6616,7 @@ items:
     aliases:
     - Regulatory Deferral Account Debit Balances and Related Deferred Tax Assets
     locations:
-    - STATEMENT-WIDE
+    - CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6823,7 +6918,7 @@ items:
     - Deferred government grants
     - Government grants deferred
     locations:
-    - EQUITY
+    - STATEMENT-WIDE
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6854,7 +6949,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     mode: disabled
     location_source: declared
   scopes:
@@ -6901,7 +6996,7 @@ items:
     - Loans and borrowings
     - Loans, borrowings and bank overdrafts
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6939,7 +7034,7 @@ items:
     - Current maturities of long-term debt
     - Current portion of borrowings
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -6976,7 +7071,7 @@ items:
     - Deposits received
     - Security deposits received
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7013,7 +7108,7 @@ items:
     - Dues of creditors other than micro enterprises and small enterprises
     - Dues of micro enterprises and small enterprises
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7046,7 +7141,7 @@ items:
     - Lease liabilities
     - Lease liability
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7087,7 +7182,7 @@ items:
     - Others
     - Derivative liabilities
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7118,7 +7213,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     mode: disabled
     location_source: declared
   scopes:
@@ -7166,7 +7261,7 @@ items:
     - Non-current liabilities
     - Non-current tax liabilities (net)
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7199,7 +7294,7 @@ items:
     - Deferred tax liabilities (net)
     - Deferred tax liability (net)
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7232,7 +7327,7 @@ items:
     aliases:
     - Deferred government grants, Non-current
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7267,7 +7362,7 @@ items:
     - Foreign Currency Monetary Item Translation Difference Liability Account
     - FCMITDA liability
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7302,7 +7397,7 @@ items:
     - Long-term provisions
     - employee benefit obiigations
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7336,7 +7431,7 @@ items:
     aliases:
     - Total non-current liabilities
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7399,7 +7494,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     mode: disabled
     location_source: declared
   scopes:
@@ -7450,7 +7545,7 @@ items:
     - Loans and borrowings
     - Loans, borrowings and bank overdrafts
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7484,7 +7579,7 @@ items:
     - Current maturities of borrowings
     - Current maturities of long-term debt
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7518,7 +7613,7 @@ items:
     - Deposit received
     - Deposits received
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7549,7 +7644,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     mode: disabled
     location_source: declared
   scopes:
@@ -7594,7 +7689,7 @@ items:
     - Unbilled
     - unbilled and accruals
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7627,7 +7722,7 @@ items:
     - Lease liabilities
     - Lease liability
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7667,7 +7762,7 @@ items:
     - Others
     - Derivative liabilities
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7702,7 +7797,7 @@ items:
     - Current tax liabilities (net)
     - Income tax liabilities (net)
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7741,7 +7836,7 @@ items:
     - Unearned and deferred revenue
     - other iiabiiities
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7773,7 +7868,7 @@ items:
     match_name: false
     aliases: []
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     mode: disabled
     location_source: declared
   scopes:
@@ -7824,7 +7919,7 @@ items:
     - Employee benefit obligations
     - Short-term provisions
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7856,7 +7951,7 @@ items:
   mapping:
     aliases: []
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7890,7 +7985,7 @@ items:
     aliases:
     - Total current liabilities
     locations:
-    - CURRENT
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7943,9 +8038,10 @@ items:
     mapping_notes: []
     distinguish_from: []
   mapping:
-    aliases: []
+    aliases:
+    - Liabilities directly associated with assets held for sale
     locations:
-    - EQUITY
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -7978,7 +8074,7 @@ items:
   mapping:
     aliases: []
     locations:
-    - EQUITY
+    - CURRENT-LIABILITIES
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -8079,7 +8175,7 @@ items:
     aliases:
     - Goodwill
     locations:
-    - NON-CURRENT
+    - NON-CURRENT-ASSETS
     match_name: true
     mode: canonical_name_and_aliases
     location_source: declared
@@ -12216,7 +12312,7 @@ items:
       position: 117
       calculation:
         type: reported
-  evidence: client_mapping
+  evidence: template_inferred
 - fid: '30461'
   name: Other cash receipts from sales of equity or debt instruments of other entities
   statement: cashflow
@@ -14148,7 +14244,7 @@ items:
   statement: cashflow
   value_type: amount
   unit: statement_currency
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Opening cash and cash equivalents balance at the start of the reporting period.
     includes:
@@ -14218,7 +14314,7 @@ items:
   statement: cashflow
   value_type: amount
   unit: statement_currency
-  time_nature: duration
+  time_nature: point_in_time
   definition:
     meaning: Closing cash and cash equivalents balance at the end of the reporting period.
     includes:
@@ -15095,7 +15191,7 @@ items:
           sign: 1
         - fid: '8905'
           sign: -1
-  evidence: client_mapping
+  evidence: template_inferred
 - fid: '18571'
   name: Segment Assets
   statement: segment
