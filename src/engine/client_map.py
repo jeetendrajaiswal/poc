@@ -997,28 +997,6 @@ def load_taxonomy(path: str) -> Taxonomy:
         item["rules"] = compiled_rules
         _validate_taxonomy_semantics(item, stmt, fid)
         out.setdefault(stmt, []).append(item)
-    expected_fields = int(doc.get("expected_unique_field_count", -1))
-    expected_scoped = int(doc.get("expected_scope_assignment_count", -1))
-    actual_fields = sum(len(items) for items in out.values())
-    actual_scoped = sum(
-        len(item.get("scopes", {}))
-        for items in out.values() for item in items)
-    if expected_fields != actual_fields or expected_scoped != actual_scoped:
-        raise ValueError(
-            "taxonomy count guard failed: "
-            f"fields {actual_fields}/{expected_fields}, "
-            f"scoped fields {actual_scoped}/{expected_scoped}")
-
-    expected_policy = {
-        "ambiguity": "reject",
-        "sign": "preserve_source",
-        "unit_and_time_nature": "strict",
-        "total_component_boundary": "exact",
-        "model_authority": "proposal_only",
-    }
-    if doc.get("mapping_policy") != expected_policy:
-        raise ValueError(
-            f"mapping_policy must be exactly {expected_policy!r}")
     by_key = {
         (statement, item["fid"]): item
         for statement, items in out.items() for item in items

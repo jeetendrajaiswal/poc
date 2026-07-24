@@ -18,9 +18,6 @@ Each field defines:
   - `includes` and `excludes`: explicit semantic boundaries;
   - `mapping_notes`: field-specific interpretation notes;
   - `distinguish_from`: FIDs with overlapping reviewed vocabulary;
-- top-level `mapping_policy`: strict unit/time/granularity, preserved source
-  sign, rejected ambiguity, and proposal-only model authority. These universal
-  rules are declared once instead of repeated in all 410 definitions.
 - `mapping.aliases`: reviewed report labels for deterministic matching.
 - `mapping.locations`: statement locations in which those labels are valid,
   such as current assets, current liabilities, operating, investing, or
@@ -39,15 +36,8 @@ Each field defines:
   - `reported`: sourced from a printed report line;
   - `sum`: signed `terms`, each referencing another FID;
   - `ratio`: FID-based numerator, denominator, and scale.
-- `evidence`: `client_mapping` when a client-supplied mapping supports the
-  field, or `template_inferred` when the field comes from the client template
-  and accounting context.
-
-The two count guards have deliberately explicit names:
-
-- `expected_unique_field_count`: number of unique FIDs in the sector taxonomy.
-- `expected_scope_assignment_count`: number of output placements after counting
-  a field once for standalone and once for consolidated when it applies to both.
+- `evidence`: `client_mapping` for a reviewed mapping or `template_inferred`
+  for a field derived from the template and accounting context.
 
 `mapping.locations` is never empty. `STATEMENT-WIDE` explicitly means that the
 caption is valid anywhere within that statement; otherwise the field lists its

@@ -56,15 +56,9 @@ class SectorConfigurationTests(unittest.TestCase):
         self.assertFalse(hasattr(self.config, "template_path"))
         with open(self.config.taxonomy_path, encoding="utf-8") as fh:
             document = yaml.safe_load(fh)
-        self.assertEqual({
-            "ambiguity": "reject",
-            "sign": "preserve_source",
-            "unit_and_time_nature": "strict",
-            "total_component_boundary": "exact",
-            "model_authority": "proposal_only",
-        }, document["mapping_policy"])
-        self.assertEqual(410, document["expected_unique_field_count"])
-        self.assertEqual(795, document["expected_scope_assignment_count"])
+        self.assertNotIn("mapping_policy", document)
+        self.assertNotIn("expected_unique_field_count", document)
+        self.assertNotIn("expected_scope_assignment_count", document)
         self.assertNotIn("schema_version", document)
         self.assertEqual(
             {"income", "balance", "cashflow", "segment"},
